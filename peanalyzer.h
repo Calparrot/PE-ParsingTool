@@ -24,6 +24,8 @@
    section_headers_analisis()：节区头分析函数
 */
 
+extern uint64_t file_size;
+
 struct SharedStructure {
     uint32_t peheader_offset_;        // NT头偏移
     int8_t peheader_offset_isvalid_ = true;
@@ -62,19 +64,20 @@ struct SharedStructure {
     int8_t size_of_initialized_data_isvalid_ = true;
     int8_t size_of_uninitialized_data_isvalid_ = true;
 
-    uint32_t import_table_RVA_;       // DataDirectory[1]
-    uint32_t import_table_size_;      // 导入表大小
-    uint32_t relocation_table_RVA_;   // DataDirectory[5]
-    uint32_t relocation_table_size_;  // 重定位表大小
-    uint32_t tls_table_RVA_;          // DataDirectory[9]
-    uint32_t tls_table_size_;         // TLS表大小
+    uint32_t import_table_RVA_;        // DataDirectory[1]
+    uint32_t import_table_size_;       // 导入表大小
+    uint32_t relocation_table_RVA_;    // DataDirectory[5]
+    uint32_t relocation_table_size_;   // 重定位表大小
+    uint32_t tls_table_RVA_;           // DataDirectory[9]
+    uint32_t tls_table_size_;          // TLS表大小
 
-    uint32_t size_of_headers_;        // 所有头的大小
+    uint32_t size_of_headers_;         // 所有头的大小
+    int64_t size_of_file_ = file_size; // 文件大小
 
-    uint32_t section_table_offset_;   // 节表在文件中的偏移
+    uint32_t section_table_offset_;    // 节表在文件中的偏移
 
-    int bitness_ = 32;                // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
-    int advbitness_ = 32;             // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
+    int bitness_ = 32;                 // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
+    int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
     bool PE_isValid_ = true;
     std::string file_extention_ = ".exe";
 };
