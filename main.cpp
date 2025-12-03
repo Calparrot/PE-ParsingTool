@@ -11,7 +11,7 @@
 */
 
 uint64_t file_size;
-bool readfile(std::string filepath, std::ifstream& file); //打开文件
+bool readfile(std::string filepath, std::ifstream& file); // 打开文件
 
 int main() {
     std::string filepath;
@@ -27,6 +27,7 @@ int main() {
             std::cout << "- 文件加载失败，请检查是否输入有误：";
         }
     }
+
     PEanalyzer target(myfile);
     target.mzcheck();
     target.dosheader_analysis();
@@ -42,7 +43,9 @@ bool readfile(std::string filepath, std::ifstream& myfile) {
         return false;
     }
     else {
+        myfile.seekg(0, std::ios::end);
         file_size = myfile.tellg();
+        myfile.seekg(0, std::ios::beg);
         return true;
     }
 }

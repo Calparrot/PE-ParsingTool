@@ -76,6 +76,8 @@ struct SharedStructure {
 
     uint32_t section_table_offset_;    // 节表在文件中的偏移
 
+    int detected_section_count_ = 0;    // 实际检测出的节区数量
+
     int bitness_ = 32;                 // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
     int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
     bool PE_isValid_ = true;

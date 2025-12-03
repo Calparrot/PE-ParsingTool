@@ -7,6 +7,7 @@
 #include "database.h"
 
 #define REASONABLE_MAX_SECTIONS 128 // 节区头数量解析上限
+/* constexpr int REASONABLE_MAX_SECTIONS = 128; C++ 11+标准*/
 
 SharedStructure shared_structure{};
 extern structuresults data_container;
@@ -292,10 +293,12 @@ bool PEanalyzer::file_header_analysis() {
 	result.informations_.push_back(field_interpretation(shared_structure.machine_));
 	/* 节区数量字段检查，还未添加实际数量检查的对照手段 */
 	if (shared_structure.number_of_sections_ == 0) {
+		shared_structure.number_of_sections_isvalid_ = false;
 		result.field_anomalies_.push_back("fileheader -> numberofsections字段异常。");
 		result.informations_.push_back("【异常】逻辑定义的节区数量为0。");
 	}
 	else if (shared_structure.number_of_sections_ > 96) {
+		shared_structure.number_of_sections_isvalid_ = 2;
 		result.field_anomalies_.push_back("fileheader -> numberofsections字段异常。");
 		result.informations_.push_back("【异常】逻辑定义的节区数量过多，可能为混淆手段。");
 	}
@@ -565,12 +568,13 @@ bool PEanalyzer::optional_header_analysis() {
 
 bool PEanalyzer::section_headers_analisis() {
 	Diaresults result;
+	int i = 0;
 
 	result.component_name_ = "Section Header";
 	result.component_type_ = "header";
 	result.file_offset_ = shared_structure.peheader_offset_;
 
-	for (int i = 0; i < REASONABLE_MAX_SECTIONS; i++) {
+	for (; i < REASONABLE_MAX_SECTIONS; i++) {
 		clear_buffer();
 		IMAGE_SECTION_HEADER current_section = {};
 		pedata_.seekg(0, std::ios::cur);
@@ -589,6 +593,7 @@ bool PEanalyzer::section_headers_analisis() {
 		std::memcpy(&current_section, mulbuffer, sizeof(IMAGE_SECTION_HEADER));
 		if (is_this_section_valid(current_section)) {
 			result.data_size_ += 40;
+			shared_structure.detected_section_count_ += 1;
 			data_container.sectionheaders.push_back(current_section);
 			continue;
 		}
@@ -598,7 +603,27 @@ bool PEanalyzer::section_headers_analisis() {
 			data_container.addresult(result);
 			return false;
 		}
+		break;
+	}
+	if (i > 128) {
+		try {
+			throw std::length_error("检测到的实际节区数量过多，工具将仅分析至前128个节区。");
+		}
+		catch (const std::length_error& e) {
+			/* 暂定区域：仅处理前128个节区，后面显示二进制的情况 */
+		}
 	}
 
-
+	if (shared_structure.detected_section_count_ == shared_structure.number_of_sections_) {
+		shared_structure.number_of_sections_isvalid_ = true;
+	}
+	else {
+		if (shared_structure.number_of_sections_isvalid_ == true) {
+			shared_structure.number_of_sections_isvalid_ = 2;
+		}
+		else if (shared_structure.number_of_sections_isvalid_ == 2) {
+			shared_structure.number_of_sections_isvalid_ = false;
+		}
+	}
+	
 }
