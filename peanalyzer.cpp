@@ -99,7 +99,7 @@ void PEanalyzer::joint_judge_magic() {
 	/* 包括的验证方式：越界验证、节归属验证、对齐验证、编译器模式匹配等 */
 }
 
-void PEanalyzer::section_characteristic_check(uint32_t input_characteristic) {
+void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
 	if (data_container.section_attributes.empty()) {
 		return;
 	}
@@ -112,7 +112,43 @@ void PEanalyzer::section_characteristic_check(uint32_t input_characteristic) {
 	data_container.section_attributes.back().cnt_uninitialized_data_ = ((input_characteristic & 0x00000080) != 0);
 }
 
-void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult) {
+void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
+	// 1. mem_execute_ + mem_write_
+	if (data_container.section_attributes[num].mem_execute_ && data_container.section_attributes[num].mem_write_) {
+		inputresult.warnings_.push_back("节区权限异常。");
+		inputresult.informations_.push_back("【异常】节区属性可读+可写，存在安全风险。");
+	}
+	// 2. mem_shared_ + cnt_uninitialized_data_
+	if (data_container.section_attributes[num].mem_shared_ && data_container.section_attributes[num].cnt_uninitialized_data_) {
+		inputresult.informations_.push_back("【可疑】节区属性共享零数据，注意特殊处理。");
+	}
+	// 3. mem_write_ + !mem_read_
+	if (data_container.section_attributes[num].mem_write_ && !data_container.section_attributes[num].mem_read_) {
+		inputresult.warnings_.push_back("节区权限异常。");
+		inputresult.informations_.push_back("【异常】节区属性可执行+不可读，无法正常执行。");
+	}
+	// 4. mem_execute_ + !mem_read_
+	if (data_container.section_attributes[num].mem_execute_ && !data_container.section_attributes[num].mem_read_) {
+		inputresult.informations_.push_back("【可疑】节区属性只写内存，较为少见。");
+	}
+	// 5. !mem_read_ + !mem_write_ + !mem_execute_
+	if (!data_container.section_attributes[num].mem_execute_ && !data_container.section_attributes[num].mem_read_ && !data_container.section_attributes[num].mem_write_) {
+		inputresult.warnings_.push_back("节区权限异常。");
+		inputresult.informations_.push_back("【异常】节区属性不可执行+不可读+不可写，无法正常访问。");
+	}
+	// 6. cnt_code_ + cnt_uninitialized_data_
+	if (data_container.section_attributes[num].cnt_code_ && data_container.section_attributes[num].cnt_uninitialized_data_) {
+		inputresult.warnings_.push_back("节区属性逻辑错误。");
+		inputresult.informations_.push_back("【异常】节区属性逻辑错误");
+	}
+	// 7. cnt_initialized_data_ + cnt_uninitialized_data_
+	if (data_container.section_attributes[num].cnt_initialized_data_ && data_container.section_attributes[num].cnt_uninitialized_data_) {
+		inputresult.warnings_.push_back("节区属性逻辑错误。");
+		inputresult.informations_.push_back("【异常】节区属性逻辑错误");
+	}
+}
+
+void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
 	static constexpr uint8_t TEXT[8] = { 0x2E, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00, 0x00 };    // .text
 	static constexpr uint8_t CODE[8] = { 0x2E, 0x63, 0x6F, 0x64, 0x65, 0x00, 0x00, 0x00 };    // .code
 	static constexpr uint8_t ITEXT[8] = { 0x2E, 0x69, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00 };   // .itext
@@ -129,7 +165,8 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 	static constexpr uint8_t PDATA[8] = { 0x2E, 0x70, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .pdata
 	static constexpr uint8_t XDATA[8] = { 0x2E, 0x78, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .xdata
 
-	bool judgement_set[7] = {};
+	bool judgement_set[7] = {0};
+	bool actual_val[7] = {};
 	bool is_attribute_common = true;
 	/*
 	[0] bool mem_execute_;               // 内存可执行
@@ -207,7 +244,31 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
 	}
 	else {
-		inputresult.field_anomalies_.push_back("sectionheader -> name 字段非常见编译器编译结果。");
+		/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
+		inputresult.informations_.push_back("【异常】sectionheader->name 字段非常见编译器编译结果。");
+		return;
+	}
+
+	actual_val[0] = data_container.section_attributes[num].mem_execute_;
+	actual_val[1] = data_container.section_attributes[num].mem_read_;
+	actual_val[2] = data_container.section_attributes[num].mem_write_;
+	actual_val[3] = data_container.section_attributes[num].mem_shared_;
+	actual_val[4] = data_container.section_attributes[num].cnt_code_;
+	actual_val[5] = data_container.section_attributes[num].cnt_initialized_data_;
+	actual_val[6] = data_container.section_attributes[num].cnt_uninitialized_data_;
+
+	if (!memcmp(judgement_set, actual_val, 7)) {
+		/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
+		inputresult.warnings_.push_back("sectionheader权限异常");
+		inputresult.informations_.push_back("【异常】sectionheader的name值与其期望的权限不匹配。");
+	}
+	if (!is_attribute_common) {
+		/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
+		inputresult.warnings_.push_back("sectionheader->characteristic值非常见结果");
+		inputresult.informations_.push_back("【可疑】sectionheader->characteristic值非常见结果");
+	}
+	else {
+		data_container.section_attributes[num].known_combination_ = true;
 	}
 }
 
@@ -740,8 +801,13 @@ bool PEanalyzer::section_headers_analisis() {
 		// 记录节区属性
 		section_imformation section_imformation_element;
 		data_container.section_attributes.push_back(section_imformation_element);
-		section_characteristic_check(data_container.sectionheaders[j].Characteristics);
-		// Name 字段合法性检验
-		section_name_check(data_container.sectionheaders[j].Name, data_container.sectionheaders[j].Characteristics, result);
+		section_characteristic_judge(data_container.sectionheaders[j].Characteristics);
+		// Name 字段合法性检验 以及 characteristic 联合校验
+		section_name_check(data_container.sectionheaders[j].Name, data_container.sectionheaders[j].Characteristics, result, j);
+		// characteristic 异常组合检验
+		if (!data_container.section_attributes[j].known_combination_) {
+			section_characteristic_check(data_container.sectionheaders[j].Characteristics, result, j);
+		}
+
 	}
 }

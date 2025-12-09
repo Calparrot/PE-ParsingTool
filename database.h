@@ -41,6 +41,8 @@ struct BreakDown {
 };
 
 struct section_imformation {
+    bool known_combination_ = false;          // 是否为已知属性节区，如text、code等标准节区
+
     /* 目前仅判断前 7 个特征属性 */
     bool mem_execute_ = false;               // 内存可执行
     bool mem_read_ = false;                  // 内存可读
@@ -49,7 +51,7 @@ struct section_imformation {
     bool cnt_code_ = false;                  // 包含可执行代码 
     bool cnt_initialized_data_ = false;      // 包含已初始化数据
     bool cnt_uninitialized_data_ = false;    // 零初始化
-    
+    /* 下面的属性目前没用，不涉及任何判断信息 */
     bool mem_discardable_ = false;           // 使用后释放
     bool image_scn_lnk_info_ = false;        // 包含链接器信息
     bool image_scn_lnk_remove_ = false;      // 链接后删除

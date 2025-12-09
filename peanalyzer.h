@@ -15,7 +15,9 @@
    field_interpretation()         ：fileheader中machine字段的解析函数
    magic_joint_check()            ：magic字段一致性联合验证函数
    joint_judge_magic()            ：magic字段反推函数
-   section_characteristic_check() ：节区属性验证函数
+   section_characteristic_judge() ：节区属性判断函数
+   section_characteristic_check() ：节区属性常见冲突组合验证函数
+   section_name_check()           ：节区常用名称检验和属性联合判断函数
 
    mzcheck()                      ：MZ签名检查函数
    dosheader_analysis()           ：DOS头分析函数
@@ -96,8 +98,9 @@ private:
     void magic_check(uint16_t inputmagic, Diaresults& inputresult, int& bitness);
     void magic_joint_check();
     void joint_judge_magic(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
-    void section_characteristic_check(uint32_t input_characteristic);
-	void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult);
+    void section_characteristic_judge(uint32_t input_characteristic);
+    void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num);
+	void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
 
 public:
     /* 此处考虑 C++11 兼容性问题，未直接成员初始化 headbuffer = {0}，而采用循环赋值 */
