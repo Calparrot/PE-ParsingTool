@@ -10,7 +10,7 @@ void structuresults::addresult(Diaresults input) {
 	diarelist.push_back(input);
 }
 
-/* 先实现最基础的，后续再添加基于置信度的判断节区合法性的方法 */
+/* 节区字段的基础检查，后续再添加基于置信度的判断节区合法性的方法，相对于 section_headers_analisis() 函数仅做最低限度的可运行性检验 */
 bool is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
 	// 1. Name字段简单验证
 	for (size_t i = 0; i < 8; i++) {

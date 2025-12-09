@@ -99,6 +99,118 @@ void PEanalyzer::joint_judge_magic() {
 	/* 包括的验证方式：越界验证、节归属验证、对齐验证、编译器模式匹配等 */
 }
 
+void PEanalyzer::section_characteristic_check(uint32_t input_characteristic) {
+	if (data_container.section_attributes.empty()) {
+		return;
+	}
+	data_container.section_attributes.back().mem_execute_ = ((input_characteristic & 0x20000000) != 0);
+	data_container.section_attributes.back().mem_read_ = ((input_characteristic & 0x40000000) != 0);
+	data_container.section_attributes.back().mem_write_ = ((input_characteristic & 0x80000000) != 0);
+	data_container.section_attributes.back().mem_shared_ = ((input_characteristic & 0x10000000) != 0);
+	data_container.section_attributes.back().cnt_code_ = ((input_characteristic & 0x00000020) != 0);
+	data_container.section_attributes.back().cnt_initialized_data_ = ((input_characteristic & 0x00000040) != 0);
+	data_container.section_attributes.back().cnt_uninitialized_data_ = ((input_characteristic & 0x00000080) != 0);
+}
+
+void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult) {
+	static constexpr uint8_t TEXT[8] = { 0x2E, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00, 0x00 };    // .text
+	static constexpr uint8_t CODE[8] = { 0x2E, 0x63, 0x6F, 0x64, 0x65, 0x00, 0x00, 0x00 };    // .code
+	static constexpr uint8_t ITEXT[8] = { 0x2E, 0x69, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00 };   // .itext
+	static constexpr uint8_t DATA[8] = { 0x2E, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00 };    // .data
+	static constexpr uint8_t RDATA[8] = { 0x2E, 0x72 ,0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .rdata
+	static constexpr uint8_t IDATA[8] = { 0x2E, 0x69 ,0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .idata
+	static constexpr uint8_t EDATA[8] = { 0x2E, 0x65 ,0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .edata
+	static constexpr uint8_t BSS[8] = { 0x2E, 0x62, 0x73, 0x73, 0x00, 0x00, 0x00, 0x00 };     // .bss
+	static constexpr uint8_t RSRC[8] = { 0x2E, 0x72, 0x73, 0x72, 0x63, 0x00, 0x00, 0x00 };    // .rsrc
+	static constexpr uint8_t RELOC[8] = { 0x2E, 0x72, 0x65, 0x6C, 0x6F, 0x63, 0x00, 0x00 };   // .reloc
+	static constexpr uint8_t DEBUG[8] = { 0x2E, 0x64, 0x65, 0x62, 0x75, 0x67, 0x24, 0x53 };   // .debug$S
+	static constexpr uint8_t DRECTVE[8] = { 0x2E, 0x64, 0x72, 0x65, 0x63, 0x74, 0x76, 0x65 }; // .drectve
+	static constexpr uint8_t TLS[8] = { 0x2E, 0x74, 0x6C, 0x73, 0x00, 0x00, 0x00, 0x00 };     // .tls
+	static constexpr uint8_t PDATA[8] = { 0x2E, 0x70, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .pdata
+	static constexpr uint8_t XDATA[8] = { 0x2E, 0x78, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .xdata
+
+	bool judgement_set[7] = {};
+	bool is_attribute_common = true;
+	/*
+	[0] bool mem_execute_;               // 内存可执行
+    [1] bool mem_read_;                  // 内存可读
+    [2] bool mem_write_;                 // 内存可写
+    [3] bool mem_shared_;                // 内存共享
+    [4] bool cnt_code_;                  // 包含可执行代码 
+    [5] bool cnt_initialized_data_;      // 包含已初始化数据
+    [6] bool cnt_uninitialized_data_;    // 零初始化
+	*/
+
+	if (memcmp(input_name, TEXT, 8) || memcmp(input_name, CODE, 8) || memcmp(input_name, ITEXT, 8)) {
+		judgement_set[0] = true;
+		judgement_set[1] = true;
+		judgement_set[2] = false;
+		judgement_set[4] = true;
+		if (input_characteristic != 0x60000020) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, DATA, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = true;
+		judgement_set[5] = true;
+		if (input_characteristic != 0xC0000040) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, RDATA, 8) || memcmp(input_name, IDATA, 8) || memcmp(input_name, EDATA, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = false;
+		judgement_set[5] = true;
+		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, BSS, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = true;
+		judgement_set[6] = true;
+		if (input_characteristic != 0xC0000080) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, RSRC, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = false;
+		judgement_set[5] = true;
+		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, RELOC, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = false;
+		judgement_set[5] = true;
+		if (input_characteristic != 0x42000040 
+			&& input_characteristic != 0x40000040) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, DEBUG, 8) || memcmp(input_name, DRECTVE, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = false;
+		judgement_set[5] = true;
+		if (input_characteristic != 0x42100040 
+			&& input_characteristic != 0x40100040) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, TLS, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = true;
+		judgement_set[5] = true;
+		if (input_characteristic != 0xC0000040) { is_attribute_common = false; }
+	}
+	else if (memcmp(input_name, PDATA, 8) || memcmp(input_name, XDATA, 8)) {
+		judgement_set[0] = false;
+		judgement_set[1] = true;
+		judgement_set[2] = false;
+		judgement_set[5] = true;
+		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
+	}
+	else {
+		inputresult.field_anomalies_.push_back("sectionheader -> name 字段非常见编译器编译结果。");
+	}
+}
+
 /* public函数 */
 bool PEanalyzer::mzcheck() {
 	clear_buffer();
@@ -291,7 +403,7 @@ bool PEanalyzer::file_header_analysis() {
 		result.informations_.push_back("【异常】machine字段为空。");
 	}
 	result.informations_.push_back(field_interpretation(shared_structure.machine_));
-	/* 节区数量字段检查，还未添加实际数量检查的对照手段 */
+	/* 节区数量字段检查，实际数量检查的对照手段在函数 section_headers_analisis() 中 */
 	if (shared_structure.number_of_sections_ == 0) {
 		shared_structure.number_of_sections_isvalid_ = false;
 		result.field_anomalies_.push_back("fileheader -> numberofsections字段异常。");
@@ -605,25 +717,31 @@ bool PEanalyzer::section_headers_analisis() {
 		}
 		break;
 	}
-	if (i > 128) {
-		try {
+	try {
+		if (i > 128) {
 			throw std::length_error("检测到的实际节区数量过多，工具将仅分析至前128个节区。");
 		}
-		catch (const std::length_error& e) {
-			/* 暂定区域：仅处理前128个节区，后面显示二进制的情况 */
-		}
+	}
+	catch (const std::length_error& e) {
+		/* 暂定区域：仅处理前128个节区，后面显示二进制的情况 */
+
 	}
 
-	if (shared_structure.detected_section_count_ == shared_structure.number_of_sections_) {
+	// fileheader -> numberofsections 和实际检测到节区的数量对照
+	if (shared_structure.number_of_sections_ == shared_structure.detected_section_count_) {
 		shared_structure.number_of_sections_isvalid_ = true;
 	}
 	else {
-		if (shared_structure.number_of_sections_isvalid_ == true) {
-			shared_structure.number_of_sections_isvalid_ = 2;
-		}
-		else if (shared_structure.number_of_sections_isvalid_ == 2) {
-			shared_structure.number_of_sections_isvalid_ = false;
-		}
+		shared_structure.number_of_sections_isvalid_ = false;
 	}
-	
+
+	// 字段严格检查，相对于 is_this_section_valid() 函数属于混淆性检测
+	for (size_t j = 0; j < shared_structure.detected_section_count_; j++) {
+		// 记录节区属性
+		section_imformation section_imformation_element;
+		data_container.section_attributes.push_back(section_imformation_element);
+		section_characteristic_check(data_container.sectionheaders[j].Characteristics);
+		// Name 字段合法性检验
+		section_name_check(data_container.sectionheaders[j].Name, data_container.sectionheaders[j].Characteristics, result);
+	}
 }

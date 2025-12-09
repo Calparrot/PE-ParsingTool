@@ -6,22 +6,23 @@
 #include "database.h"
 
 /*
-   pedata                    ：文件流
-   shared_structure          ：关键字段提取结构体
-                             ：int8_t型数据 = 2 时表示无法判断值是否合法
-   mulbuffer[]               ：复用缓冲区
+   pedata                         ：文件流
+   shared_structure               ：关键字段提取结构体
+                                  ：int8_t型数据 = 2 时表示无法判断值是否合法
+   mulbuffer[]                    ：复用缓冲区
 
-   clear_buffer()            ：清空复用缓冲区
-   field_interpretation()    ：fileheader中machine字段的解析函数
-   magic_joint_check()       ：magic字段一致性联合验证函数
-   joint_judge_magic()       ：magic字段反推函数
+   clear_buffer()                 ：清空复用缓冲区
+   field_interpretation()         ：fileheader中machine字段的解析函数
+   magic_joint_check()            ：magic字段一致性联合验证函数
+   joint_judge_magic()            ：magic字段反推函数
+   section_characteristic_check() ：节区属性验证函数
 
-   mzcheck()                 ：MZ签名检查函数
-   dosheader_analysis()      ：DOS头分析函数
-   signaturecheck()          ：PE签名检查函数
-   file_header_analysis()    ：文件头分析函数
-   optional_header_analysis()：可选头分析函数
-   section_headers_analisis()：节区头分析函数
+   mzcheck()                      ：MZ签名检查函数
+   dosheader_analysis()           ：DOS头分析函数
+   signaturecheck()               ：PE签名检查函数
+   file_header_analysis()         ：文件头分析函数
+   optional_header_analysis()     ：可选头分析函数
+   section_headers_analisis()     ：节区头分析函数
 */
 
 extern uint64_t file_size;
@@ -95,6 +96,8 @@ private:
     void magic_check(uint16_t inputmagic, Diaresults& inputresult, int& bitness);
     void magic_joint_check();
     void joint_judge_magic(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
+    void section_characteristic_check(uint32_t input_characteristic);
+	void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult);
 
 public:
     /* 此处考虑 C++11 兼容性问题，未直接成员初始化 headbuffer = {0}，而采用循环赋值 */

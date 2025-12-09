@@ -11,6 +11,7 @@
     Diaresults              ：诊断结果
     BreakDown               ：无药可救的文件特征
     data_container          ：输出结果&数据库
+    section_imformation     ：节区属性信息
 
     is_this_section_valid() ：节区头有效性检查函数
 */
@@ -37,6 +38,34 @@ struct Diaresults {
 struct BreakDown {
     int abnormal_num_of_keywords_ = 0; // 异常关键字段数量
     int total_num_of_keywords_ = 23;    // 关键字段总数量
+};
+
+struct section_imformation {
+    /* 目前仅判断前 7 个特征属性 */
+    bool mem_execute_ = false;               // 内存可执行
+    bool mem_read_ = false;                  // 内存可读
+    bool mem_write_ = false;                 // 内存可写
+    bool mem_shared_ = false;                // 内存共享
+    bool cnt_code_ = false;                  // 包含可执行代码 
+    bool cnt_initialized_data_ = false;      // 包含已初始化数据
+    bool cnt_uninitialized_data_ = false;    // 零初始化
+    
+    bool mem_discardable_ = false;           // 使用后释放
+    bool image_scn_lnk_info_ = false;        // 包含链接器信息
+    bool image_scn_lnk_remove_ = false;      // 链接后删除
+
+    bool image_scn_type_no_pad_ = false;     // 不填充对齐（不常用）
+    bool image_scn_align_ = false;           // 对齐方式（1 - 8192字节）
+    bool image_scn_lnk_nreloc_ovfl_ = false; // 重定位溢出
+
+    bool image_scn_mem_not_cached_ = false;  // 不缓存 硬件相关
+    bool image_scn_mem_not_paged_ = false;   // 不可分页 驱动代码
+    bool image_scn_mem_purgeable_ = false;   // 可清除 资源
+    bool image_scn_mem_16bit_ = false;       // 16位代码（旧）
+
+    bool image_scn_lnk_comdat = false;       // COMDAT记录
+    bool image_scn_gprel = false;            // 包含GP相对数据
+    bool image_scn_mam_fardata = false;      // 远数据
 };
 
 #pragma pack(push, 1)
@@ -183,12 +212,13 @@ private:
 public:
     IMAGE_DOS_HEADER dosheader{};
     std::vector<uint8_t> dosstub;
-    uint32_t signature; // PE签名
+    uint32_t signature = 0; // PE签名
     IMAGE_FILE_HEADER fileheader{};
     IMAGE_OPTIONAL_HEADER32 optionalheader32{};
     IMAGE_OPTIONAL_HEADER64 optionalheader64{};
     IMAGE_ROM_OPTIONAL_HEADER optionalheaderrom{};
     std::vector<IMAGE_SECTION_HEADER> sectionheaders;
+    std::vector<section_imformation> section_attributes;
 
     void addresult(Diaresults input);
 };
