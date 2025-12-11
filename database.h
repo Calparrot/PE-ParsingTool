@@ -8,13 +8,27 @@
 #include <cctype>
 
 /*
-    Diaresults              ：诊断结果
-    BreakDown               ：无药可救的文件特征
+    structural_imformation  ：结构是否存在可疑或异常的收录表
+    Diaresults              ：单个结构具体诊断结果
+    BreakDown               ：文件整体信息，用于判断是否为完全无效的文件或非PE文件
     data_container          ：输出结果&数据库
     section_imformation     ：节区属性信息
 
-    is_this_section_valid() ：节区头有效性检查函数
+    is_this_section_valid() ：某40字节数据是否为节区头的检查函数
 */
+
+struct structural_imformation {
+    bool dos_header_normal_ = true;
+
+    bool dos_stub_normal_ = true;
+    bool dos_stub_exist_ = true;
+
+    bool file_header_normal_ = true;
+    bool optional_header_normal_ = true;
+
+    bool section_header_normal_ = true;
+    bool section_header_exist_ = true;
+};
 
 struct Diaresults {
     std::string component_name_;    // 结构名称
@@ -41,7 +55,7 @@ struct BreakDown {
 };
 
 struct section_imformation {
-    bool known_combination_ = false;          // 是否为已知属性节区，如text、code等标准节区
+    bool known_combination_ = false;         // 是否为已知属性节区，如text、code等标准节区，名称和属性需要完全满足
 
     /* 目前仅判断前 7 个特征属性 */
     bool mem_execute_ = false;               // 内存可执行
@@ -209,9 +223,13 @@ struct IMAGE_SECTION_HEADER {
 #pragma pack(pop)
 
 class structuresults {
-private:
-    std::vector<Diaresults> diarelist{};
 public:
+    // 诊断数据
+    std::vector<Diaresults> diarelist{};
+    structural_imformation structures_attributes;
+    std::vector<section_imformation> section_attributes;
+
+    // 原始文件数据
     IMAGE_DOS_HEADER dosheader{};
     std::vector<uint8_t> dosstub;
     uint32_t signature = 0; // PE签名
@@ -220,8 +238,8 @@ public:
     IMAGE_OPTIONAL_HEADER64 optionalheader64{};
     IMAGE_ROM_OPTIONAL_HEADER optionalheaderrom{};
     std::vector<IMAGE_SECTION_HEADER> sectionheaders;
-    std::vector<section_imformation> section_attributes;
 
+    // 函数
     void addresult(Diaresults input);
 };
 

@@ -90,7 +90,7 @@ struct SharedStructure {
 class PEanalyzer {
 private:
     std::ifstream& pedata_;
-    uint8_t mulbuffer[1024];
+    uint8_t mulbuffer[1024] = { 0 };
 
     /* 工具函数 */
     void clear_buffer();
@@ -103,12 +103,7 @@ private:
 	void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
 
 public:
-    /* 此处考虑 C++11 兼容性问题，未直接成员初始化 headbuffer = {0}，而采用循环赋值 */
-    PEanalyzer(std::ifstream& file) : pedata_(file) {
-        for (int i = 0; i < 256; i++) {
-            mulbuffer[i] = 0;
-        }
-    }
+    PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
     /* 调用时一定要按顺序调用 */
     bool mzcheck();
     bool dosheader_analysis();

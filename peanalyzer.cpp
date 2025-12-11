@@ -6,8 +6,7 @@
 #include "peanalyzer.h"
 #include "database.h"
 
-#define REASONABLE_MAX_SECTIONS 128 // 节区头数量解析上限
-/* constexpr int REASONABLE_MAX_SECTIONS = 128; C++ 11+标准*/
+constexpr int REASONABLE_MAX_SECTIONS = 128;
 
 SharedStructure shared_structure{};
 extern structuresults data_container;
@@ -98,7 +97,7 @@ void PEanalyzer::joint_judge_magic() {
 	/* 包括以下字段：machine、sizeofoptionalheader、datadirectory、imageBase、sectionalignment、filealignment、subsystem、characteristics、addressofentrypoint */
 	/* 包括的验证方式：越界验证、节归属验证、对齐验证、编译器模式匹配等 */
 }
-
+                          
 void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
 	if (data_container.section_attributes.empty()) {
 		return;
@@ -113,6 +112,7 @@ void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
 }
 
 void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
+	/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
 	// 1. mem_execute_ + mem_write_
 	if (data_container.section_attributes[num].mem_execute_ && data_container.section_attributes[num].mem_write_) {
 		inputresult.warnings_.push_back("节区权限异常。");
@@ -300,6 +300,7 @@ bool PEanalyzer::mzcheck() {
 	}
 	else {
 		data_container.dosheader.e_magic = (mulbuffer[0] << 8) | mulbuffer[1];
+		data_container.structures_attributes.dos_header_normal_ = false;
 		result.field_anomalies_.push_back("不合法的MZ签名，不是有效的PE文件。");
 		result.warnings_.push_back("MZ 签名字段异常。");
 		result.informations_.push_back("【异常】MZ签名异常，期望值：0x4D5A。");
@@ -368,6 +369,7 @@ bool PEanalyzer::dosstub_analysis() {
 	}
 	else {
 		if (result.data_size_ == 0) {
+			data_container.structures_attributes.dos_stub_exist_ = false;
 			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）区域缺失。");
 		}
 		else if (result.data_size_ <= 16) {
@@ -382,6 +384,7 @@ bool PEanalyzer::dosstub_analysis() {
 		else {
 			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过长。");
 		}
+		data_container.structures_attributes.dos_stub_normal_ = false;
 		result.warnings_.push_back("非标准DOS存根（DOS Stub）结构。");
 		result.informations_.push_back("【存疑】DOS存根长度非标准，期望长度：约0x40字节");
 		result.issuspicious = true;
@@ -418,6 +421,7 @@ bool PEanalyzer::signaturecheck() {
 		data_container.dosheader.e_magic = (mulbuffer[0] << 24) | (mulbuffer[1] << 16) | (mulbuffer[2] << 8) | mulbuffer[3];
 		result.isvalid = false;
 		result.issuspicious = true;
+		data_container.structures_attributes.file_header_normal_ = false;
 		result.field_anomalies_.push_back("PE 签名验证失败，不是有效的PE文件。");
 		result.warnings_.push_back("PE 签名字段异常。");
 		result.informations_.push_back("【异常】PE签名异常，期望值：0x00004550。");
@@ -454,12 +458,14 @@ bool PEanalyzer::file_header_analysis() {
 
 	/* 偏移检查 */
 	if (shared_structure.peheader_offset_ < 0x40) {
+		data_container.structures_attributes.file_header_normal_ = false;
 		result.excursion_anomalies_.push_back("检测到File Header（文件头）偏移异常。");
 		result.warnings_.push_back("File Header（文件头）偏移存在重叠。");
 		result.informations_.push_back("【异常】期望的文件头偏移值：大于0x40。");
 	}
 	/* 架构字段检查 */
 	if (shared_structure.machine_ == 0x0000) {
+		data_container.structures_attributes.file_header_normal_ = false;
 		result.field_anomalies_.push_back("machine字段异常。");
 		result.informations_.push_back("【异常】machine字段为空。");
 	}
@@ -467,16 +473,19 @@ bool PEanalyzer::file_header_analysis() {
 	/* 节区数量字段检查，实际数量检查的对照手段在函数 section_headers_analisis() 中 */
 	if (shared_structure.number_of_sections_ == 0) {
 		shared_structure.number_of_sections_isvalid_ = false;
+		data_container.structures_attributes.file_header_normal_ = false;
 		result.field_anomalies_.push_back("fileheader -> numberofsections字段异常。");
 		result.informations_.push_back("【异常】逻辑定义的节区数量为0。");
 	}
 	else if (shared_structure.number_of_sections_ > 96) {
 		shared_structure.number_of_sections_isvalid_ = 2;
+		data_container.structures_attributes.file_header_normal_ = false;
 		result.field_anomalies_.push_back("fileheader -> numberofsections字段异常。");
 		result.informations_.push_back("【异常】逻辑定义的节区数量过多，可能为混淆手段。");
 	}
 	/* sizeofoptionalheader字段检查 */
 	if (shared_structure.size_of_optionalheader_ != 0xF0 && shared_structure.size_of_optionalheader_ != 0xE0) {
+		data_container.structures_attributes.file_header_normal_ = false;
 		result.field_anomalies_.push_back("fileheader -> sizeofoptionalheader字段异常。");
 		result.informations_.push_back("【异常】sizeofoptionalheader字段值非标准值。");
 	}
@@ -539,12 +548,14 @@ bool PEanalyzer::optional_header_analysis() {
 
 		if (shared_structure.imagebase32_ == 0) {
 			shared_structure.image_base_isvalid_ = false;
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->imagebase（预设加载基址）字段异常。");
 			result.warnings_.push_back("optionalheader->imagebase字段存在篡改，无效字段。");
 			result.informations_.push_back("【异常】optionalheader->imagebase（预设加载基址）字段为0。");
 		}
 		else if (shared_structure.imagebase32_ >= 0xFFFFFFFF) {
 			shared_structure.image_base_isvalid_ = false;
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->imagebase（预设加载基址）字段异常。");
 			result.warnings_.push_back("optionalheader->imagebase字段存在篡改，无效字段。");
 			result.informations_.push_back("【异常】optionalheader->imagebase（预设加载基址）超过32位地址空间上限。");
@@ -566,6 +577,7 @@ bool PEanalyzer::optional_header_analysis() {
 
 		if (shared_structure.imagebase64_ <= 0x100000 || shared_structure.imagebase64_ >= 0x7FFF00000000) {
 			shared_structure.image_base_isvalid_ = false;
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->imagebase（预设加载基址）字段异常。");
 			result.warnings_.push_back("optionalheader->imagebase字段可能存在篡改。");
 			result.informations_.push_back("【异常】optionalheadre->imagebase（预设加载基址）可能超过64位地址空间上限。");
@@ -599,10 +611,12 @@ bool PEanalyzer::optional_header_analysis() {
 		/* file_alignment值检验 */
 		if (shared_structure.file_alignment_ != 0x200) {
 			if (shared_structure.file_alignment_ != 0 && ((shared_structure.file_alignment_ & (shared_structure.file_alignment_ - 1)) == 0)) {
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.informations_.push_back("【可疑】磁盘中节区数据的对齐粒度非常见值0x200。");
 			}
 			else {
 				shared_structure.file_alignment_isvalid_ = false;
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.field_anomalies_.push_back("optionalheader->filealignment（磁盘中节区数据的对齐粒度）字段异常。");
 				result.warnings_.push_back("optionalheader->filealignment（磁盘中节区数据的对齐粒度）字段可能存在篡改。");
 				result.informations_.push_back("【异常】optionalheader->filealignment（磁盘中节区数据的对齐粒度）非合法值。");
@@ -612,10 +626,12 @@ bool PEanalyzer::optional_header_analysis() {
 		/* section_alignment值检验 */
 		if (shared_structure.section_alignment_ != 0x1000) {
 			if (shared_structure.section_alignment_ != 0 && ((shared_structure.section_alignment_ & (shared_structure.section_alignment_ - 1)) == 0)) {
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.informations_.push_back("【可疑】optionalheader->sectionalignment(内存中节区数据的对齐粒度)非常见值0x1000。");
 			}
 			else {
 				shared_structure.section_alignment_isvalid_ = false;
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.field_anomalies_.push_back("optionalheader->sectionalignment（内存中节区数据的对齐粒度）字段异常。");
 				result.warnings_.push_back("optionalheader->sectionalignment（内存中节区数据的对齐粒度）字段可能存在篡改。");
 				result.informations_.push_back("【异常】optionalheader->sectionalignment（内存中节区数据的对齐粒度）非合法值。");
@@ -627,15 +643,18 @@ bool PEanalyzer::optional_header_analysis() {
 			if (shared_structure.section_alignment_ < shared_structure.file_alignment_) {
 				shared_structure.file_alignment_isvalid_ = false;
 				shared_structure.section_alignment_isvalid_ = false;
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.field_anomalies_.push_back("格式异常：（optionalheader)sectionaliment < filealiment");
 				result.warnings_.push_back("格式异常：（optionalheader)sectionaliment < filealiment");
 				result.informations_.push_back("【异常】（optionalheader)sectionaliment < filealiment，不符合规范格式。");
 			}
 			else if (shared_structure.section_alignment_ == shared_structure.file_alignment_) {
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.informations_.push_back("【可疑】磁盘和内存对齐粒度过于整齐。");
 			}
 		}
 		else {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			shared_structure.file_alignment_isvalid_ = 2;
 			shared_structure.section_alignment_isvalid_ = 2;
 		}
@@ -643,6 +662,7 @@ bool PEanalyzer::optional_header_analysis() {
 		/* address_of_entrypoint值检验 */
 		if (shared_structure.address_of_entrypoint_ == 0) {
 			shared_structure.address_of_entrypoint_isvalid_ = false;
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->addressofentrypoint（入口点RVA）字段异常。");
 			result.warnings_.push_back("optionalheader->addressofentrypoint（入口点RVA）字段存在篡改，无效字段。");
 			result.informations_.push_back("【异常】optionalheader->addressofentrypoint（入口点RVA）字段为0。");
@@ -654,10 +674,12 @@ bool PEanalyzer::optional_header_analysis() {
 
 		/* size_of_image值检验 */
 		if (shared_structure.section_alignment_isvalid_ == false) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			shared_structure.size_of_image_isvalid_ = 2;
 		}
 		else if (shared_structure.size_of_image_ % shared_structure.section_alignment_ != 0) {
 			shared_structure.size_of_image_isvalid_ = false;
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->sizeofimage（映像在内存中的总大小）值异常。");
 			result.warnings_.push_back("optionalheader->sizeofimage（映像在内存中的总大小）字段存在篡改，无效字段。");
 			result.informations_.push_back("【异常】optionalheader->sizeofimage（映像在内存中的总大小）值非对齐值倍数。");
@@ -666,6 +688,7 @@ bool PEanalyzer::optional_header_analysis() {
 		/* address_of_entrypoint、size_of_image联合检验 */
 		if (shared_structure.address_of_entrypoint_ >= shared_structure.size_of_image_ && shared_structure.size_of_image_isvalid_ == true) {
 			shared_structure.address_of_entrypoint_isvalid_ = false;
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->addressofentrypoint（入口点RVA）字段异常。");
 			result.warnings_.push_back("optionalheader->addressofentrypoint（入口点RVA）字段存在篡改，无效字段。");
 			result.informations_.push_back("【异常】optionalheader->addressofentrypoint（入口点RVA）超出映像在内存中的总大小。");
@@ -681,37 +704,44 @@ bool PEanalyzer::optional_header_analysis() {
 		}
 		else {
 			if (shared_structure.import_table_size_ == 0) {
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.field_anomalies_.push_back("optionalheader->dataderectory[1]->Size（导入表大小）字段异常");
 				result.warnings_.push_back("optionalheader->dataderectory[1]->Size（导入表大小）字段存在篡改，无效字段");
 				result.informations_.push_back("【异常】optionalheader->dataderectory[1]->Size（导入表大小）与RVA值不一致");
 			}
 		}
 		if (shared_structure.import_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->dataderectory[1]->VirtualAddress（导入表RVA）字段异常");
 			result.warnings_.push_back("optionalheader->dataderectory[1]->VirtualAddress（导入表RVA）字段存在篡改，无效字段");
 			result.informations_.push_back("【异常】optionalheader->dataderectory[1]->VirtualAddress（导入表RVA）超出映像在内存中的总大小");
 		}
 		if ((shared_structure.import_table_RVA_ & 0x3) != 0) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.informations_.push_back("【可疑】optionalheader->dataderectory[1]->VirtualAddress（导入表RVA）未按4字节对齐");
 		}
 
 		/* dataderectory[5]值检验 */
 		if (shared_structure.relocation_table_RVA_ == 0) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.informations_.push_back("【普通】无重定位表。");
 		}
 		else {
 			if (shared_structure.relocation_table_size_ == 0) {
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.field_anomalies_.push_back("optionalheader->dataderectory[5]->Size（重定位表大小）字段异常");
 				result.warnings_.push_back("optionalheader->dataderectory[5]->Size（重定位表大小）字段存在篡改，无效字段");
 				result.informations_.push_back("【异常】optionalheader->dataderectory[5]->Size（重定位表大小）与RVA值不一致");
 			}
 		}
 		if (shared_structure.relocation_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->dataderectory[5]->VirtualAddress（导入表RVA）字段异常");
 			result.warnings_.push_back("optionalheader->dataderectory[5]->VirtualAddress（导入表RVA）字段存在篡改，无效字段");
 			result.informations_.push_back("【异常】optionalheader->dataderectory[5]->VirtualAddress（导入表RVA）超出映像在内存中的总大小");
 		}
 		if ((shared_structure.relocation_table_RVA_ & 0x3) != 0) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.informations_.push_back("【可疑】optionalheader->dataderectory[5]->VirtualAddress（导入表RVA）未按4字节对齐");
 		}
 
@@ -721,17 +751,20 @@ bool PEanalyzer::optional_header_analysis() {
 		}
 		else {
 			if (shared_structure.tls_table_size_ == 0) {
+				data_container.structures_attributes.optional_header_normal_ = false;
 				result.field_anomalies_.push_back("optionalheader->dataderectory[9]->Size（TLS表大小）字段异常");
 				result.warnings_.push_back("optionalheader->dataderectory[9]->Size（TLS表大小）字段存在篡改，无效字段");
 				result.informations_.push_back("【异常】optionalheader->dataderectory[9]->Size（TLS表大小）与RVA值不一致");
 			}
 		}
 		if (shared_structure.tls_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.field_anomalies_.push_back("optionalheader->dataderectory[9]->VirtualAddress（TLS表RVA）字段异常");
 			result.warnings_.push_back("optionalheader->dataderectory[9]->VirtualAddress（TLS表RVA）字段存在篡改，无效字段");
 			result.informations_.push_back("【异常】optionalheader->dataderectory[9]->VirtualAddress（TLS表RVA）超出映像在内存中的总大小");
 		}
 		if ((shared_structure.tls_table_RVA_ & 0x3) != 0) {
+			data_container.structures_attributes.optional_header_normal_ = false;
 			result.informations_.push_back("【可疑】optionalheader->dataderectory[9]->VirtualAddress（TLS表RVA）未按4字节对齐");
 		}
 	}
@@ -785,22 +818,18 @@ bool PEanalyzer::section_headers_analisis() {
 	}
 	catch (const std::length_error& e) {
 		/* 暂定区域：仅处理前128个节区，后面显示二进制的情况 */
-
 	}
 
 	// fileheader -> numberofsections 和实际检测到节区的数量对照
-	if (shared_structure.number_of_sections_ == shared_structure.detected_section_count_) {
-		shared_structure.number_of_sections_isvalid_ = true;
-	}
-	else {
-		shared_structure.number_of_sections_isvalid_ = false;
-	}
+	shared_structure.number_of_sections_isvalid_ = (shared_structure.number_of_sections_ == shared_structure.detected_section_count_) ? true : false;
 
 	// 字段严格检查，相对于 is_this_section_valid() 函数属于混淆性检测
 	for (size_t j = 0; j < shared_structure.detected_section_count_; j++) {
+
 		// 记录节区属性
 		section_imformation section_imformation_element;
 		data_container.section_attributes.push_back(section_imformation_element);
+		// 判断节区展现的实际属性
 		section_characteristic_judge(data_container.sectionheaders[j].Characteristics);
 		// Name 字段合法性检验 以及 characteristic 联合校验
 		section_name_check(data_container.sectionheaders[j].Name, data_container.sectionheaders[j].Characteristics, result, j);
@@ -808,6 +837,7 @@ bool PEanalyzer::section_headers_analisis() {
 		if (!data_container.section_attributes[j].known_combination_) {
 			section_characteristic_check(data_container.sectionheaders[j].Characteristics, result, j);
 		}
+
 
 	}
 }

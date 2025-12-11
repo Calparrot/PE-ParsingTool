@@ -4,7 +4,7 @@
 #include "peanalyzer.h"
 
 structuresults data_container;
-extern SharedStructure shared_structure{};
+extern SharedStructure shared_structure;
 
 void structuresults::addresult(Diaresults input) {
 	diarelist.push_back(input);
