@@ -9,6 +9,7 @@
    pedata                         ：文件流
    shared_structure               ：关键字段提取结构体
                                   ：int8_t型数据 = 2 时表示无法判断值是否合法
+
    mulbuffer[]                    ：复用缓冲区
 
    clear_buffer()                 ：清空复用缓冲区
@@ -90,14 +91,14 @@ struct SharedStructure {
 class PEanalyzer {
 private:
     std::ifstream& pedata_;
-    uint8_t mulbuffer[1024] = { 0 };
+    uint8_t mulbuffer[5600] = { 0 };
 
     /* 工具函数 */
     void clear_buffer();
     std::string field_interpretation(uint16_t inputmachine);
     void magic_check(uint16_t inputmagic, Diaresults& inputresult, int& bitness);
     void magic_joint_check();
-    void joint_judge_magic(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
+    void magic_joint_judge(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
     void section_characteristic_judge(uint32_t input_characteristic);
     void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num);
 	void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
@@ -105,10 +106,8 @@ private:
 public:
     PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
     /* 调用时一定要按顺序调用 */
-    bool mzcheck();
     bool dosheader_analysis();
     bool dosstub_analysis();
-    bool signaturecheck();
     bool file_header_analysis();
     bool optional_header_analysis();
     bool section_headers_analisis();

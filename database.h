@@ -232,15 +232,11 @@ public:
     // 原始文件数据
     IMAGE_DOS_HEADER dosheader{};
     std::vector<uint8_t> dosstub;
-    uint32_t signature = 0; // PE签名
     IMAGE_FILE_HEADER fileheader{};
     IMAGE_OPTIONAL_HEADER32 optionalheader32{};
     IMAGE_OPTIONAL_HEADER64 optionalheader64{};
     IMAGE_ROM_OPTIONAL_HEADER optionalheaderrom{};
     std::vector<IMAGE_SECTION_HEADER> sectionheaders;
-
-    // 函数
-    void addresult(Diaresults input);
 };
 
 bool is_this_section_valid(const IMAGE_SECTION_HEADER& header);

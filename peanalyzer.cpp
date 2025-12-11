@@ -92,12 +92,12 @@ void PEanalyzer::magic_joint_check() {
 	/* 暂定区域，实现magic字段相关的一致性验证 */
 }
 
-void PEanalyzer::joint_judge_magic() {
+void PEanalyzer::magic_joint_judge() {
 	/* 暂定区域，实现magic字段错误时的预验证和反推 */
 	/* 包括以下字段：machine、sizeofoptionalheader、datadirectory、imageBase、sectionalignment、filealignment、subsystem、characteristics、addressofentrypoint */
 	/* 包括的验证方式：越界验证、节归属验证、对齐验证、编译器模式匹配等 */
 }
-                          
+
 void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
 	if (data_container.section_attributes.empty()) {
 		return;
@@ -273,67 +273,39 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 }
 
 /* public函数 */
-bool PEanalyzer::mzcheck() {
-	clear_buffer();
-	Diaresults result;
-	pedata_.seekg(0, std::ios::beg); // 固定结构采用硬编码（beg），非固定结构采用动态偏移（cur）
-	if (!pedata_) {
-		result.warnings_.push_back("MZ Header（MZ签名）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-		data_container.addresult(result);
-		return false;
-	}
-	pedata_.read(reinterpret_cast<char*>(mulbuffer), 2);
-	if (pedata_.gcount() != 2) {
-		result.warnings_.push_back("MZ Header（MZ签名）：文件流读取数据到内存缓冲区失败");
-		data_container.addresult(result);
-		return false;
-	}
-
-	result.component_name_ = "DOS Header -> MZ";
-	result.component_type_ = "header";
-	result.file_offset_ = 0;
-	result.data_size_ = 2;
-
-	if (mulbuffer[0] == 'M' && mulbuffer[1] == 'Z') {
-		data_container.dosheader.e_magic = 0x4D5A;
-		data_container.addresult(result);
-	}
-	else {
-		data_container.dosheader.e_magic = (mulbuffer[0] << 8) | mulbuffer[1];
-		data_container.structures_attributes.dos_header_normal_ = false;
-		result.field_anomalies_.push_back("不合法的MZ签名，不是有效的PE文件。");
-		result.warnings_.push_back("MZ 签名字段异常。");
-		result.informations_.push_back("【异常】MZ签名异常，期望值：0x4D5A。");
-		data_container.addresult(result);
-	}
-	return true;
-}
-
 bool PEanalyzer::dosheader_analysis() {
 	clear_buffer();
 	Diaresults result;
-	pedata_.seekg(2, std::ios::beg);
+	pedata_.seekg(0, std::ios::beg);
 	if (!pedata_) {
 		result.warnings_.push_back("DOS Header（DOS头）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
-	pedata_.read(reinterpret_cast<char*>(mulbuffer), 62);
-	if (pedata_.gcount() != 62) {
+	pedata_.read(reinterpret_cast<char*>(mulbuffer), 64);
+	if (pedata_.gcount() != 64) {
 		result.warnings_.push_back("DOS Header（DOS头）：文件流读取数据到内存缓冲区失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 
 	result.component_name_ = "DOS Header";
 	result.component_type_ = "header";
-	result.file_offset_ = 2;
-	result.data_size_ = 62;
+	result.file_offset_ = 0;
+	result.data_size_ = 64;
 
 	std::memcpy(&data_container.dosheader, mulbuffer, sizeof(IMAGE_DOS_HEADER));
-	shared_structure.peheader_offset_ = (mulbuffer[58] << 24) | (mulbuffer[59] << 16) | (mulbuffer[60] << 8) | mulbuffer[61];
+	shared_structure.peheader_offset_ = (mulbuffer[60] << 24) | (mulbuffer[61] << 16) | (mulbuffer[62] << 8) | mulbuffer[63];
 
-	data_container.addresult(result);
+	if (mulbuffer[0] != 'M' && mulbuffer[1] != 'Z') {
+		data_container.dosheader.e_magic = (mulbuffer[0] << 8) | mulbuffer[1];
+		data_container.structures_attributes.dos_header_normal_ = false;
+		result.field_anomalies_.push_back("不合法的MZ签名，不是有效的PE文件。");
+		result.warnings_.push_back("MZ 签名字段异常。");
+		result.informations_.push_back("【异常】MZ签名异常，期望值：0x4D5A。");
+	}
+	
+	data_container.diarelist.push_back(result);
 	return true;
 }
 
@@ -343,14 +315,14 @@ bool PEanalyzer::dosstub_analysis() {
 	pedata_.seekg(64, std::ios::beg);
 	if (!pedata_) {
 		result.warnings_.push_back("DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
-	int count = shared_structure.peheader_offset_ - 64 > 0 ? shared_structure.peheader_offset_ : 0;
+	int count = shared_structure.peheader_offset_ - 64 > 0 ? shared_structure.peheader_offset_ - 64 : 0;
 	pedata_.read(reinterpret_cast<char*>(mulbuffer), count);
 	if (pedata_.gcount() != count) {
 		result.warnings_.push_back("DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 
@@ -364,7 +336,7 @@ bool PEanalyzer::dosstub_analysis() {
 	}
 
 	if (result.data_size_ >= 64 && result.data_size_ <= 128) {
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return true;
 	}
 	else {
@@ -388,46 +360,9 @@ bool PEanalyzer::dosstub_analysis() {
 		result.warnings_.push_back("非标准DOS存根（DOS Stub）结构。");
 		result.informations_.push_back("【存疑】DOS存根长度非标准，期望长度：约0x40字节");
 		result.issuspicious = true;
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return true;
 	}
-}
-
-bool PEanalyzer::signaturecheck() {
-	clear_buffer();
-	Diaresults result;
-	pedata_.seekg(0, std::ios::cur);
-	if (!pedata_) {
-		result.warnings_.push_back("PEHeader（PE签名）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-		data_container.addresult(result);
-		return false;
-	}
-	pedata_.read(reinterpret_cast<char*>(mulbuffer), 4);
-	if (pedata_.gcount() != 4) {
-		result.warnings_.push_back("PEHeader（PE签名）：文件流读取数据到内存缓冲区失败");
-		data_container.addresult(result);
-		return false;
-	}
-
-	result.component_name_ = "NT Header -> Signature";
-	result.component_type_ = "header";
-	result.file_offset_ = 64;
-	result.data_size_ = 4;
-
-	if (mulbuffer[0] == 'P' && mulbuffer[1] == 'E' && mulbuffer[2] == '\0' && mulbuffer[3] == '\0') {
-		data_container.signature = 0x00004550;
-	}
-	else {
-		data_container.dosheader.e_magic = (mulbuffer[0] << 24) | (mulbuffer[1] << 16) | (mulbuffer[2] << 8) | mulbuffer[3];
-		result.isvalid = false;
-		result.issuspicious = true;
-		data_container.structures_attributes.file_header_normal_ = false;
-		result.field_anomalies_.push_back("PE 签名验证失败，不是有效的PE文件。");
-		result.warnings_.push_back("PE 签名字段异常。");
-		result.informations_.push_back("【异常】PE签名异常，期望值：0x00004550。");
-	}
-	data_container.addresult(result);
-	return true;
 }
 
 bool PEanalyzer::file_header_analysis() {
@@ -436,13 +371,13 @@ bool PEanalyzer::file_header_analysis() {
 	pedata_.seekg(0, std::ios::cur);
 	if (!pedata_) {
 		result.warnings_.push_back("File Header（文件头）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 	pedata_.read(reinterpret_cast<char*>(mulbuffer), 20);
 	if (pedata_.gcount() != 20) {
 		result.warnings_.push_back("File Header（文件头）：文件流读取数据到内存缓冲区失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 
@@ -455,6 +390,16 @@ bool PEanalyzer::file_header_analysis() {
 	shared_structure.machine_ = data_container.fileheader.machine;
 	shared_structure.number_of_sections_ = data_container.fileheader.numberofsections;
 	shared_structure.size_of_optionalheader_ = data_container.fileheader.sizeofoptionalheader;
+
+	if (mulbuffer[0] != 'P' && mulbuffer[1] != 'E' && mulbuffer[2] != '\0' && mulbuffer[3] != '\0') {
+		data_container.dosheader.e_magic = (mulbuffer[0] << 24) | (mulbuffer[1] << 16) | (mulbuffer[2] << 8) | mulbuffer[3];
+		result.isvalid = false;
+		result.issuspicious = true;
+		data_container.structures_attributes.file_header_normal_ = false;
+		result.field_anomalies_.push_back("PE 签名验证失败，不是有效的PE文件。");
+		result.warnings_.push_back("PE 签名字段异常。");
+		result.informations_.push_back("【异常】PE签名异常，期望值：0x00004550。");
+	}
 
 	/* 偏移检查 */
 	if (shared_structure.peheader_offset_ < 0x40) {
@@ -489,7 +434,7 @@ bool PEanalyzer::file_header_analysis() {
 		result.field_anomalies_.push_back("fileheader -> sizeofoptionalheader字段异常。");
 		result.informations_.push_back("【异常】sizeofoptionalheader字段值非标准值。");
 	}
-	data_container.addresult(result);
+	data_container.diarelist.push_back(result);
 	return true;
 }
 
@@ -501,13 +446,13 @@ bool PEanalyzer::optional_header_analysis() {
 	pedata_.seekg(2, std::ios::cur);
 	if (!pedata_) {
 		result.warnings_.push_back("optionalheader加载失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 	pedata_.read(reinterpret_cast<char*>(mulbuffer), 2);
 	if (pedata_.gcount() != 2) {
 		result.warnings_.push_back("optionalheader加载失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 
@@ -517,13 +462,13 @@ bool PEanalyzer::optional_header_analysis() {
 	pedata_.seekg(headerlength, std::ios::cur);
 	if (!pedata_) {
 		result.warnings_.push_back("optionalheader加载失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 	pedata_.read(reinterpret_cast<char*>(mulbuffer) + 2, headerlength);
 	if (pedata_.gcount() != headerlength) {
 		result.warnings_.push_back("optionalheader加载失败");
-		data_container.addresult(result);
+		data_container.diarelist.push_back(result);
 		return false;
 	}
 	result.component_name_ = "Optional Header";
@@ -768,7 +713,7 @@ bool PEanalyzer::optional_header_analysis() {
 			result.informations_.push_back("【可疑】optionalheader->dataderectory[9]->VirtualAddress（TLS表RVA）未按4字节对齐");
 		}
 	}
-	data_container.addresult(result);
+	data_container.diarelist.push_back(result);
 	return true;
 }
 
@@ -786,13 +731,13 @@ bool PEanalyzer::section_headers_analisis() {
 		pedata_.seekg(0, std::ios::cur);
 		if (!pedata_) {
 			result.warnings_.push_back("Section Header（节区头）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-			data_container.addresult(result);
+			data_container.diarelist.push_back(result);
 			return false;
 		}
 		pedata_.read(reinterpret_cast<char*>(mulbuffer), 40);
 		if (pedata_.gcount() != 40) {
 			result.warnings_.push_back("Section Header（节区头）：文件流读取数据到内存缓冲区失败");
-			data_container.addresult(result);
+			data_container.diarelist.push_back(result);
 			return false;
 		}
 
@@ -806,7 +751,7 @@ bool PEanalyzer::section_headers_analisis() {
 		pedata_.seekg(-40, std::ios::cur);
 		if (!pedata_) {
 			result.warnings_.push_back("Section Header（节区头）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
-			data_container.addresult(result);
+			data_container.diarelist.push_back(result);
 			return false;
 		}
 		break;

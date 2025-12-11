@@ -29,10 +29,8 @@ int main() {
     }
 
     PEanalyzer target(myfile);
-    target.mzcheck();
     target.dosheader_analysis();
     target.dosstub_analysis();
-    target.signaturecheck();
     target.file_header_analysis();
     return 0;
 }
