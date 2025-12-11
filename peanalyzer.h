@@ -11,6 +11,7 @@
                                   ：int8_t型数据 = 2 时表示无法判断值是否合法
 
    mulbuffer[]                    ：复用缓冲区
+   read_offset                    ：复用缓冲区指针偏移
 
    clear_buffer()                 ：清空复用缓冲区
    field_interpretation()         ：fileheader中machine字段的解析函数
@@ -30,15 +31,21 @@
 
 extern uint64_t file_size;
 
+enum class EleCorrectness : uint8_t {
+    not_valid = 0,
+    valid = 1,
+    uncertain = 2
+};
+
 struct SharedStructure {
     uint32_t peheader_offset_;        // NT头偏移
-    int8_t peheader_offset_isvalid_ = true;
+    EleCorrectness peheader_offset_isvalid_ = EleCorrectness::valid;
     uint16_t machine_;                // 目标CPU架构
     uint16_t number_of_sections_;     // 节区数量
     uint16_t size_of_optionalheader_; // 可选头大小
-    int8_t machine_isvalid_ = true;
-    int8_t number_of_sections_isvalid_ = true;
-    int8_t size_of_optionalheader_isvalid = true;
+    EleCorrectness machine_isvalid_ = EleCorrectness::valid;
+    EleCorrectness number_of_sections_isvalid_ = EleCorrectness::valid;
+    EleCorrectness size_of_optionalheader_isvalid = EleCorrectness::valid;
 
     /* x32、x64架构 */
     uint16_t magic_;
@@ -48,12 +55,12 @@ struct SharedStructure {
     uint32_t section_alignment_;      // 内存中的节区对齐粒度
     uint32_t file_alignment_;         // 文件中的节区对齐粒度
     uint32_t size_of_image_;          // 映像在内存中的总大小
-    int8_t magic_isvalid_ = true;
-    int8_t address_of_entrypoint_isvalid_ = true;
-    int8_t image_base_isvalid_ = true;
-    int8_t section_alignment_isvalid_ = true;
-    int8_t file_alignment_isvalid_ = true;
-    int8_t size_of_image_isvalid_ = true;
+    EleCorrectness magic_isvalid_ = EleCorrectness::valid;
+    EleCorrectness address_of_entrypoint_isvalid_ = EleCorrectness::valid;
+    EleCorrectness image_base_isvalid_ = EleCorrectness::valid;
+    EleCorrectness section_alignment_isvalid_ = EleCorrectness::valid;
+    EleCorrectness file_alignment_isvalid_ = EleCorrectness::valid;
+    EleCorrectness size_of_image_isvalid_ = EleCorrectness::valid;
     /* ROM架构 */
     uint32_t base_of_code_;
     uint32_t base_of_data_;
@@ -61,12 +68,12 @@ struct SharedStructure {
     uint32_t size_of_code_;
     uint32_t size_of_initialized_data_;
     uint32_t size_of_uninitialized_data_;
-    int8_t base_of_code_isvalid_ = true;
-    int8_t base_of_data_isvalid_ = true;
-    int8_t base_of_bss_isvalid_ = true;
-    int8_t size_of_code_isvalid_ = true;
-    int8_t size_of_initialized_data_isvalid_ = true;
-    int8_t size_of_uninitialized_data_isvalid_ = true;
+    EleCorrectness base_of_code_isvalid_ = EleCorrectness::valid;
+    EleCorrectness base_of_data_isvalid_ = EleCorrectness::valid;
+    EleCorrectness base_of_bss_isvalid_ = EleCorrectness::valid;
+    EleCorrectness size_of_code_isvalid_ = EleCorrectness::valid;
+    EleCorrectness size_of_initialized_data_isvalid_ = EleCorrectness::valid;
+    EleCorrectness size_of_uninitialized_data_isvalid_ = EleCorrectness::valid;
 
     uint32_t import_table_RVA_;        // DataDirectory[1]
     uint32_t import_table_size_;       // 导入表大小
@@ -92,6 +99,7 @@ class PEanalyzer {
 private:
     std::ifstream& pedata_;
     uint8_t mulbuffer[5600] = { 0 };
+    size_t read_offset = 0;
 
     /* 工具函数 */
     void clear_buffer();

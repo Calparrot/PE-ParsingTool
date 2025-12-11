@@ -18,7 +18,7 @@ bool is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
 		}
 	}
 	// 2. VirtualAddress 和 PointerToRawData 对齐检查
-	if (shared_structure.section_alignment_isvalid_ == true) {
+	if (shared_structure.section_alignment_isvalid_ == EleCorrectness::valid) {
 		if (header.VirtualAddress != 0 && header.VirtualAddress % shared_structure.section_alignment_ != 0) {
 			return false;
 		}
@@ -26,7 +26,7 @@ bool is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
 	else {
 		/* 暂定区域，section_alignment不合法导致无法检测的情况 */
 	}
-	if (shared_structure.file_alignment_isvalid_ == true) {
+	if (shared_structure.file_alignment_isvalid_ == EleCorrectness::valid) {
 		if (header.PointerToRawData != 0 && header.PointerToRawData % shared_structure.file_alignment_ != 0) {
 			return false;
 		}
@@ -41,7 +41,11 @@ bool is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
 		}
 	}
 	else {
-		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) >= shared_structure.size_of_file_) {
+		if (shared_structure.size_of_file_ < 0) {
+			/* 文件大小为负数，影响下面的有符号转无符号数，要进行错误处理 */
+
+		}
+		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) >= static_cast<uint64_t>(shared_structure.size_of_file_)) {
 			return false;
 		}
 	}
