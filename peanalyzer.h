@@ -8,7 +8,6 @@
 /*
    pedata                         ：文件流
    shared_structure               ：关键字段提取结构体
-                                  ：int8_t型数据 = 2 时表示无法判断值是否合法
 
    mulbuffer[]                    ：复用缓冲区
    read_offset                    ：复用缓冲区指针偏移

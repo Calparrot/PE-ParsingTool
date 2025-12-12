@@ -244,8 +244,8 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
 	}
 	else {
-		/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
-		inputresult.informations_.push_back("【异常】sectionheader->name 字段非常见编译器编译结果。");
+		std::string msg = "【异常】sectionheader[" + std::to_string(num) + "]->name 字段非常见编译器编译结果。";
+		inputresult.informations_.push_back(msg);
 		return;
 	}
 
@@ -258,14 +258,16 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 	actual_val[6] = data_container.section_attributes[num].cnt_uninitialized_data_;
 
 	if (!memcmp(judgement_set, actual_val, 7)) {
-		/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
-		inputresult.warnings_.push_back("sectionheader权限异常");
-		inputresult.informations_.push_back("【异常】sectionheader的name值与其期望的权限不匹配。");
+		std::string msg1 = "sectionheader[" + std::to_string(num) + "]权限异常";
+		std::string msg2 = "【异常】sectionheader[" + std::to_string(num) + "]的name值与其期望的权限不匹配。";
+		inputresult.warnings_.push_back(msg1);
+		inputresult.informations_.push_back(msg2);
 	}
 	if (!is_attribute_common) {
-		/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
-		inputresult.warnings_.push_back("sectionheader->characteristic值非常见结果");
-		inputresult.informations_.push_back("【可疑】sectionheader->characteristic值非常见结果");
+		std::string msg1 = "sectionheader[" + std::to_string(num) + "]->characteristic值非常见结果。";
+		std::string msg2 = "【可疑】sectionheader[" + std::to_string(num) + "]->characteristic值非常见结果。";
+		inputresult.warnings_.push_back(msg1);
+		inputresult.informations_.push_back(msg2);
 	}
 	else {
 		data_container.section_attributes[num].known_combination_ = true;
@@ -312,6 +314,9 @@ bool PEanalyzer::dosheader_analysis() {
 bool PEanalyzer::dosstub_analysis() {
 	clear_buffer();
 	Diaresults result;
+	uint8_t reading_mode = 0; /* 读取方式 0-正常读取，1-分段读取，2-不读取 */
+	uint8_t imformation_processing_mode = 1; /* 信息处理方式 1-需要异常 0-不需要异常 */
+
 	pedata_.seekg(64, std::ios::beg);
 	if (!pedata_) {
 		result.warnings_.push_back("DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
@@ -319,55 +324,101 @@ bool PEanalyzer::dosstub_analysis() {
 		return false;
 	}
 	int count = shared_structure.peheader_offset_ - 64 > 0 ? shared_structure.peheader_offset_ - 64 : 0;
-	if (count > 5600) {
-		/* 先这样粗暴处理一下 */
-		std::string msg = "不能处理错误：DOS Stub 长度 " + std::to_string(count) + " 超过缓冲区5600字节。";
-		throw std::out_of_range(msg);
-	}
-	pedata_.read(reinterpret_cast<char*>(mulbuffer), count);
-	if (pedata_.gcount() != count) {
-		result.warnings_.push_back("DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败");
-		data_container.diarelist.push_back(result);
-		return false;
-	}
 
 	result.component_name_ = "DOS Stub";
 	result.component_type_ = "header";
 	result.file_offset_ = 64;
 	result.data_size_ = count;
 
-	for (size_t i = 0; i < count; i++) {
-		data_container.dosstub.push_back(mulbuffer[i]);
+	if (count == 0) {
+		data_container.structures_attributes.dos_stub_exist_ = false;
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）区域缺失。");
+	}
+	else if (count <= 16) {  // 1-16
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过短。");
+	}
+	else if (count <= 64) {  // 17-64
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）较短。");
+	}
+	else if (count <= 128) { // 65-128
+		imformation_processing_mode = 0; // 正常
+	}
+	else if (count <= 256) { // 129-256
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）较长。");
+	}
+	else if (count <= 5600) { // 257-5600
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过长。");
+	}
+	else if (count <= 10240) { // 5601-10240
+		reading_mode = 1;
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过长。");
+	}
+	else { // >10240
+		reading_mode = 2;
+		result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过长。");
 	}
 
-	if (result.data_size_ >= 64 && result.data_size_ <= 128) {
-		data_container.diarelist.push_back(result);
-		return true;
+	// 读取方式处理
+	switch (reading_mode) {
+	case 0:  // 正常读取
+		pedata_.read(reinterpret_cast<char*>(mulbuffer), count);
+		if (pedata_.gcount() != count) {
+			result.warnings_.push_back("DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败");
+			data_container.diarelist.push_back(result);
+			return false;
+		}
+		for (size_t i = 0; i < count; i++) {
+			data_container.dosstub.push_back(mulbuffer[i]);
+		}
+		break;
+	case 1:  // 分段读取
+		int num_of_bytes_read = 5600;
+		int num_of_bytes_remaining = count - 5600;
+		while (num_of_bytes_read > 0) {
+			pedata_.read(reinterpret_cast<char*>(mulbuffer), num_of_bytes_read);
+			if (pedata_.gcount() != count) {
+				result.warnings_.push_back("DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败");
+				data_container.diarelist.push_back(result);
+				return false;
+			}
+			num_of_bytes_read = (num_of_bytes_remaining - num_of_bytes_read > 5600) ? 5600 : (num_of_bytes_remaining - num_of_bytes_read);
+			num_of_bytes_remaining -= num_of_bytes_read;
+		}
+		for (size_t i = 0; i < count; i++) {
+			data_container.dosstub.push_back(mulbuffer[i]);
+		}
+		break;
+	case 2:  // 不读取
+		pedata_.seekg(static_cast<std::streamoff>(64) + count, std::ios::beg);
+		if (!pedata_) {
+			result.warnings_.push_back("DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
+			data_container.diarelist.push_back(result);
+			return false;
+		}
+		break;
+	default: // 异常
+		throw std::runtime_error("分析 DOS Stub 区域时出现未知参数。");
+		break;
 	}
-	else {
-		if (result.data_size_ == 0) {
-			data_container.structures_attributes.dos_stub_exist_ = false;
-			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）区域缺失。");
-		}
-		else if (result.data_size_ <= 16) {
-			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过短。");
-		}
-		else if (result.data_size_ <= 48) {
-			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）较短。");
-		}
-		else if (result.data_size_ <= 256) {
-			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）较长。");
-		}
-		else {
-			result.excursion_anomalies_.push_back("DOS存根（DOS Stub）过长。");
-		}
+	
+	// 信息处理
+	switch (imformation_processing_mode) {
+	case 0:
+		data_container.diarelist.push_back(result);
+		break;
+	case 1:
 		data_container.structures_attributes.dos_stub_normal_ = false;
 		result.warnings_.push_back("非标准DOS存根（DOS Stub）结构。");
 		result.informations_.push_back("【存疑】DOS存根长度非标准，期望长度：约0x40字节");
 		result.issuspicious = true;
 		data_container.diarelist.push_back(result);
-		return true;
+		break;
+	default:
+		throw std::runtime_error("分析 DOS Stub 区域时出现未知参数。");
+		break;
 	}
+
+	return true;
 }
 
 bool PEanalyzer::file_header_analysis() {
