@@ -280,13 +280,19 @@ bool PEanalyzer::dosheader_analysis() {
 	Diaresults result;
 	pedata_.seekg(0, std::ios::beg);
 	if (!pedata_) {
-		result.warnings_.push_back("DOS Header（DOS头）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
+		data_container.crash_imformation_set(
+			error_category::FILE_SEEK_FAILED,
+			"DOS Header（DOS头）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏。"
+		);
 		data_container.diarelist.push_back(result);
 		return false;
 	}
 	pedata_.read(reinterpret_cast<char*>(mulbuffer), 64);
 	if (pedata_.gcount() != 64) {
-		result.warnings_.push_back("DOS Header（DOS头）：文件流读取数据到内存缓冲区失败");
+		data_container.crash_imformation_set(
+			error_category::FILE_READ_FAILED,
+			"DOS Header（DOS头）：文件流读取数据到内存缓冲区失败。"
+		);
 		data_container.diarelist.push_back(result);
 		return false;
 	}
@@ -319,7 +325,10 @@ bool PEanalyzer::dosstub_analysis() {
 
 	pedata_.seekg(64, std::ios::beg);
 	if (!pedata_) {
-		result.warnings_.push_back("DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
+		data_container.crash_imformation_set(
+			error_category::FILE_SEEK_FAILED,
+			"DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏。"
+		);
 		data_container.diarelist.push_back(result);
 		return false;
 	}
@@ -363,7 +372,10 @@ bool PEanalyzer::dosstub_analysis() {
 	case 0:  // 正常读取
 		pedata_.read(reinterpret_cast<char*>(mulbuffer), count);
 		if (pedata_.gcount() != count) {
-			result.warnings_.push_back("DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败");
+			data_container.crash_imformation_set(
+				error_category::FILE_READ_FAILED,
+				"DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败。"
+			);
 			data_container.diarelist.push_back(result);
 			return false;
 		}
@@ -377,7 +389,10 @@ bool PEanalyzer::dosstub_analysis() {
 		while (num_of_bytes_read > 0) {
 			pedata_.read(reinterpret_cast<char*>(mulbuffer), num_of_bytes_read);
 			if (pedata_.gcount() != count) {
-				result.warnings_.push_back("DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败");
+				data_container.crash_imformation_set(
+					error_category::FILE_READ_FAILED,
+					"DOS Stub（DOS存根）：文件流读取数据到内存缓冲区失败。"
+				);
 				data_container.diarelist.push_back(result);
 				return false;
 			}
@@ -391,12 +406,19 @@ bool PEanalyzer::dosstub_analysis() {
 	case 2:  // 不读取
 		pedata_.seekg(static_cast<std::streamoff>(64) + count, std::ios::beg);
 		if (!pedata_) {
-			result.warnings_.push_back("DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏");
+			data_container.crash_imformation_set(
+				error_category::FILE_READ_FAILED,
+				"DOS Stub（DOS存根）：文件流异常，文件指针移动失败，可能文件未正确打开或已损坏。"
+			);
 			data_container.diarelist.push_back(result);
 			return false;
 		}
 		break;
 	default: // 异常
+		data_container.crash_imformation_set(
+			error_category::LOGIC_ERROR,
+			"分析 DOS Stub 区域时出现未知参数。"
+		);
 		throw std::runtime_error("分析 DOS Stub 区域时出现未知参数。");
 		break;
 	}
@@ -426,13 +448,19 @@ bool PEanalyzer::file_header_analysis() {
 	Diaresults result;
 
 	if (!pedata_.good()) {
-		result.warnings_.push_back("File Header（文件头）：文件流异常，可能文件未正确打开或已损坏");
+		data_container.crash_imformation_set(
+			error_category::FILE_SEEK_FAILED,
+			"File Header（文件头）：文件流异常，可能文件未正确打开或已损坏。"
+		);
 		data_container.diarelist.push_back(result);
 		return false;
 	}
 	pedata_.read(reinterpret_cast<char*>(mulbuffer), 5600);
 	if (pedata_.gcount() != 5600) {
-		result.warnings_.push_back("File Header（文件头）：文件流读取数据到内存缓冲区失败");
+		data_container.crash_imformation_set(
+			error_category::FILE_SEEK_FAILED,
+			"File Header（文件头）：文件流读取数据到内存缓冲区失败。"
+		);
 		data_container.diarelist.push_back(result);
 		return false;
 	}
@@ -574,6 +602,12 @@ bool PEanalyzer::optional_header_analysis() {
 		}
 	}
 	else if (shared_structure.bitness_ == 82) { // ROM
+		data_container.crash_imformation_set(
+			error_category::UNKNOWN_ERROR,
+			"Optional Header（可选头）：暂不支持ROM架构的文件分析，敬请期待工具的未来更新！"
+		);
+		return false;
+
 		if (read_offset >= 0 && read_offset < 5600) {
 			std::memcpy(&data_container.optionalheaderrom,
 				mulbuffer + read_offset,
@@ -594,6 +628,11 @@ bool PEanalyzer::optional_header_analysis() {
 		/* 暂定区域，实现magic字段检查失败时的处理，大致包括magic字段反推和预处理 */
 		/* 可能关联的部分特殊函数和变量：joint_judge_magic()，shared_structure.advbitness_，shared_structure.bitness_ */
 		shared_structure.bitness_ = 0;
+		data_container.crash_imformation_set(
+			error_category::UNKNOWN_ERROR,
+			"Optional Header（可选头）：暂不支持magic字段的异常处理，敬请期待工具的未来更新！"
+		);
+		return false;
 	}
 
 	/* x32、x64架构剩余字段处理 */
@@ -784,6 +823,19 @@ bool PEanalyzer::section_headers_analisis() {
 				mulbuffer + read_offset,
 				sizeof(IMAGE_SECTION_HEADER));
 		}
+		else {
+			try {
+				throw std::out_of_range("(sectionheader)临时分析缓冲区读取复用缓冲区时偏移异常。");
+			}
+			catch (const std::out_of_range& e) {
+				data_container.crash_imformation_set(
+					error_category::OFFSET_OUT_OF_RANGE,
+					"Section Header（节区头）：临时分析缓冲区读取复用缓冲区时偏移异常。"
+				);
+				data_container.diarelist.push_back(result);
+				return false;
+			}
+		}
 
 		if (is_this_section_valid(current_section)) {
 			read_offset += sizeof(IMAGE_SECTION_HEADER);
@@ -808,18 +860,13 @@ bool PEanalyzer::section_headers_analisis() {
 
 	// 字段严格检查，相对于 is_this_section_valid() 函数属于混淆性检测
 	for (size_t j = 0; j < shared_structure.detected_section_count_; j++) {
-
-		// 记录节区属性
 		section_imformation section_imformation_element;
-		data_container.section_attributes.push_back(section_imformation_element);
-		// 判断节区展现的实际属性
-		section_characteristic_judge(data_container.sectionheaders[j].Characteristics);
-		// Name 字段合法性检验 以及 characteristic 联合校验
-		section_name_check(data_container.sectionheaders[j].Name, data_container.sectionheaders[j].Characteristics, result, j);
-		// characteristic 异常组合检验
+		data_container.section_attributes.push_back(section_imformation_element); // 创建记录节区属性的结构体
+		section_characteristic_judge(data_container.sectionheaders[j].Characteristics); // 根据characteristic判断节区展现的实际属性并存入结构体
+		section_name_check(data_container.sectionheaders[j].Name, data_container.sectionheaders[j].Characteristics, result, j); // 检测Name字段，如果为常见值则标记可能属性，并与上述属性判断结果联合判断
 		if (!data_container.section_attributes[j].known_combination_) {
 			section_characteristic_check(data_container.sectionheaders[j].Characteristics, result, j);
-		}
+		} // 如果Name非常见值，则判断characteristic本身属性组合是否有问题
 
 
 	}

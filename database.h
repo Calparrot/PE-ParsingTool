@@ -13,6 +13,8 @@
     BreakDown               ：文件整体信息，用于判断是否为完全无效的文件或非PE文件
     data_container          ：输出结果&数据库
     section_imformation     ：节区属性信息
+	error_category          ：错误码枚举
+	crash_report            ：崩溃报告
 
     is_this_section_valid() ：某40字节数据是否为节区头的检查函数
 */
@@ -82,6 +84,37 @@ struct section_imformation {
     bool image_scn_lnk_comdat = false;       // COMDAT记录
     bool image_scn_gprel = false;            // 包含GP相对数据
     bool image_scn_mam_fardata = false;      // 远数据
+};
+
+enum error_category {
+    UNKNOWN_ERROR,
+    // 文件操作错误
+    FILE_OPEN_FAILED,
+    FILE_SEEK_FAILED,
+    FILE_READ_FAILED,
+    FILE_TRUNCATED,        // 文件被截断
+    FILE_TOO_SMALL,        // 文件太小
+    // 指针/偏移错误
+    SEEK_BEFORE_BOF,       // 移动到文件开头之前
+    SEEK_AFTER_EOF,        // 移动到文件末尾之后
+    INVALID_OFFSET,        // 无效的偏移值
+    OFFSET_OUT_OF_RANGE,   // 偏移超出范围
+    // 缓冲区错误
+    BUFFER_OVERFLOW,       // 缓冲区溢出
+    BUFFER_UNDERFLOW,      // 读取数据不足
+    INVALID_BUFFER_ACCESS, // 无效的缓冲区访问
+    MEMCPY_OUT_OF_BOUNDS,  // memcpy越界
+    // 资源限制错误
+    BUFFER_TOO_SMALL,      // 缓冲区太小
+    OUT_OF_MEMORY,
+    // 逻辑错误
+    LOGIC_ERROR,
+    UNREACHABLE_CODE
+};
+
+struct crash_report {
+    std::string error_code_;
+    std::string message_;
 };
 
 #pragma pack(push, 1)
@@ -237,6 +270,10 @@ public:
     IMAGE_OPTIONAL_HEADER64 optionalheader64{};
     IMAGE_ROM_OPTIONAL_HEADER optionalheaderrom{};
     std::vector<IMAGE_SECTION_HEADER> sectionheaders;
+
+    // 崩溃报告（文件加载失败等原因未能成功分析）
+	crash_report crashreport{};
+    void crash_imformation_set(error_category code, const std::string& msg = "");
 };
 
 bool is_this_section_valid(const IMAGE_SECTION_HEADER& header);

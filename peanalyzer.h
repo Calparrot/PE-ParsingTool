@@ -100,7 +100,7 @@ private:
     uint8_t mulbuffer[5600] = { 0 };
     size_t read_offset = 0;
 
-    /* 工具函数 */
+    /* 临时工具函数 */
     void clear_buffer();
     std::string field_interpretation(uint16_t inputmachine);
     void magic_check(uint16_t inputmagic, Diaresults& inputresult, int& bitness);
