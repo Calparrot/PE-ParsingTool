@@ -1,4 +1,5 @@
 #include <vector>
+#include <stdexcept>
 
 #include "database.h"
 #include "peanalyzer.h"
@@ -11,53 +12,84 @@ void structuresults::crash_imformation_set(error_category code, const std::strin
 	crashreport.message_ = msg;
 }
 
-/* 节区字段的基础检查，后续再添加基于置信度的判断节区合法性的方法，相对于 section_headers_analisis() 函数仅做最低限度的可运行性检验 */
-bool is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
-	// 1. Name字段简单验证
+/* 节区头的基础检查，用于初步判断任意40字节是否为合法节区头，
+   相对于 section_headers_analisis() 函数仅做较宽松的可能性检查，
+   可能错判，不能作为最终输出结果 */
+
+/* 函数返回值为错误状态码：
+   0：合法节区头
+   1：映射越界
+   2：VirtualAddress未与SectionAlignment对齐
+   3：PointerToRawData未与FileAlignment对齐
+   4：VirtualAddress位于头内部
+   5：PointerToRawData位于头内部
+   6：关键字段全部为0
+   7：（仅x32环境）VirtualAddress+VirtualSize超过32位系统内存页
+*/
+int is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
+	// Name字段全零验证
+	bool all_zero_name = true;
 	for (size_t i = 0; i < 8; i++) {
-		if (header.Name[i] == 0) {
-			continue;
+		if (header.Name[i] != 0) {
+			all_zero_name = false;
+			break;
 		}
-		if (header.Name[i] < 0x20 || header.Name[i] > 0x7E) {
-			return false;
-		}
-	}
-	// 2. VirtualAddress 和 PointerToRawData 对齐检查
-	if (shared_structure.section_alignment_isvalid_ == EleCorrectness::valid) {
-		if (header.VirtualAddress != 0 && header.VirtualAddress % shared_structure.section_alignment_ != 0) {
-			return false;
-		}
-	}
-	else {
-		/* 暂定区域，section_alignment不合法导致无法检测的情况 */
-	}
-	if (shared_structure.file_alignment_isvalid_ == EleCorrectness::valid) {
-		if (header.PointerToRawData != 0 && header.PointerToRawData % shared_structure.file_alignment_ != 0) {
-			return false;
-		}
-	}
-	else {
-		/* 暂定区域，file_alignment不合法导致无法检测的情况 */
-	}
-	// 3.SizeOfRawData 和 PointerToRawData 的一致性
-	if (header.SizeOfRawData == 0) {
-		if (header.PointerToRawData != 0) {
-			return false;
-		}
-	}
-	else {
-		if (shared_structure.size_of_file_ < 0) {
-			/* 文件大小为负数，影响下面的有符号转无符号数，要进行错误处理 */
-
-		}
-		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) >= static_cast<uint64_t>(shared_structure.size_of_file_)) {
-			return false;
-		}
-	}
-	// 4. 特征标志简单检查
-	if (header.Characteristics == 0 || header.Characteristics == 0xFFFFFFFF) {
-		return false;
 	}
 
-	return true;
+	// 文件映射越界检测 PointerToRawData + SizeOfRawData > 文件大小
+	if (header.SizeOfRawData > 0) {
+		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) > static_cast<uint64_t>(shared_structure.size_of_file_)) {
+			return 1;
+		}
+	}
+	
+	// VirtualAddress 和 PointerToRawData 对齐检查
+	try {
+		if (shared_structure.section_alignment_isvalid_ == EleCorrectness::valid) {
+			if (header.VirtualAddress != 0 && header.VirtualAddress % shared_structure.section_alignment_ != 0) {
+				return 2;
+			}
+		}
+		else {
+			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> SectionAlignment值不合法，\n可能导致加载器报错，无法扫描节区头。");
+		}
+		if (shared_structure.file_alignment_isvalid_ == EleCorrectness::valid) {
+			if (header.PointerToRawData != 0 && header.PointerToRawData % shared_structure.file_alignment_ != 0) {
+				return 3;
+			}
+		}
+		else {
+			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> FileAlignment值不合法，\n可能导致加载器报错，无法扫描节区头。");
+		}
+	}
+	catch (std::runtime_error& e) {
+		data_container.output_range = 4; // 不输出节区头和节区内容，后续也不处理
+	}
+
+	// VirtualAddress 是否位于PE头区域检测
+	if (header.VirtualAddress > 0 && header.VirtualAddress < shared_structure.size_of_headers_) {
+		return 4;
+	}
+
+	// PointerToRawData 是否位于PE头区域检测
+	if (header.PointerToRawData < shared_structure.size_of_headers_) {
+		return 5;
+	}
+
+	// 关键字段全零检测
+	if (all_zero_name &&
+		header.VirtualSize == 0 &&
+		header.VirtualAddress == 0 &&
+		header.SizeOfRawData == 0 &&
+		header.PointerToRawData == 0) {
+		return 6;
+	}
+
+	// 特殊架构处理
+	// VirtualSize 或 VirtualAddress导致地址溢出（32位系统）
+	if (shared_structure.bitness_ == 32 && header.VirtualAddress + header.VirtualSize > 0xFFFFFFFF) {
+		return 7;
+	}
+
+	return 0;
 }

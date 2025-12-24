@@ -8,18 +8,26 @@
 #include <cctype>
 
 /*
-    structural_imformation  ：结构是否存在可疑或异常的收录表
-    Diaresults              ：单个结构具体诊断结果
-    BreakDown               ：文件整体信息，用于判断是否为完全无效的文件或非PE文件
-    data_container          ：输出结果&数据库
-    section_imformation     ：节区属性信息
-	error_category          ：错误码枚举
-	crash_report            ：崩溃报告
-
-    is_this_section_valid() ：某40字节数据是否为节区头的检查函数
+结构体说明
+    StructuralImformation          ：结构是否存在可疑或异常的收录表
+    Diaresults                     ：单个结构具体诊断结果
+    BreakDown                      ：文件整体信息，用于判断是否为完全无效的文件或非PE文件
+    SectionImformation             ：单个节区信息（标准、偏移、属性）
+    SectionRange                   ：节区范围
+	error_category                 ：错误码枚举
+	CrashReport                    ：崩溃报告
+类说明
+	structuresults                 ：输出结果&数据库
+类成员说明
+    max_number_of_possible_sections：扫描的可能最大节区数量
+	m_orderliness                  ：内存映射区间是否有序
+	s_orderliness                  ：文件映射区间是否有序
+    memory_interval_table          ：节区内存分布区间表
+    storage_interval_table         ：节区文件分布区间表
+    is_this_section_valid()        ：某40字节数据是否可能为节区头的检查函数
 */
 
-struct structural_imformation {
+struct StructuralImformation {
     bool dos_header_normal_ = true;
 
     bool dos_stub_normal_ = true;
@@ -56,10 +64,11 @@ struct BreakDown {
     int total_num_of_keywords_ = 23;    // 关键字段总数量
 };
 
-struct section_imformation {
+struct SectionImformation {
     bool known_combination_ = false;         // 是否为已知属性节区，如text、code等标准节区，名称和属性需要完全满足
+    uint32_t offset_of_file_base = 0;        // 文件（磁盘）中的偏移（基址为0）
 
-    /* 目前仅判断前 7 个特征属性 */
+    /* 目前仅判断前 7 个特征 属性 */
     bool mem_execute_ = false;               // 内存可执行
     bool mem_read_ = false;                  // 内存可读
     bool mem_write_ = false;                 // 内存可写
@@ -84,6 +93,17 @@ struct section_imformation {
     bool image_scn_lnk_comdat = false;       // COMDAT记录
     bool image_scn_gprel = false;            // 包含GP相对数据
     bool image_scn_mam_fardata = false;      // 远数据
+};
+
+struct SectionRange {
+    size_t index;              // 节区头索引，从0开始
+    uint64_t begin;            // 起始地址（或偏移）
+    uint64_t end;              // 结束地址（或偏移，这里是总长，包括对齐数据）
+    uint64_t size;             // 有效长度
+    uint64_t alignment_length; // 对齐长度
+
+    SectionRange(uint8_t idx, uint32_t bgn, uint32_t ed, uint32_t siz, uint32_t alth):
+        index(idx), begin(bgn), end(ed), size(siz), alignment_length(alth){}
 };
 
 enum error_category {
@@ -112,7 +132,7 @@ enum error_category {
     UNREACHABLE_CODE
 };
 
-struct crash_report {
+struct CrashReport {
     std::string error_code_;
     std::string message_;
 };
@@ -257,10 +277,18 @@ struct IMAGE_SECTION_HEADER {
 
 class structuresults {
 public:
+    // 输出范围
+    int output_range = 5;
+
     // 诊断数据
     std::vector<Diaresults> diarelist{};
-    structural_imformation structures_attributes;
-    std::vector<section_imformation> section_attributes;
+    StructuralImformation structures_attributes;
+    std::vector<SectionImformation> section_attributes;
+	int max_number_of_possible_sections = 0;
+    bool m_orderliness = true; // 节区内存布局和节区头顺序是否一致
+    bool s_orderliness = true; // 节区文件布局和节区头顺序是否一致
+    std::vector<SectionRange> memory_interval_table;
+    std::vector<SectionRange> storage_interval_table;
 
     // 原始文件数据
     IMAGE_DOS_HEADER dosheader{};
@@ -272,10 +300,10 @@ public:
     std::vector<IMAGE_SECTION_HEADER> sectionheaders;
 
     // 崩溃报告（文件加载失败等原因未能成功分析）
-	crash_report crashreport{};
+	CrashReport crashreport{};
     void crash_imformation_set(error_category code, const std::string& msg = "");
 };
 
-bool is_this_section_valid(const IMAGE_SECTION_HEADER& header);
+int is_this_section_valid(const IMAGE_SECTION_HEADER& header); 
 
 #endif

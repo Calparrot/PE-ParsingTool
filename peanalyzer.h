@@ -6,26 +6,30 @@
 #include "database.h"
 
 /*
-   pedata                         ：文件流
-   shared_structure               ：关键字段提取结构体
+结构体说明
+    SharedStructure                ：关键字段提取结构体
+类说明
+	PEanalyzer                     ：PE文件分析类
+类成员说明
+    pedata                         ：文件流
+    mulbuffer[]                    ：复用缓冲区
+    read_offset                    ：复用缓冲区指针偏移
 
-   mulbuffer[]                    ：复用缓冲区
-   read_offset                    ：复用缓冲区指针偏移
+    clear_buffer()                 ：清空复用缓冲区
+    field_interpretation()         ：fileheader中machine字段的解析函数
+	magic_check()                  ：magic字段单架构验证函数
+    magic_joint_check()            ：magic字段一致性联合验证函数
+    joint_judge_magic()            ：magic字段反推函数
+    section_characteristic_judge() ：节区属性判断函数
+    section_characteristic_check() ：节区属性常见冲突组合验证函数
+    section_name_check()           ：节区常用名称检验和属性联合判断函数
 
-   clear_buffer()                 ：清空复用缓冲区
-   field_interpretation()         ：fileheader中machine字段的解析函数
-   magic_joint_check()            ：magic字段一致性联合验证函数
-   joint_judge_magic()            ：magic字段反推函数
-   section_characteristic_judge() ：节区属性判断函数
-   section_characteristic_check() ：节区属性常见冲突组合验证函数
-   section_name_check()           ：节区常用名称检验和属性联合判断函数
-
-   mzcheck()                      ：MZ签名检查函数
-   dosheader_analysis()           ：DOS头分析函数
-   signaturecheck()               ：PE签名检查函数
-   file_header_analysis()         ：文件头分析函数
-   optional_header_analysis()     ：可选头分析函数
-   section_headers_analisis()     ：节区头分析函数
+    mzcheck()                      ：MZ签名检查函数
+    dosheader_analysis()           ：DOS头分析函数
+    signaturecheck()               ：PE签名检查函数
+    file_header_analysis()         ：文件头分析函数
+    optional_header_analysis()     ：可选头分析函数
+    section_headers_analisis()     ：节区头分析函数
 */
 
 extern uint64_t file_size;
@@ -84,9 +88,9 @@ struct SharedStructure {
     uint32_t size_of_headers_;         // 所有头的大小
     int64_t size_of_file_ = file_size; // 文件大小
 
-    uint32_t section_table_offset_;    // 节表在文件中的偏移
-
-    int detected_section_count_ = 0;    // 实际检测出的节区数量
+    uint32_t section_table_offset_;    // 节区在文件中的偏移
+    uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
+    int detected_section_count_ = 0;   // 实际检测出的节区数量
 
     int bitness_ = 32;                 // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
     int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
@@ -117,7 +121,7 @@ public:
     bool dosstub_analysis();
     bool file_header_analysis();
     bool optional_header_analysis();
-    bool section_headers_analisis();
+    bool section_headers_analysis();
 };
 
 #endif

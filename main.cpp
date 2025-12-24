@@ -32,6 +32,9 @@ int main() {
     target.dosheader_analysis();
     target.dosstub_analysis();
     target.file_header_analysis();
+    target.optional_header_analysis();
+
+
     return 0;
 }
 
