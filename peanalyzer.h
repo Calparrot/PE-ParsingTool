@@ -112,7 +112,8 @@ private:
     void magic_joint_judge(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
     void section_characteristic_judge(uint32_t input_characteristic);
     void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num);
-	void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
+	int section_name_match(const uint8_t input_name[8]);
+    void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
 
 public:
     PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}

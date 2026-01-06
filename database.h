@@ -65,6 +65,7 @@ struct BreakDown {
 };
 
 struct SectionImformation {
+    bool marked_section = false;             // 是否存在不可执行可能
     bool known_combination_ = false;         // 是否为已知属性节区，如text、code等标准节区，名称和属性需要完全满足
     uint32_t offset_of_file_base = 0;        // 文件（磁盘）中的偏移（基址为0）
 
@@ -285,8 +286,8 @@ public:
     StructuralImformation structures_attributes;
     std::vector<SectionImformation> section_attributes;
 	int max_number_of_possible_sections = 0;
-    bool m_orderliness = true; // 节区内存布局和节区头顺序是否一致
-    bool s_orderliness = true; // 节区文件布局和节区头顺序是否一致
+	bool m_orderliness = true; // 节区内存布局和节区头顺序是否一致，有序 = true，无序 = false
+    bool s_orderliness = true; // 节区文件布局和节区头顺序是否一致，同上
     std::vector<SectionRange> memory_interval_table;
     std::vector<SectionRange> storage_interval_table;
 

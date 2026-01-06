@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
 #include "peanalyzer.h"
 #include "database.h"
@@ -13,7 +14,71 @@ extern structuresults data_container;
 
 /*
 	interval_relation_judgment ：两个区间关系判断函数
+	interval_insertion_sort    ：处理区间的插入排序函数
+	interval_hole_scan         ：区间缺口扫描函数（要求传入参数已排序）
 */
+
+/* 普通工具函数 */
+static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t a_begin, uint64_t a_end) { // front和after的始末值
+	if (f_begin > f_end || a_begin > a_end) {
+		return -1;    // 无效区间
+	}
+	if (f_begin < a_begin && f_begin < a_end) {
+		if (f_end < a_end && f_end < a_begin) {
+			return 1; // 正常
+		}
+		else if (f_end < a_end && f_end >= a_begin) {
+			return 2; // front后部与after前部重叠
+		}
+		else if (f_end >= a_end && f_end >= a_begin) {
+			return 3; // 完全重叠
+		}
+	}
+	else if (f_begin >= a_begin && f_begin < a_end) {
+		return 4;     // front前部与after后部重叠 + 乱序
+	}
+	else if (f_begin >= a_begin && f_begin >= a_end) {
+		return 5;     // 乱序
+	}
+	return 0;         // 奇怪的情况
+}
+
+static void interval_insertion_sort(std::vector<SectionRange>& input_vector) {
+	size_t n = input_vector.size();
+	for (size_t i = 1; i < n; i++) {
+		SectionRange current = input_vector[i];
+		size_t j = i - 1;
+		while (j >= 0) {
+			if (current.begin < input_vector[j].begin) {
+				input_vector[j + 1] = input_vector[j];
+				j--;
+			}
+			else if (current.begin == input_vector[j].begin) {
+				if (current.end < input_vector[j].end) {
+					input_vector[j + 1] = input_vector[j];
+					j--;
+				}
+				else {
+					break;
+				}
+			}
+			else {
+				break;
+			}
+		}
+		input_vector[j + 1] = current;
+	}
+}
+
+static bool interval_hole_scan(const std::vector<SectionRange>& input_vector) {
+	for(size_t i = 0; i < input_vector.size() - 1; i++) {
+		if (input_vector[i].begin < input_vector[i + 1].begin && 
+		input_vector[i].end + 0x01 < input_vector[i + 1].begin) {
+			return false;
+		}
+	}
+	return true;
+}
 
 /* private里的工具函数 */
 void PEanalyzer::clear_buffer() {
@@ -116,62 +181,90 @@ void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
 }
 
 void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
-	/* 这里没有显示到底是第几个节区的信息，未来再继续改进 */
-	// 1. mem_execute_ + mem_write_
+	std::string msg1 = "sectionheader[" + std::to_string(num) + "]权限异常。";
+	std::string msg2 = "sectionheader[" + std::to_string(num) + "]属性逻辑错误。";
+	// mem_execute_ + mem_write_
 	if (data_container.section_attributes[num].mem_execute_ && data_container.section_attributes[num].mem_write_) {
-		inputresult.warnings_.push_back("节区权限异常。");
-		inputresult.informations_.push_back("【异常】节区属性可读+可写，存在安全风险。");
+		std::string msg3 = "【异常】sectionheader[" + std::to_string(num) + "]属性可读+可写，存在安全风险。";
+		inputresult.warnings_.push_back(msg1);
+		inputresult.informations_.push_back(msg3);
 	}
-	// 2. mem_shared_ + cnt_uninitialized_data_
+	// mem_shared_ + cnt_uninitialized_data_
 	if (data_container.section_attributes[num].mem_shared_ && data_container.section_attributes[num].cnt_uninitialized_data_) {
-		inputresult.informations_.push_back("【可疑】节区属性共享零数据，注意特殊处理。");
+		std::string msg3 = "【可疑】sectionheader[" + std::to_string(num) + "]属性共享零数据，注意特殊处理。";
+		inputresult.informations_.push_back(msg3);
 	}
-	// 3. mem_write_ + !mem_read_
+	// mem_write_ + !mem_read_
 	if (data_container.section_attributes[num].mem_write_ && !data_container.section_attributes[num].mem_read_) {
-		inputresult.warnings_.push_back("节区权限异常。");
-		inputresult.informations_.push_back("【异常】节区属性可执行+不可读，无法正常执行。");
+		std::string msg3 = "【异常】sectionheader[" + std::to_string(num) + "]属性可执行+不可读，无法正常执行。";
+		inputresult.warnings_.push_back(msg1);
+		inputresult.informations_.push_back(msg3);
 	}
-	// 4. mem_execute_ + !mem_read_
+	// mem_execute_ + !mem_read_
 	if (data_container.section_attributes[num].mem_execute_ && !data_container.section_attributes[num].mem_read_) {
-		inputresult.informations_.push_back("【可疑】节区属性只写内存，较为少见。");
+		std::string msg3 = "【可疑】sectionheader[" + std::to_string(num) + "]属性只写内存，较为少见。";
+		inputresult.informations_.push_back(msg3);
 	}
-	// 5. !mem_read_ + !mem_write_ + !mem_execute_
+	// !mem_read_ + !mem_write_ + !mem_execute_
 	if (!data_container.section_attributes[num].mem_execute_ && !data_container.section_attributes[num].mem_read_ && !data_container.section_attributes[num].mem_write_) {
-		inputresult.warnings_.push_back("节区权限异常。");
-		inputresult.informations_.push_back("【异常】节区属性不可执行+不可读+不可写，无法正常访问。");
+		std::string msg3 = "【异常】sectionheader[" + std::to_string(num) + "]属性不可执行+不可读+不可写，无法正常访问。";
+		inputresult.warnings_.push_back(msg1);
+		inputresult.informations_.push_back(msg3);
 	}
 	// 6. cnt_code_ + cnt_uninitialized_data_
 	if (data_container.section_attributes[num].cnt_code_ && data_container.section_attributes[num].cnt_uninitialized_data_) {
-		inputresult.warnings_.push_back("节区属性逻辑错误。");
-		inputresult.informations_.push_back("【异常】节区属性逻辑错误");
+		std::string msg3 = "【异常】sectionheader[" + std::to_string(num) + "]属性逻辑错误。";
+		inputresult.warnings_.push_back(msg2);
+		inputresult.informations_.push_back(msg3);
 	}
 	// 7. cnt_initialized_data_ + cnt_uninitialized_data_
 	if (data_container.section_attributes[num].cnt_initialized_data_ && data_container.section_attributes[num].cnt_uninitialized_data_) {
-		inputresult.warnings_.push_back("节区属性逻辑错误。");
+		std::string msg3 = "【异常】sectionheader[" + std::to_string(num) + "]属性逻辑矛盾。";
+		inputresult.warnings_.push_back(msg2);
 		inputresult.informations_.push_back("【异常】节区属性逻辑错误");
 	}
 }
 
-void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
-	static constexpr uint8_t TEXT[8] = { 0x2E, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00, 0x00 };    // .text
-	static constexpr uint8_t CODE[8] = { 0x2E, 0x63, 0x6F, 0x64, 0x65, 0x00, 0x00, 0x00 };    // .code
-	static constexpr uint8_t ITEXT[8] = { 0x2E, 0x69, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00 };   // .itext
-	static constexpr uint8_t DATA[8] = { 0x2E, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00 };    // .data
-	static constexpr uint8_t RDATA[8] = { 0x2E, 0x72 ,0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .rdata
-	static constexpr uint8_t IDATA[8] = { 0x2E, 0x69 ,0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .idata
-	static constexpr uint8_t EDATA[8] = { 0x2E, 0x65 ,0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .edata
-	static constexpr uint8_t BSS[8] = { 0x2E, 0x62, 0x73, 0x73, 0x00, 0x00, 0x00, 0x00 };     // .bss
-	static constexpr uint8_t RSRC[8] = { 0x2E, 0x72, 0x73, 0x72, 0x63, 0x00, 0x00, 0x00 };    // .rsrc
-	static constexpr uint8_t RELOC[8] = { 0x2E, 0x72, 0x65, 0x6C, 0x6F, 0x63, 0x00, 0x00 };   // .reloc
-	static constexpr uint8_t DEBUG[8] = { 0x2E, 0x64, 0x65, 0x62, 0x75, 0x67, 0x24, 0x53 };   // .debug$S
-	static constexpr uint8_t DRECTVE[8] = { 0x2E, 0x64, 0x72, 0x65, 0x63, 0x74, 0x76, 0x65 }; // .drectve
-	static constexpr uint8_t TLS[8] = { 0x2E, 0x74, 0x6C, 0x73, 0x00, 0x00, 0x00, 0x00 };     // .tls
-	static constexpr uint8_t PDATA[8] = { 0x2E, 0x70, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .pdata
-	static constexpr uint8_t XDATA[8] = { 0x2E, 0x78, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00 };   // .xdata
+int PEanalyzer::section_name_match(const uint8_t input_name[8]) {
+	struct NameCompare {
+		const uint8_t name[8];
+		int id;
+	};
 
+	static constexpr NameCompare SECTION_TABLE[] = {
+		{{0x2E, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00, 0x00}, 8469},    // .text
+		{{0x2E, 0x63, 0x6F, 0x64, 0x65, 0x00, 0x00, 0x00}, 6779},    // .code
+		{{0x2E, 0x69, 0x74, 0x65, 0x78, 0x74, 0x00, 0x00}, 7384},    // .itext
+		{{0x2E, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00}, 6865},    // .data
+		{{0x2E, 0x72, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00}, 8268},    // .rdata
+		{{0x2E, 0x69, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00}, 7368},    // .idata
+		{{0x2E, 0x65, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00}, 6968},    // .edata
+		{{0x2E, 0x62, 0x73, 0x73, 0x00, 0x00, 0x00, 0x00}, 6683},    // .bss
+		{{0x2E, 0x72, 0x73, 0x72, 0x63, 0x00, 0x00, 0x00}, 8283},    // .rsrc
+		{{0x2E, 0x72, 0x65, 0x6C, 0x6F, 0x63, 0x00, 0x00}, 8269},    // .reloc
+		{{0x2E, 0x64, 0x65, 0x62, 0x75, 0x67, 0x24, 0x53}, 6869},    // .debug$S
+		{{0x2E, 0x64, 0x72, 0x65, 0x63, 0x74, 0x76, 0x65}, 6882},    // .drectve
+		{{0x2E, 0x74, 0x6C, 0x73, 0x00, 0x00, 0x00, 0x00}, 8476},    // .tls
+		{{0x2E, 0x70, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00}, 8068},    // .pdata
+		{{0x2E, 0x78, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00}, 8868}     // .xdata
+	};
+
+	auto it = std::find_if(std::begin(SECTION_TABLE), std::end(SECTION_TABLE),
+		[input_name](const NameCompare& entry) {
+			return memcmp(input_name, entry.name, 8) == 0;
+		});
+
+	if (it != std::end(SECTION_TABLE)) {
+		return it->id;
+	}
+	return -1;
+}
+
+void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
 	bool judgement_set[7] = {0};
 	bool actual_val[7] = {};
 	bool is_attribute_common = true;
+	int name_id = section_name_match(input_name);
 	/*
 	[0] bool mem_execute_;               // 内存可执行
     [1] bool mem_read_;                  // 内存可读
@@ -182,42 +275,48 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
     [6] bool cnt_uninitialized_data_;    // 零初始化
 	*/
 
-	if (memcmp(input_name, TEXT, 8) || memcmp(input_name, CODE, 8) || memcmp(input_name, ITEXT, 8)) {
+	// .text .code .itext
+	if (name_id == 8469 || name_id == 6779 || name_id == 7384) { 
 		judgement_set[0] = true;
 		judgement_set[1] = true;
 		judgement_set[2] = false;
 		judgement_set[4] = true;
 		if (input_characteristic != 0x60000020) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, DATA, 8)) {
+	// .data
+	else if (name_id == 6865) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = true;
 		judgement_set[5] = true;
 		if (input_characteristic != 0xC0000040) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, RDATA, 8) || memcmp(input_name, IDATA, 8) || memcmp(input_name, EDATA, 8)) {
+	// .rdata .idata .edata
+	else if (name_id == 8268 || name_id == 7368 || name_id == 6968) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = false;
 		judgement_set[5] = true;
 		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, BSS, 8)) {
+	// .bss
+	else if (name_id == 6683) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = true;
 		judgement_set[6] = true;
 		if (input_characteristic != 0xC0000080) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, RSRC, 8)) {
+	// .rsrc
+	else if (name_id == 8283) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = false;
 		judgement_set[5] = true;
 		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, RELOC, 8)) {
+	// .reloc
+	else if (name_id == 8269) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = false;
@@ -225,7 +324,8 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 		if (input_characteristic != 0x42000040 
 			&& input_characteristic != 0x40000040) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, DEBUG, 8) || memcmp(input_name, DRECTVE, 8)) {
+	// .debug$S .drectve
+	else if (name_id == 6869 || name_id == 6882) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = false;
@@ -233,14 +333,16 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 		if (input_characteristic != 0x42100040 
 			&& input_characteristic != 0x40100040) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, TLS, 8)) {
+	// .tls
+	else if (name_id == 8476) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = true;
 		judgement_set[5] = true;
 		if (input_characteristic != 0xC0000040) { is_attribute_common = false; }
 	}
-	else if (memcmp(input_name, PDATA, 8) || memcmp(input_name, XDATA, 8)) {
+	// .pdata .xdata
+	else if (name_id == 8068 || name_id == 8868) {
 		judgement_set[0] = false;
 		judgement_set[1] = true;
 		judgement_set[2] = false;
@@ -248,7 +350,7 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 		if (input_characteristic != 0x40000040) { is_attribute_common = false; }
 	}
 	else {
-		std::string msg = "【异常】sectionheader[" + std::to_string(num) + "]->name 字段非常见编译器编译结果。";
+		std::string msg = "【可疑】sectionheader[" + std::to_string(num) + "]->name 字段非常见编译器编译结果。";
 		inputresult.informations_.push_back(msg);
 		return;
 	}
@@ -263,7 +365,7 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 
 	if (!memcmp(judgement_set, actual_val, 7)) {
 		std::string msg1 = "sectionheader[" + std::to_string(num) + "]权限异常";
-		std::string msg2 = "【异常】sectionheader[" + std::to_string(num) + "]的name值与其期望的权限不匹配。";
+		std::string msg2 = "【可疑】sectionheader[" + std::to_string(num) + "]的name值与其期望的权限不匹配。";
 		inputresult.warnings_.push_back(msg1);
 		inputresult.informations_.push_back(msg2);
 	}
@@ -276,30 +378,6 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 	else {
 		data_container.section_attributes[num].known_combination_ = true;
 	}
-}
-
-static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t a_begin, uint64_t a_end) { // front和after的始末值
-	if (f_begin > f_end || a_begin > a_end) {
-		return -1;    // 无效区间
-	}
-	if (f_begin < a_begin && f_begin < a_end) {
-		if (f_end < a_end && f_end < a_begin) {
-			return 1; // 正常
-		}
-		else if (f_end < a_end && f_end >= a_begin) {
-			return 2; // front后部与after前部重叠
-		}
-		else if (f_end >= a_end && f_end >= a_begin) {
-			return 3; // 完全重叠
-		}
-	}
-	else if (f_begin >= a_begin && f_begin < a_end) {
-		return 4;     // front前部与after后部重叠 + 乱序
-	}
-	else if(f_begin >= a_begin && f_begin >= a_end) {
-		return 5;     // 乱序
-	}
-	return 0;         // 奇怪的情况
 }
 
 /* public函数 */
@@ -1015,13 +1093,18 @@ bool PEanalyzer::section_headers_analysis() {
 				result.informations_.push_back(msg2);
 				data_container.m_orderliness = false;
 			}
-			// 内存分布空洞扫描，仅分析至最后一个节区进行扫描
-
 		}
 		if (data_container.output_range < 5) {
 			break;
 		}
-		
+		// 内存区间排序
+		if (max_num == j + 1 && !data_container.m_orderliness) {
+			interval_insertion_sort(data_container.memory_interval_table);
+		}
+		if (max_num == j + 1 && !interval_hole_scan(data_container.memory_interval_table)) {
+			result.field_anomalies_.push_back("sectionheader对应的节区在内存映射中可能存在空洞现象。");
+			result.informations_.push_back("【可疑】sectionheader所示节区在内存中存在空洞现象。");
+		}
 		// 外存区间乱序、重叠、空洞检查
 		for (size_t j2 = 0; j2 < j; j2++) {
 			// 外存分布重叠+乱序扫描
@@ -1054,17 +1137,31 @@ bool PEanalyzer::section_headers_analysis() {
 		if (data_container.output_range < 5) {
 			break;
 		}
+		if (max_num == j + 1 && !data_container.s_orderliness) {
+			interval_insertion_sort(data_container.storage_interval_table);
+		}
+		if (max_num == j + 1 && !interval_hole_scan(data_container.storage_interval_table)) {
+			result.field_anomalies_.push_back("sectionheader对应的节区在文件可能出现空洞现象。");
+			result.informations_.push_back("【可疑】sectionheader所示节区在文件中存在空洞现象。");
+		}
 
-		// virtualsize 和 virtualaddress的联合判断
-		if (!data_container.section_attributes[j].cnt_uninitialized_data_ &&
-		data_container.sectionheaders[j].SizeOfRawData < data_container.sectionheaders[j].VirtualSize) {
-			std::string msg1 = "sectionheader[" + std::to_string(j) + "]->sizeofrawdata小于virtualsize";
-			std::string msg2 = "【可疑】sectionheader[" + std::to_string(j) + "]->sizeofrawdata小于virtualsize";
-			result.warnings_.push_back(msg1);
-			result.informations_.push_back(msg2);
+		// 诊断异常区域
+
+
+		// 诊断可疑区域
+		if (current_section.VirtualSize < current_section.SizeOfRawData) {
+			result.informations_.push_back("【可疑】VS < SRD");
+		}
+		//VirtualSize=0 但 SizeOfRawData>0
+		if (data_container.section_attributes[j].known_combination_) {
+			if (current_section.VirtualSize == 0 && current_section.SizeOfRawData > 0) {
+
+			}
+			result.informations_.push_back("【可疑】VS=0&&SRD>0");
+			
 		}
 
 		read_offset += sizeof(IMAGE_SECTION_HEADER);
 	}
-	
+
 }
