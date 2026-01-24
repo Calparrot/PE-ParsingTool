@@ -22,6 +22,7 @@
     joint_judge_magic()            ：magic字段反推函数
     section_characteristic_judge() ：节区属性判断函数
     section_characteristic_check() ：节区属性常见冲突组合验证函数
+	section_name_match()           ：节区常用名称匹配函数
     section_name_check()           ：节区常用名称检验和属性联合判断函数
 
     mzcheck()                      ：MZ签名检查函数

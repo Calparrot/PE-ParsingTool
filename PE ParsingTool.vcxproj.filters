@@ -1,54 +1,81 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="头文件">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="资源文件">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{b546b635-1d05-44b7-a253-1814f9cf63e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="core\src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="gui">
+      <UniqueIdentifier>{d44b1de6-8ebc-4157-a280-637cdd3cb904}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\src">
+      <UniqueIdentifier>{bee00baf-c995-44ea-b44f-611e4c3cefde}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="database.cpp">
-      <Filter>源文件</Filter>
+      <Filter>core\src</Filter>
     </ClCompile>
     <ClCompile Include="peanalyzer.cpp">
-      <Filter>源文件</Filter>
+      <Filter>core\src</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
+      <Filter>core\src</Filter>
     </ClCompile>
     <ClCompile Include="functool.cpp">
-      <Filter>源文件</Filter>
+      <Filter>core\src</Filter>
     </ClCompile>
     <ClCompile Include="shellextension.cpp">
-      <Filter>源文件</Filter>
+      <Filter>core\src</Filter>
     </ClCompile>
     <ClCompile Include="siganalyzer.cpp">
-      <Filter>源文件</Filter>
+      <Filter>core\src</Filter>
+    </ClCompile>
+    <ClCompile Include="guimain.cpp">
+      <Filter>gui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="window.cpp">
+      <Filter>gui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="wrapper.cpp">
+      <Filter>gui\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="database.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="peanalyzer.h">
-      <Filter>头文件</Filter>
+      <Filter>core\include</Filter>
     </ClInclude>
     <ClInclude Include="shellextension.h">
-      <Filter>头文件</Filter>
+      <Filter>core\include</Filter>
     </ClInclude>
     <ClInclude Include="siganalyzer.h">
-      <Filter>头文件</Filter>
+      <Filter>core\include</Filter>
+    </ClInclude>
+    <ClInclude Include="database.h">
+      <Filter>core\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakecore.txt">
+      <Filter>core</Filter>
+    </Text>
+    <Text Include="CMakegui.txt">
+      <Filter>gui</Filter>
+    </Text>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
 </Project>

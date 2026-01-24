@@ -714,7 +714,7 @@ bool PEanalyzer::optional_header_analysis() {
 	else if (shared_structure.bitness_ == 82) { // ROM
 		data_container.crash_imformation_set(
 			error_category::UNKNOWN_ERROR,
-			"Optional Header（可选头）：暂不支持ROM架构的文件分析，敬请期待工具的未来更新！"
+			"Optional Header（可选头）：暂不支持ROM架构的文件分析，敬请期待未来更新！"
 		);
 		return false;
 
@@ -740,7 +740,7 @@ bool PEanalyzer::optional_header_analysis() {
 		shared_structure.bitness_ = 0;
 		data_container.crash_imformation_set(
 			error_category::UNKNOWN_ERROR,
-			"Optional Header（可选头）：暂不支持magic字段的异常处理，敬请期待工具的未来更新！"
+			"Optional Header（可选头）：暂不支持magic字段的异常处理，敬请期待未来更新！"
 		);
 		return false;
 	}
@@ -925,11 +925,16 @@ bool PEanalyzer::section_headers_analysis() {
 	result.component_type_ = "header";
 	result.file_offset_ = shared_structure.peheader_offset_ + 20 + data_container.diarelist[3].data_size_;
 	
-	size_t read_offset_copy = read_offset;
-	int section_error_status_code = 0; // 参考 database.cpp -> is_this_section_valid() 函数的返回值定义
+	size_t read_offset_copy = read_offset; // 复用缓冲区偏移备份
+	int section_error_status_code = 0;     // 参考 database.cpp -> is_this_section_valid() 函数的返回值定义
 
-	// 基于宽松条件首次扫描节区数量（shared_structure.detected_section_count_）
-	// 这里主要是避免相信numberofsections造成的可能的漏判
+	/* 第一层大循环 基于宽松条件首次扫描节区数量（shared_structure.detected_section_count_） 
+	变量汇总：
+	   【全局】i                         ：第一层循环计数
+	   【临时】current_section           ：临时节区分析对象
+	   【全局】read_offset               ：复用缓冲区指针
+	   【全局】section_error_status_code ：记录结束扫描原因
+	*/ 
 	for (; i < REASONABLE_MAX_SECTIONS; i++) {
 		IMAGE_SECTION_HEADER current_section = {};
 
@@ -962,6 +967,13 @@ bool PEanalyzer::section_headers_analysis() {
 		section_error_status_code = is_this_section_valid(current_section);
 		break;
 	}
+
+	/* 第一层大循环结束后处理 
+	变量汇总：
+	   【临时】has_contradiction        ：记录首次扫描数量是否与numberofsections冲突
+	   【临时】theoretical_max_sections ：根据节区起始位置计算的理论值
+	   【全局】max_num                  ：在numberofsections、首次扫描数量、根据节区起始位置计算的理论值中取得的最大值
+	*/
 	// 节区因前面字段错误而导致无法扫描，此处直接中止分析节区头部分，仅输出至可选头分析结果
 	if (data_container.output_range < 5) { 
 		return true;
@@ -983,8 +995,17 @@ bool PEanalyzer::section_headers_analysis() {
 		max_num = shared_structure.number_of_sections_ != 0 ? shared_structure.number_of_sections_ : theoretical_max_sections;
 	}   // 排除恶意构造的第一个节区全0导致扫描器崩溃情况
 
-	// 基于严格条件重复扫描进行异常分析
-	read_offset = read_offset_copy; // 重置read_offset
+	/* 第二层大循环 基于严格条件重复扫描进行异常分析 
+	变量汇总：
+	   【临时】j                           ：第二层循环计数
+	   【存储】current_section             ：临时节区分析对象
+	   【存储】section_imformation_element ：扫描结果临时对象
+	   【临时】t_imagebase                 ：根据前期扫描结果读取的imagebase值
+	   【临时】aligned_virtual_size        ：根据节区对齐粒度计算的对齐后虚拟大小
+	   【临时】m_section_range             ：内存区间记录对象
+	   【临时】s_section_range             ：存储区间记录对象
+	*/
+	read_offset = read_offset_copy; // 重置复用缓冲区指针
 	for (size_t j = 0; j < max_num; j++) {
 		if (j == REASONABLE_MAX_SECTIONS) {
 			result.informations_.insert(result.informations_.begin(), "检测到可能的节区头数量过多，工具将仅分析至前128个节区头。");
@@ -1086,7 +1107,7 @@ bool PEanalyzer::section_headers_analysis() {
 				result.field_anomalies_.push_back(msg1);
 				result.informations_.push_back(msg2);
 			}
-			if (judgment_code == 4 || judgment_code == 5) { // 有乱序现象
+			if (judgment_code == 4 || judgment_code == 5) { // 有乱序现象，乱序定义指节区和节区头顺序不一致
 				msg1 = "扫描至sectionheader[" + std::to_string(j) + "]内存映射区间时发现可能出现的内存映射乱序现象。";
 				msg2 = "【可疑】sectionheader[" + std::to_string(j) + "]所示的映射区间与[" + std::to_string(j1) + "]所示节区出现乱序现象。";
 				result.field_anomalies_.push_back(msg1);
@@ -1145,21 +1166,26 @@ bool PEanalyzer::section_headers_analysis() {
 			result.informations_.push_back("【可疑】sectionheader所示节区在文件中存在空洞现象。");
 		}
 
-		// 诊断异常区域
-
-
-		// 诊断可疑区域
-		if (current_section.VirtualSize < current_section.SizeOfRawData) {
-			result.informations_.push_back("【可疑】VS < SRD");
-		}
-		//VirtualSize=0 但 SizeOfRawData>0
-		if (data_container.section_attributes[j].known_combination_) {
-			if (current_section.VirtualSize == 0 && current_section.SizeOfRawData > 0) {
-
+		// 诊断异常区域（终止条件）
+		// 地址问题和字段的混合问题
+		// VirtualSize 大于 SizeOfRawData 且超出内存页对齐范围
+		if (current_section.VirtualSize > current_section.SizeOfRawData &&
+		!(data_container.section_attributes[j].known_combination_ && section_name_match(current_section.Name) == 6683)) {
+			if (m_section_range.size > s_section_range.size) {
+				result.field_anomalies_.push_back("sectionheader[" + std::to_string(j) + "]存在内存未初始化区域。");
 			}
-			result.informations_.push_back("【可疑】VS=0&&SRD>0");
-			
 		}
+		// VirtualSize 为0但 VirtualAddress 与其他节重叠
+		
+		// VirtualSize 与 SizeOfRawData 均为0且节区属性包含可执行/可写
+		// 节区重叠（VirtualAddress 计算后范围重叠）
+		//  VirtualAddress=0 且非第一个节区
+		//SizeOfRawData=0 但 VirtualSize>0 且节区属性异常
+		// SizeOfRawData 与 VirtualSize 均为0
+		// 节区数据重叠（PointerToRawData + SizeOfRawData 重叠）
+		// 节区间文件数据重叠
+		// PointerToRawData = 0（非特殊情况）
+		// 指向文件末尾之后（但SizeOfRawData=0）
 
 		read_offset += sizeof(IMAGE_SECTION_HEADER);
 	}

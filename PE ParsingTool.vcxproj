@@ -125,10 +125,13 @@
   <ItemGroup>
     <ClCompile Include="database.cpp" />
     <ClCompile Include="functool.cpp" />
+    <ClCompile Include="guimain.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="peanalyzer.cpp" />
     <ClCompile Include="shellextension.cpp" />
     <ClCompile Include="siganalyzer.cpp" />
+    <ClCompile Include="window.cpp" />
+    <ClCompile Include="wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="database.h" />
@@ -141,6 +144,11 @@
       <SubType>
       </SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+    <Text Include="CMakecore.txt" />
+    <Text Include="CMakegui.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
