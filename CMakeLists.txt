@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
-project(PE_ParsingTool)
+project(PE_Cartographer
+    VERSION 1.0.0 
+    DESCRIPTION "专注于PE字段扫描的安全诊断辅助工具" 
+    LANGUAGES CXX  
+)
 
-# 设置C++标准
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(WIN32)
+    add_definitions(-DUNICODE -D_UNICODE)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY 
+    "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # 设置输出目录（可选）
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

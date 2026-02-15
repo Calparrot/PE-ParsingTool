@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="database.cpp" />
+    <ClCompile Include="diagnostic_helpers.cpp" />
     <ClCompile Include="functool.cpp" />
     <ClCompile Include="guimain.cpp" />
     <ClCompile Include="main.cpp" />
@@ -135,6 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="database.h" />
+    <ClInclude Include="diagnostic_codes.h" />
     <ClInclude Include="peanalyzer.h" />
     <ClInclude Include="shellextension.h" />
     <ClInclude Include="siganalyzer.h" />
@@ -147,8 +149,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
-    <Text Include="CMakecore.txt" />
-    <Text Include="CMakegui.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

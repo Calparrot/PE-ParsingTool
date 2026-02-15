@@ -7,6 +7,8 @@
 #include <array>
 #include <cctype>
 
+#include "diagnostic_codes.h"
+
 /*
 结构体说明
     StructuralImformation          ：结构是否存在可疑或异常的收录表
@@ -47,13 +49,16 @@ struct Diaresults {
     bool isvalid = true;          // 格式是否有效
     bool issuspicious = false;    // 是否可疑
 
+	std::vector<Core::Diagnostic> information_list_; // 扫描信息表
+    std::vector<Core::Diagnostic> additional_information; // 额外信息
+
     std::vector<std::string> field_anomalies_;     // 字段异常列表
     std::vector<std::string> excursion_anomalies_; // 地址（解析段本身地址异常，不是指地址值）异常列表
     std::vector<std::string> warnings_;            // 警告信息
     std::vector<std::string> informations_;        // 普通信息
 
     uint32_t confidence_level_ = 100;               // 置信度 (0-100)
-    std::vector<std::string> evidence_;            // 判断依据
+    std::vector<std::string> evidence_;             // 判断依据
 
     uint32_t file_offset_ = 0;                      // 在文件中的偏移
     uint32_t data_size_ = 0;                        // 数据大小
@@ -74,7 +79,7 @@ struct SectionImformation {
     bool mem_read_ = false;                  // 内存可读
     bool mem_write_ = false;                 // 内存可写
     bool mem_shared_ = false;                // 内存共享
-    bool cnt_code_ = false;                  // 包含可执行代码 
+    bool cnt_code_ = false;                  // 包含可执行代码
     bool cnt_initialized_data_ = false;      // 包含已初始化数据
     bool cnt_uninitialized_data_ = false;    // 零初始化
     /* 下面的属性目前没用，不涉及任何判断信息 */
@@ -162,6 +167,7 @@ struct IMAGE_DOS_HEADER {
 };
 
 struct IMAGE_FILE_HEADER {
+	uint32_t signature;            // "PE\0\0" 魔术字 (0x00004550)
     uint16_t machine;              // 目标CPU架构（如0x014C=Intel 386）
     uint16_t numberofsections;     // 节区数量
     uint32_t timedatestamp;        // 编译时间戳
