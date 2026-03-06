@@ -51,7 +51,9 @@ int is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
 			}
 		}
 		else {
-			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> SectionAlignment值不合法，\n可能导致加载器报错，无法扫描节区头。");
+			// IMAGE_OPTIONAL_HEADER -> SectionAlignment值不合法，可能导致加载器报错，无法扫描节区头。
+			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> The SectionAlignment value is invalid, \n\
+				which may cause loader errors and prevent scanning of section headers.");
 		}
 		if (shared_structure.file_alignment_isvalid_ == EleCorrectness::valid) {
 			if (header.PointerToRawData != 0 && header.PointerToRawData % shared_structure.file_alignment_ != 0) {
@@ -59,11 +61,14 @@ int is_this_section_valid(const IMAGE_SECTION_HEADER& header) {
 			}
 		}
 		else {
-			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> FileAlignment值不合法，\n可能导致加载器报错，无法扫描节区头。");
+			// IMAGE_OPTIONAL_HEADER -> FileAlignment值不合法，可能导致加载器报错，无法扫描节区头。
+			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> The FileAlignment value is invalid, \n\
+				which may cause loader errors and prevent scanning of section headers.");
 		}
 	}
 	catch (std::runtime_error& e) {
-		data_container.output_range = 4; // 不输出节区头和节区内容，后续也不处理
+		// 不输出节区头和节区内容，后续也不处理
+		data_container.output_range = 4; 
 	}
 
 	// VirtualAddress 是否位于PE头区域检测

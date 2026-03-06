@@ -127,7 +127,7 @@
     <ClCompile Include="diagnostic_helpers.cpp" />
     <ClCompile Include="functool.cpp" />
     <ClCompile Include="guimain.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="api.cpp" />
     <ClCompile Include="peanalyzer.cpp" />
     <ClCompile Include="shellextension.cpp" />
     <ClCompile Include="siganalyzer.cpp" />
@@ -135,6 +135,7 @@
     <ClCompile Include="wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="api.h" />
     <ClInclude Include="database.h" />
     <ClInclude Include="diagnostic_codes.h" />
     <ClInclude Include="peanalyzer.h" />

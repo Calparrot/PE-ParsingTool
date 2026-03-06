@@ -52,10 +52,11 @@ struct Diaresults {
 	std::vector<Core::Diagnostic> information_list_; // 扫描信息表
     std::vector<Core::Diagnostic> additional_information; // 额外信息
 
-    std::vector<std::string> field_anomalies_;     // 字段异常列表
+    /*std::vector<std::string> field_anomalies_;     // 字段异常列表
     std::vector<std::string> excursion_anomalies_; // 地址（解析段本身地址异常，不是指地址值）异常列表
     std::vector<std::string> warnings_;            // 警告信息
-    std::vector<std::string> informations_;        // 普通信息
+    std::vector<std::string> informations_;        // 普通信息*/
+    
 
     uint32_t confidence_level_ = 100;               // 置信度 (0-100)
     std::vector<std::string> evidence_;             // 判断依据
@@ -284,12 +285,20 @@ struct IMAGE_SECTION_HEADER {
 
 class structuresults {
 public:
-    // 输出范围
+    /* 
+    output_range 输出范围说明（不可用户管理，默认尽量输出所有结果）：
+        1 - 输出至 40 byte 扫描结果
+        2 - 输出至 PE 签名前扫描结果
+        3 - 输出至 PE 签名后 20 byte 扫描结果
+        4 - 输出至节区头前的扫描结果
+        5 - 输出文件头部内容所有扫描结果
+    */
     int output_range = 5;
+    StructuralImformation structures_attributes;
 
     // 诊断数据
     std::vector<Diaresults> diarelist{};
-    StructuralImformation structures_attributes;
+
     std::vector<SectionImformation> section_attributes;
 	int max_number_of_possible_sections = 0;
 	bool m_orderliness = true; // 节区内存布局和节区头顺序是否一致，有序 = true，无序 = false
