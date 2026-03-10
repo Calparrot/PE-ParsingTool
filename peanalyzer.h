@@ -87,7 +87,7 @@ struct SharedStructure {
     uint32_t tls_table_size_;          // TLS表大小
 
     uint32_t size_of_headers_;         // 所有头的大小
-    int64_t size_of_file_ = file_size; // 文件大小
+    int64_t size_of_file_; // 文件大小
 
     uint32_t section_table_offset_;    // 节区在文件中的偏移
     uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
@@ -117,13 +117,14 @@ private:
     void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
 
 public:
-    PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
     /* 调用时一定要按顺序调用 */
     bool dosheader_analysis();
     bool dosstub_analysis();
     bool file_header_analysis();
     bool optional_header_analysis();
     bool section_headers_analysis();
+
+    PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
 };
 
 #endif

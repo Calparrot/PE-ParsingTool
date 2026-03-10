@@ -1671,4 +1671,5 @@ bool PEanalyzer::section_headers_analysis() {
 		read_offset += sizeof(IMAGE_SECTION_HEADER);
 	}
 
+	return true;
 }

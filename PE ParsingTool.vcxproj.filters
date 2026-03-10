@@ -38,7 +38,7 @@
     <ClCompile Include="siganalyzer.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="guimain.cpp">
+    <ClCompile Include="winmain.cpp">
       <Filter>gui\src</Filter>
     </ClCompile>
     <ClCompile Include="window.cpp">
@@ -70,11 +70,22 @@
     <ClInclude Include="api.h">
       <Filter>core\include</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>core\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icons\icon16x16.ico" />
+    <Image Include="icons\icon32x32.ico" />
+    <Image Include="icons\icon258x258.ico" />
   </ItemGroup>
 </Project>

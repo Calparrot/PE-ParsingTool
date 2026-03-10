@@ -74,7 +74,7 @@ namespace Core {
     };
 }
 
-static Core::Diagnostic value_mismatch(
+Core::Diagnostic value_mismatch(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -82,7 +82,7 @@ static Core::Diagnostic value_mismatch(
     uint32_t actual,
     uint64_t offset
 );
-static Core::Diagnostic invalid_value(
+Core::Diagnostic invalid_value(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -90,49 +90,49 @@ static Core::Diagnostic invalid_value(
     uint64_t offset,
     bool is_signature
 );
-static Core::Diagnostic excursion_anomaly(
+Core::Diagnostic excursion_anomaly(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
     uint64_t address
 );
-static Core::Diagnostic address_out_of_range(
+Core::Diagnostic address_out_of_range(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
     uint64_t address
 );
-static Core::Diagnostic abnormal_length(
+Core::Diagnostic abnormal_length(
     Core::Severity severity,
     const std::string& description,
     uint32_t actual,
     uint64_t offset
 );
-static Core::Diagnostic structure_missing(
+Core::Diagnostic structure_missing(
     Core::Severity severity,
     const std::string& description
 );
-static Core::Diagnostic detailed_information(
+Core::Diagnostic detailed_information(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
     const std::string& info1,
     uint64_t offset
 );
-static Core::Diagnostic regular_issue(
+Core::Diagnostic regular_issue(
     Core::Severity severity,
     const std::string& description,
     const std::string& info1,
     uint64_t offset
 );
-static Core::Diagnostic indexed_issue(
+Core::Diagnostic indexed_issue(
     Core::Severity severity,
     const std::string& description,
     size_t index,
     const std::string& info1,
     uint64_t offset
 );
-static Core::Diagnostic relationship_issue(
+Core::Diagnostic relationship_issue(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -141,7 +141,7 @@ static Core::Diagnostic relationship_issue(
     const std::string& info1,
     uint64_t offset
 );
-static Core::Diagnostic additional_information(
+Core::Diagnostic additional_information(
     const std::string& info2,
     uint64_t offset
 );

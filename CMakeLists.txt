@@ -5,72 +5,101 @@ project(PE_Cartographer
     LANGUAGES CXX  
 )
 
+# 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
+# 设置输出路径
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# 如果是Windows平台，启用UNICODE
 if(WIN32)
     add_definitions(-DUNICODE -D_UNICODE)
     set(CMAKE_MSVC_RUNTIME_LIBRARY 
     "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-# 设置输出目录（可选）
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# 核心库的头文件目录
+include_directories(core/include)
 
-# ============ 核心控制台程序 ============
-add_executable(pe_core
-    # 核心分析文件
-    main.cpp
-    database.cpp
-    functool.cpp
-    peanalyzer.cpp
-    shellextension.cpp
-    signal analyzer.cpp
+# 创建核心静态库
+file(GLOB CORE_SOURCES
+    "core/src/*.cpp"
 )
 
-# 设置控制台程序属性
-set_target_properties(pe_core PROPERTIES
-    OUTPUT_NAME "pe_analysis_core"  # 输出文件名
-    WIN32_EXECUTABLE FALSE          # 这是控制台程序
+# 排除可能不需要的文件（根据实际情况调整）
+list(REMOVE_ITEM CORE_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/src/api.cpp"  # 如果api.cpp是导出的实现，可能需要保留
 )
 
-# ============ GUI窗口程序 ============
-add_executable(pe_gui
-    # GUI界面文件
-    guimain.cpp
-    window.cpp
-    wrapper.cpp
-)
+add_library(core STATIC ${CORE_SOURCES})
 
-# 设置GUI程序属性
-set_target_properties(pe_gui PROPERTIES
-    OUTPUT_NAME "pe_analysis_gui"   # 输出文件名
-    WIN32_EXECUTABLE TRUE           # 这是窗口程序（无控制台）
-)
+# 设置核心库的编译选项
+target_compile_definitions(core PRIVATE CORE_LIBRARY)
 
-# Windows特定设置
+# 如果是Windows，可能需要链接一些系统库
 if(WIN32)
-    # GUI程序需要链接Windows库
-    target_link_libraries(pe_gui
-        user32      # 用户界面服务
-        gdi32       # 图形设备接口
-        shell32     # Shell API
+    target_link_libraries(core PRIVATE 
+        ws2_32      # Windows Socket
+        dbghelp     # 调试帮助库，可能用于diagnostic_helpers.cpp
     )
-    
-    # 可以设置窗口程序入口（可选）
-    # set_target_properties(pe_gui PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
 endif()
 
-# ============ 可选：设置编译选项 ============
-if(MSVC)  # Visual Studio编译器
-    # 禁用某些警告
-    target_compile_options(pe_core PRIVATE /W3)
-    target_compile_options(pe_gui PRIVATE /W3)
-    
-    # 调试信息
-    target_compile_options(pe_core PRIVATE /Zi)
-    target_compile_options(pe_gui PRIVATE /Zi)
-    
-    # 优化（Release配置）
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MT")
+# 创建GUI可执行文件
+file(GLOB GUI_SOURCES
+    "gui/src/*.cpp"
+)
+
+# 添加资源文件（如果是Windows）
+if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Resource.rc")
+    set(GUI_SOURCES ${GUI_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/Resource.rc)
+endif()
+
+add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES})
+
+# 链接核心库和必要的系统库
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    core
+)
+
+# 如果是Windows，链接必要的GUI库
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE 
+        comctl32     # 通用控件库
+        uxtheme      # 主题支持
+        dwmapi       # DWM支持
+        shell32      # Shell扩展支持
+        gdi32        # GDI绘图
+        user32       # 用户界面
+    )
+endif()
+
+# 设置安装规则
+install(TARGETS ${PROJECT_NAME} core
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+# 安装头文件
+install(DIRECTORY core/include/ 
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
+# 复制README.md到安装目录
+install(FILES README.md DESTINATION .)
+
+# 可选：启用编译器警告
+if(MSVC)
+    # MSVC编译器警告
+    target_compile_options(core PRIVATE /W4 /WX)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+else()
+    # GCC/Clang编译器警告
+    target_compile_options(core PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()

@@ -5,7 +5,7 @@
 /* 懒人模板 */
 // 创建字段相关的诊断，重载VALUE_MISMATCH
 // 【{severity}】{description} -> {field_name}字段异常，期望/阈值/参考值：{expected}，实际值：{actual}
-static Core::Diagnostic value_mismatch(
+Core::Diagnostic value_mismatch(
 	Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -27,7 +27,7 @@ static Core::Diagnostic value_mismatch(
 
 // 创建字段相关的诊断，重载INVALID_VALUE
 // 【{severity}】{description} -> {field_name}字段值无效，实际值：{actual}
-static Core::Diagnostic invalid_value(
+Core::Diagnostic invalid_value(
     Core::Severity severity,
     const std::string& field,
         const std::string& description,
@@ -48,7 +48,7 @@ static Core::Diagnostic invalid_value(
 
 // 创建地址相关的诊断
 // 【{severity}】{description} -> {field_name}所示地址异常，值：0x{address}
-static Core::Diagnostic excursion_anomaly(
+Core::Diagnostic excursion_anomaly(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -66,7 +66,7 @@ static Core::Diagnostic excursion_anomaly(
     
 // 创建地址相关的诊断
 // 【{severity}】{description} -> {field_name}地址超过文件/内存范围，值：0x{address}
-static Core::Diagnostic address_out_of_range(
+Core::Diagnostic address_out_of_range(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -84,7 +84,7 @@ static Core::Diagnostic address_out_of_range(
 
 // 创建结构相关的诊断
 // 【{severity}】{description}长度异常，实际长度：{actual}字节
-static Core::Diagnostic abnormal_length(
+Core::Diagnostic abnormal_length(
     Core::Severity severity,
     const std::string& description,
     uint32_t actual,
@@ -102,7 +102,7 @@ static Core::Diagnostic abnormal_length(
 
 // 创建结构相关的诊断
 // 【{severity}】{description}区域缺失
-static Core::Diagnostic structure_missing(
+Core::Diagnostic structure_missing(
     Core::Severity severity,
     const std::string& description
 ) {
@@ -116,7 +116,7 @@ static Core::Diagnostic structure_missing(
 
 // 创建字段信息相关的诊断
 // 【{severity}】{description} -> {field_name}：{info1}
-static Core::Diagnostic detailed_information(
+Core::Diagnostic detailed_information(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -136,7 +136,7 @@ static Core::Diagnostic detailed_information(
 
 // 创建结构地址相关的诊断
 // 【{severity}】{description}{info1}
-static Core::Diagnostic regular_issue(
+Core::Diagnostic regular_issue(
     Core::Severity severity,
     const std::string& description,
     const std::string& info1,
@@ -154,7 +154,7 @@ static Core::Diagnostic regular_issue(
 
 // 创建结构地址相关的诊断
 // 【{severity}】{description}[{index}]{info1}
-static Core::Diagnostic indexed_issue(
+Core::Diagnostic indexed_issue(
     Core::Severity severity,
     const std::string& description,
     size_t index,
@@ -174,7 +174,7 @@ static Core::Diagnostic indexed_issue(
 
 // 创建关系相关的诊断
 // 【{severity}】{description} -> {field_name}与{compared_description} -> {compared_field_name}：{info1}
-static Core::Diagnostic relationship_issue(
+Core::Diagnostic relationship_issue(
     Core::Severity severity,
     const std::string& field,
     const std::string& description,
@@ -198,7 +198,7 @@ static Core::Diagnostic relationship_issue(
 
 // 创建额外信息相关的诊断
 // {info2}
-static Core::Diagnostic additional_information(
+Core::Diagnostic additional_information(
     const std::string& info2,
     uint64_t offset
 ) {
