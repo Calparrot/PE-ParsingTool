@@ -4,7 +4,7 @@
 
 #include "api.h"
 
-bool PEApi::readfile(std::string filepath) {
+bool FundamentalAnalysis::readfile(std::string filepath) {
     myfile.open(filepath.c_str(), std::ios::binary);
     if (!myfile.is_open()) {
         return false;
@@ -17,23 +17,23 @@ bool PEApi::readfile(std::string filepath) {
     }
 }
 
-PEApi::error_code PEApi::analysis_file(const std::string input_filepath) {
+FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::string input_filepath) {
     if (readfile(input_filepath)) {
         PEanalyzer target(myfile);
-        target.dosheader_analysis();
-        target.dosstub_analysis();
-        target.file_header_analysis();
-        target.optional_header_analysis();
+        target.dosheader_analysis(data_container);
+        target.dosstub_analysis(data_container);
+        target.file_header_analysis(data_container);
+        target.optional_header_analysis(data_container);
 
-        return SUCCESS;
+        return error_code::SUCCESS;
     }
     else {
         std::ifstream test(input_filepath);
         if (!test.good()) {
-            return FILE_NOT_FOUND;
+            return error_code::FILE_NOT_FOUND;
         }
         test.close();
-        return FILE_ACCESS_DENIED;
+        return error_code::FILE_ACCESS_DENIED;
     }
 }
 

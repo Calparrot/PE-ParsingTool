@@ -136,7 +136,7 @@
     <ClCompile Include="shellextension.cpp" />
     <ClCompile Include="siganalyzer.cpp" />
     <ClCompile Include="window.cpp" />
-    <ClCompile Include="wrapper.cpp" />
+    <ClCompile Include="translator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api.h" />
@@ -160,8 +160,6 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons\icon16x16.ico" />
-    <Image Include="icons\icon258x258.ico" />
     <Image Include="icons\icon32x32.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

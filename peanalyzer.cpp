@@ -4,14 +4,11 @@
 #include <cstring>
 #include <algorithm>
 
-#include "peanalyzer.h"
 #include "database.h"
-#include "diagnostic_codes.h"
 
 constexpr int REASONABLE_MAX_SECTIONS = 128;
 
 SharedStructure shared_structure{};
-extern structuresults data_container;
 
 /*
 	interval_relation_judgment ：两个区间关系判断函数
@@ -170,7 +167,7 @@ void PEanalyzer::magic_joint_judge() {
 }
 
 /* SectionHeader分析用函数 */
-void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
+void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic, structuresults& data_container) {
 	if (data_container.section_attributes.empty()) {
 		return;
 	}
@@ -183,7 +180,7 @@ void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic) {
 	data_container.section_attributes.back().cnt_uninitialized_data_ = ((input_characteristic & 0x00000080) != 0);
 }
 
-void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
+void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container) {
 	std::string msg = "";
 	uint64_t characteristics_offset = 
 		static_cast<uint64_t>(inputresult.file_offset_) + 0x28 + static_cast<uint64_t>(num) * 40 + 36; // Characteristics字段偏移，其中num值被限制在128内，不会导致溢出
@@ -323,7 +320,7 @@ int PEanalyzer::section_name_match(const uint8_t input_name[8]) {
 	return -1;
 }
 
-void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num) {
+void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container) {
 	/*
 	[0] bool mem_execute_;               // 内存可执行
     [1] bool mem_read_;                  // 内存可读
@@ -464,7 +461,7 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 }
 
 /* public函数 */
-bool PEanalyzer::dosheader_analysis() {
+bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 	clear_buffer();
 	Diaresults result;
 	pedata_.seekg(0, std::ios::beg);
@@ -495,7 +492,7 @@ bool PEanalyzer::dosheader_analysis() {
 	result.file_offset_ = 0;
 	result.data_size_ = 64;
 
-	std::memcpy(&data_container.dosheader, mulbuffer, sizeof(IMAGE_DOS_HEADER));
+	std::memcpy(&data_container.dosheader, mulbuffer, sizeof(DOSHeader));
 	shared_structure.peheader_offset_ = (mulbuffer[60] << 24) | (mulbuffer[61] << 16) | (mulbuffer[62] << 8) | mulbuffer[63];
 	// 异常：不合法的MZ签名
 	if (mulbuffer[0] != 'M' && mulbuffer[1] != 'Z') {
@@ -517,7 +514,7 @@ bool PEanalyzer::dosheader_analysis() {
 	return true;
 }
 
-bool PEanalyzer::dosstub_analysis() {
+bool PEanalyzer::dosstub_analysis(structuresults& data_container) {
 	clear_buffer();
 	Diaresults result;
 	uint8_t reading_mode = 0; /* 读取方式 0-正常读取，1-分段读取，2-不读取 */
@@ -686,7 +683,7 @@ bool PEanalyzer::dosstub_analysis() {
 	return true;
 }
 
-bool PEanalyzer::file_header_analysis() {
+bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	clear_buffer();
 	Diaresults result;
 
@@ -719,7 +716,7 @@ bool PEanalyzer::file_header_analysis() {
 
 	read_offset += 24;
 
-	std::memcpy(&data_container.fileheader, mulbuffer, sizeof(IMAGE_FILE_HEADER));
+	std::memcpy(&data_container.fileheader, mulbuffer, sizeof(FileHeader));
 	shared_structure.machine_ = data_container.fileheader.machine;
 	shared_structure.number_of_sections_ = data_container.fileheader.numberofsections;
 	shared_structure.size_of_optionalheader_ = data_container.fileheader.sizeofoptionalheader;
@@ -853,7 +850,7 @@ bool PEanalyzer::file_header_analysis() {
 	return true;
 }
 
-bool PEanalyzer::optional_header_analysis() {
+bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 	Diaresults result;
 	int headerlength = 222;
 
@@ -872,8 +869,8 @@ bool PEanalyzer::optional_header_analysis() {
 		if (read_offset >= 0 && read_offset < 5600) {
 			std::memcpy(&data_container.optionalheader32,
 				mulbuffer + read_offset,
-				sizeof(IMAGE_OPTIONAL_HEADER32));
-			read_offset = read_offset + sizeof(IMAGE_OPTIONAL_HEADER32) - 2;
+				sizeof(OptionalHeader32));
+			read_offset = read_offset + sizeof(OptionalHeader32) - 2;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheader32.AddressOfEntryPoint;
@@ -924,8 +921,8 @@ bool PEanalyzer::optional_header_analysis() {
 		if (read_offset >= 0 && read_offset < 5600) {
 			std::memcpy(&data_container.optionalheader64,
 				mulbuffer + read_offset,
-				sizeof(IMAGE_OPTIONAL_HEADER64));
-			read_offset = read_offset + sizeof(IMAGE_OPTIONAL_HEADER64) - 2;
+				sizeof(OptionalHeader64));
+			read_offset = read_offset + sizeof(OptionalHeader64) - 2;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheader64.AddressOfEntryPoint;
@@ -968,8 +965,8 @@ bool PEanalyzer::optional_header_analysis() {
 		if (read_offset >= 0 && read_offset < 5600) {
 			std::memcpy(&data_container.optionalheaderrom,
 				mulbuffer + read_offset,
-				sizeof(IMAGE_ROM_OPTIONAL_HEADER));
-			read_offset += sizeof(IMAGE_ROM_OPTIONAL_HEADER);
+				sizeof(ROM_OptionalHeader));
+			read_offset += sizeof(ROM_OptionalHeader);
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheaderrom.AddressOfEntryPoint;
@@ -1356,7 +1353,7 @@ bool PEanalyzer::optional_header_analysis() {
 	【临时】m_section_range           ：内存区间记录对象
 	【临时】s_section_range           ：存储区间记录对象
 */
-bool PEanalyzer::section_headers_analysis() {
+bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 	Diaresults result;
 	int i = 0;
 
@@ -1369,12 +1366,12 @@ bool PEanalyzer::section_headers_analysis() {
 
 	/* 第一层大循环 基于宽松条件首次扫描节区数量（shared_structure.detected_section_count_） */ 
 	for (; i < REASONABLE_MAX_SECTIONS; i++) {
-		IMAGE_SECTION_HEADER current_section = {};
+		SectionHeader current_section = {};
 
 		if (read_offset >= 0 && read_offset < 5600) {
 			std::memcpy(&current_section,
 				mulbuffer + read_offset,
-				sizeof(IMAGE_SECTION_HEADER));
+				sizeof(SectionHeader));
 		}
 		else {
 			try {
@@ -1392,12 +1389,12 @@ bool PEanalyzer::section_headers_analysis() {
 			}
 		}
 
-		if (is_this_section_valid(current_section) == 0) {
-			read_offset += sizeof(IMAGE_SECTION_HEADER);
+		if (is_this_section_valid(current_section, shared_structure) == 0) {
+			read_offset += sizeof(SectionHeader);
 			shared_structure.detected_section_count_ += 1;
 			continue;
 		}
-		section_error_status_code = is_this_section_valid(current_section);
+		section_error_status_code = is_this_section_valid(current_section, shared_structure);
 		break;
 	}
 
@@ -1439,12 +1436,12 @@ bool PEanalyzer::section_headers_analysis() {
 			data_container.max_number_of_possible_sections = j;
 			break;
 		}
-		IMAGE_SECTION_HEADER current_section = {};
+		SectionHeader current_section = {};
 
 		if (read_offset >= 0 && read_offset < 5600) {
 			std::memcpy(&current_section,
 				mulbuffer + read_offset,
-				sizeof(IMAGE_SECTION_HEADER));
+				sizeof(SectionHeader));
 		}
 		else {
 			try {
@@ -1464,11 +1461,11 @@ bool PEanalyzer::section_headers_analysis() {
 
 		SectionImformation section_imformation_element;
 		data_container.section_attributes.push_back(section_imformation_element); // 创建记录节区属性的结构体
-		section_characteristic_judge(current_section.Characteristics); // 根据characteristic判断节区展现的实际属性并存入结构体
-		section_name_check(current_section.Name, current_section.Characteristics, result, j); // 检测Name字段，如果为常见值则标记可能属性，并与上述属性判断结果联合判断
+		section_characteristic_judge(current_section.Characteristics, data_container); // 根据characteristic判断节区展现的实际属性并存入结构体
+		section_name_check(current_section.Name, current_section.Characteristics, result, j, data_container); // 检测Name字段，如果为常见值则标记可能属性，并与上述属性判断结果联合判断
 		// 如果Name非常见值，则判断characteristic本身属性组合是否有问题
 		if (!data_container.section_attributes[j].known_combination_) {
-			section_characteristic_check(current_section.Characteristics, result, j);
+			section_characteristic_check(current_section.Characteristics, result, j, data_container);
 		}
 
 		// 内存地址区间记录
@@ -1668,7 +1665,7 @@ bool PEanalyzer::section_headers_analysis() {
 		// PointerToRawData = 0（非特殊情况）
 		// 指向文件末尾之后（但SizeOfRawData=0）
 
-		read_offset += sizeof(IMAGE_SECTION_HEADER);
+		read_offset += sizeof(SectionHeader);
 	}
 
 	return true;

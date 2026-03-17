@@ -8,6 +8,7 @@
 #include <cctype>
 
 #include "diagnostic_codes.h"
+#include "peanalyzer.h"
 
 /*
 结构体说明
@@ -145,7 +146,7 @@ struct CrashReport {
 };
 
 #pragma pack(push, 1)
-struct IMAGE_DOS_HEADER {
+struct DOSHeader {
     uint16_t e_magic;    // "MZ" 魔术字 (0x5A4D)
     uint16_t e_cblp;     // 最后页字节数
     uint16_t e_cp;       // 文件页数
@@ -167,7 +168,7 @@ struct IMAGE_DOS_HEADER {
     uint32_t e_lfanew;   // PE头偏移地址（关键字段！）
 };
 
-struct IMAGE_FILE_HEADER {
+struct FileHeader {
 	uint32_t signature;            // "PE\0\0" 魔术字 (0x00004550)
     uint16_t machine;              // 目标CPU架构（如0x014C=Intel 386）
     uint16_t numberofsections;     // 节区数量
@@ -178,12 +179,12 @@ struct IMAGE_FILE_HEADER {
     uint16_t characteristics;      // 文件属性（如可执行/DLL）
 };
 
-struct IMAGE_DATA_DIRECTORY {
+struct DataDirectory {
     uint32_t VirtualAddress;       // 数据的 RVA（相对虚拟地址）
     uint32_t Size;                 // 数据的大小（字节数）
 };
 
-struct IMAGE_OPTIONAL_HEADER32 {
+struct OptionalHeader32 {
     uint16_t Magic;                       // 标识：0x10B=32位，0x20B=64位
     uint8_t MajorLinkerVersion;           // 链接器主版本号
     uint8_t MinorLinkerVersion;           // 链接器次版本号
@@ -215,10 +216,10 @@ struct IMAGE_OPTIONAL_HEADER32 {
     uint32_t SizeOfHeapCommit;            // 初始提交的堆大小
     uint32_t LoaderFlags;                 // 保留（已废弃）
     uint32_t NumberOfRvaAndSizes;         // 数据目录项数（通常16）
-    IMAGE_DATA_DIRECTORY DataDirectory[16]; // 数据目录表
+    DataDirectory DataDirectory[16];      // 数据目录表
 };
 
-struct IMAGE_OPTIONAL_HEADER64 {
+struct OptionalHeader64 {
     uint16_t Magic;                       // 标识：0x20B=64位
     uint8_t MajorLinkerVersion;           // 链接器主版本号
     uint8_t MinorLinkerVersion;           // 链接器次版本号
@@ -249,10 +250,10 @@ struct IMAGE_OPTIONAL_HEADER64 {
     uint64_t SizeOfHeapCommit;            // 64位：扩展为64位
     uint32_t LoaderFlags;                 // 保留（已废弃）
     uint32_t NumberOfRvaAndSizes;         // 数据目录项数（通常16）
-    IMAGE_DATA_DIRECTORY DataDirectory[16]; // 数据目录表
+    DataDirectory DataDirectory[16];      // 数据目录表
 };
 
-struct IMAGE_ROM_OPTIONAL_HEADER {
+struct ROM_OptionalHeader {
     uint8_t Magic;                        // 0x107 - ROM 魔数
     uint16_t MajorLinkerVersion;          // 链接器主版本号
     uint16_t MinorLinkerVersion;          // 链接器次版本号
@@ -269,7 +270,7 @@ struct IMAGE_ROM_OPTIONAL_HEADER {
     uint32_t GpValue;                     // 全局指针值
 };
 
-struct IMAGE_SECTION_HEADER {
+struct SectionHeader {
     uint8_t  Name[8];                     // 节区名称（如 ".idata"）
     uint32_t VirtualSize;                 // 内存中节区实际大小（可能未对齐）
     uint32_t VirtualAddress;              // 内存中的 RVA（关键！用于计算）
@@ -307,19 +308,19 @@ public:
     std::vector<SectionRange> storage_interval_table;
 
     // 原始文件数据
-    IMAGE_DOS_HEADER dosheader{};
+    DOSHeader dosheader{};
     std::vector<uint8_t> dosstub;
-    IMAGE_FILE_HEADER fileheader{};
-    IMAGE_OPTIONAL_HEADER32 optionalheader32{};
-    IMAGE_OPTIONAL_HEADER64 optionalheader64{};
-    IMAGE_ROM_OPTIONAL_HEADER optionalheaderrom{};
-    std::vector<IMAGE_SECTION_HEADER> sectionheaders;
+    FileHeader fileheader{};
+    OptionalHeader32 optionalheader32{};
+    OptionalHeader64 optionalheader64{};
+    ROM_OptionalHeader optionalheaderrom{};
+    std::vector<SectionHeader> sectionheaders;
 
     // 崩溃报告（文件加载失败等原因未能成功分析）
 	CrashReport crashreport{};
     void crash_imformation_set(error_category code, const std::string& msg = "");
 };
 
-int is_this_section_valid(const IMAGE_SECTION_HEADER& header); 
+int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure);
 
 #endif

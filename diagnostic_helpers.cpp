@@ -1,6 +1,7 @@
-#include "diagnostic_codes.h"
 #include <sstream>
 #include <string>
+
+#include "diagnostic_codes.h"
 
 /* 懒人模板 */
 // 创建字段相关的诊断，重载VALUE_MISMATCH

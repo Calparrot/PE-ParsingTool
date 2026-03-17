@@ -1,9 +1,12 @@
 #ifndef PEANALYZER_H
 #define PEANALYZER_H
+
 #include <vector>
 #include <cstdint>
 
-#include "database.h"
+/* 前置声明 */
+class structuresults;
+struct Diaresults;
 
 /*
 结构体说明
@@ -111,20 +114,19 @@ private:
     void magic_check(uint16_t inputmagic, Diaresults& inputresult, int& bitness);
     void magic_joint_check();
     void magic_joint_judge(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
-    void section_characteristic_judge(uint32_t input_characteristic);
-    void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num);
+    void section_characteristic_judge(uint32_t input_characteristic, structuresults& data_container);
+    void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container);
 	int section_name_match(const uint8_t input_name[8]);
-    void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num);
+    void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container);
 
 public:
-    /* 调用时一定要按顺序调用 */
-    bool dosheader_analysis();
-    bool dosstub_analysis();
-    bool file_header_analysis();
-    bool optional_header_analysis();
-    bool section_headers_analysis();
+    /* 调用时一定要按顺序调用，用户不可管理，由API统一封装 */
+    bool dosheader_analysis(structuresults& data_container);
+    bool dosstub_analysis(structuresults& data_container);
+    bool file_header_analysis(structuresults& data_container);
+    bool optional_header_analysis(structuresults& data_container);
+    bool section_headers_analysis(structuresults& data_container);
 
     PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
 };
-
-#endif
+#endif // ！PEANALYZER_H

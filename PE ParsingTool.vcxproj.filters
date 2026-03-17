@@ -44,7 +44,7 @@
     <ClCompile Include="window.cpp">
       <Filter>gui\src</Filter>
     </ClCompile>
-    <ClCompile Include="wrapper.cpp">
+    <ClCompile Include="translator.cpp">
       <Filter>gui\src</Filter>
     </ClCompile>
     <ClCompile Include="diagnostic_helpers.cpp">
@@ -84,8 +84,6 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons\icon16x16.ico" />
     <Image Include="icons\icon32x32.ico" />
-    <Image Include="icons\icon258x258.ico" />
   </ItemGroup>
 </Project>
