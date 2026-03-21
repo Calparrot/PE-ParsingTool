@@ -11,13 +11,19 @@
 
 #include "resource.h"
 #include "api.h"
+#include "translator.h"
+#include "custom_message.h"
 
 /* 全局变量 */
 RECT client_rect;                 // 客户区窗口大小
 wchar_t szFile[MAX_PATH] = { 0 }; // 接收文件路径的缓冲区
+std::wstring source_file_data;    // 源文件数据
+static HWND g_navigation_window = NULL;
+static HWND g_message_window = NULL;
+static HWND g_data_window = NULL;
 
 /* 字体设置 */
-HFONT Consolas = CreateFont(
+HFONT consolas = CreateFont(
     16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
     CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
@@ -39,18 +45,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     RegisterAllWindowClasses(hInstance);
 
     HWND main_window = CreateWindowEx(
-        0,
-        L"MainClass",
-        L"PE_Cartographer", 
+        0, L"MainClass", L"PE_Cartographer", 
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, 
-        CW_USEDEFAULT, 
-        1024,
-        640,
-        NULL,  
-        NULL,
-        hInstance,
-        NULL
+        CW_USEDEFAULT,  CW_USEDEFAULT, 1024, 640,
+        NULL, NULL, hInstance, NULL
     );
 
     if (main_window == NULL){
@@ -71,10 +69,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 /* 回调函数实现 */
 // 主窗口
 LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
-    static HWND g_navigation_window = NULL;
-    static HWND g_message_window = NULL;
-    static HWND g_data_window = NULL;
-
     GetClientRect(hWnd, &client_rect);
 
 	int client_width = client_rect.right;   // 客户区域总宽度
@@ -87,21 +81,16 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     int wmId = LOWORD(wParam);
 
     switch (uMsg) {
-    case WM_CREATE:
+    case WM_CREATE: {
         x_position = 8;
         y_position = 8;
         child_width = (client_width - 16) / 4;
         child_height = (client_height - 16) * 4 / 7;
         g_navigation_window = CreateWindowEx(
-            0,
-            L"NavigationBar",
-            NULL,
+            0, L"NavigationBar", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE,
             x_position, y_position, child_width, child_height,
-            hWnd,
-            NULL,
-            GetModuleHandle(NULL),
-            NULL
+            hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
         x_position = 8;
@@ -109,15 +98,10 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         child_width = (client_width - 16) / 4;
         child_height = client_height - child_height - 20;
         g_message_window = CreateWindowEx(
-            0,
-            L"DisplayBox",
-            NULL,
+            0, L"InformationBar", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE | WS_VSCROLL,
             x_position, y_position, child_width, child_height,
-            hWnd,
-            NULL,
-            GetModuleHandle(NULL),
-            NULL
+            hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
         x_position = child_width + 12;
@@ -125,21 +109,17 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         child_width = client_width - child_width - 20;
         child_height = client_height - 16;
         g_data_window = CreateWindowEx(
-            0,
-            L"DisplayBox",
-            NULL,
+            0, L"DisplayBox", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE | WS_VSCROLL,
             x_position, y_position, child_width, child_height,
-            hWnd,
-            NULL,
-            GetModuleHandle(NULL),
-            NULL
+            hWnd, NULL, GetModuleHandle(NULL), NULL
         );
-        break;
 
-    case WM_COMMAND:
-        switch (wmId){
-        case ID_40001: // 菜单栏：文件 -> 打开
+        break;
+    }  
+    case WM_COMMAND:{
+        switch (wmId) {
+        case ID_40001:{ // 菜单栏：文件 -> 打开
             OnFileOpen(hWnd);
             if (szFile[0] != L'\0') {
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
@@ -147,26 +127,29 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
                 FundamentalAnalysis object;
                 object.analysis_file(file_path);
+                source_file_data = generate_file_display(object.data_container);
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 0, 0);
             }
             break;
-
-        case ID_40002: // 菜单栏：文件 -> 关闭
+        }
+        case ID_40002:{ // 菜单栏：文件 -> 关闭
             DestroyWindow(hWnd);
             break;
-
-        case ID_40003: // 菜单栏：帮助 -> 关于
+        }
+        case ID_40003:{ // 菜单栏：帮助 -> 关于
             MessageBox(hWnd, L"还没开始写这个功能。", L"关于", MB_OK);
         }
-        
+        }
         break;
-
-    case WM_CLOSE:
+    }
+    case WM_CLOSE: {
         DestroyWindow(hWnd);
         return 0;
-
-    case WM_DESTROY:
+    }
+    case WM_DESTROY: {
         PostQuitMessage(0);
         return 0;
+    }
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -181,90 +164,64 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
     HWND hText_e = NULL; // "IMAGE_OPTIONAL_HEADER"，ID-1005
 
     switch (msg) {
-    case WM_CREATE:
+    case WM_CREATE: {
         hText_a = CreateWindowEx(
-            WS_EX_TOPMOST | WS_EX_CLIENTEDGE,
-            L"STATIC",
-            L"Source File Information",
-            WS_CHILD | WS_VISIBLE | SS_NOTIFY,
+            WS_EX_TOPMOST, L"STATIC", L" Source File Information",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
             0, 0, (client_rect.right - 16) / 4, 25,
-            hWnd,
-            (HMENU)1001,
-            NULL,
-            NULL
+            hWnd, (HMENU)1001, NULL, NULL
         );
+        SendMessage(hText_a, WM_SETFONT, (WPARAM)consolas, TRUE);
 
         hText_b = CreateWindowEx(
-            WS_EX_TOPMOST,
-            L"STATIC",
-            L"IMAGE_DOS_HEADER",
-            WS_CHILD | WS_VISIBLE | SS_NOTIFY,
+            WS_EX_TOPMOST, L"STATIC", L" IMAGE_DOS_HEADER",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
             0, 30, (client_rect.right - 16) / 4, 25,
-            hWnd,
-            (HMENU)1002,
-            NULL,
-            NULL
+            hWnd, (HMENU)1002, NULL, NULL
         );
-        SendMessage(hWnd, WM_SETFONT, (WPARAM)Consolas, TRUE);
+        SendMessage(hText_b, WM_SETFONT, (WPARAM)consolas, TRUE);
 
         hText_c = CreateWindowEx(
-            WS_EX_TOPMOST,
-            L"STATIC",
-            L"DOS Stub Program",
-            WS_CHILD | WS_VISIBLE | SS_NOTIFY,
+            WS_EX_TOPMOST, L"STATIC", L" DOS Stub Program",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
             0, 55, (client_rect.right - 16) / 4, 25,
-            hWnd,
-            (HMENU)1003,
-            NULL,
-            NULL
+            hWnd, (HMENU)1003, NULL, NULL
         );
+        SendMessage(hText_c, WM_SETFONT, (WPARAM)consolas, TRUE);
 
         hText_d = CreateWindowEx(
-            WS_EX_TOPMOST,
-            L"STATIC",
-            L"IMAGE_FILE_HEADER",
-            WS_CHILD | WS_VISIBLE | SS_NOTIFY,
+            WS_EX_TOPMOST, L"STATIC", L" IMAGE_FILE_HEADER",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
             0, 80, (client_rect.right - 16) / 4, 25,
-            hWnd,
-            (HMENU)1004,
-            NULL,
-            NULL
+            hWnd, (HMENU)1004, NULL, NULL
         );
+        SendMessage(hText_d, WM_SETFONT, (WPARAM)consolas, TRUE);
 
         hText_e = CreateWindowEx(
-            WS_EX_TOPMOST,
-            L"STATIC",
-            L"IMAGE_OPTIONAL_HEADER",
-            WS_CHILD | WS_VISIBLE | SS_NOTIFY,
-            0, 80, (client_rect.right - 16) / 4, 25,
-            hWnd,
-            (HMENU)1005,
-            NULL,
-            NULL
+            WS_EX_TOPMOST, L"STATIC", L" IMAGE_OPTIONAL_HEADER",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
+            0, 105, (client_rect.right - 16) / 4, 25,
+            hWnd, (HMENU)1005, NULL, NULL
         );
-        break;
+        SendMessage(hText_e, WM_SETFONT, (WPARAM)consolas, TRUE);
 
-    case WM_LBUTTONDBLCLK:
+        break;
+    }
+    case WM_LBUTTONDBLCLK: {
         SendMessage(GetParent(hWnd), WM_COMMAND,
             MAKEWPARAM(1001, STN_DBLCLK),
             (LPARAM)hWnd);
         return 0;
-
-    case WM_COMMAND:
+    }
+    case WM_COMMAND: {
         WORD wID = LOWORD(wp);
 
-        if (HIWORD(wp) == STN_DBLCLK){
+        if (HIWORD(wp) == STN_DBLCLK) {
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-                /* 测试，记得删 */
-                MessageBox(hWnd, L"1", L"1", MB_OK);
-
 
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                /* 测试，记得删 */
-                MessageBox(hWnd, L"2", L"2", MB_OK);
-
 
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
@@ -278,6 +235,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
                 break;
             }
         }
+    }      
     }
 
 	return DefWindowProc(hWnd, msg, wp, lp);
@@ -291,6 +249,57 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 // 右
 LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+	// std::wstring displaytext = L"点击菜单栏 -> 文件 -> 打开，\n选择文件，双击左侧导航栏项目以显示详细信息";
+
+    switch (msg) {
+    case WM_NCCREATE: {
+        std::wstring* display_text = new std::wstring(L"点击菜单栏 -> 文件 -> 打开，\n选择文件，双击左侧导航栏项目以显示详细信息");
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)display_text);
+        return DefWindowProc(hWnd, msg, wp, lp);
+    }
+    case WM_PAINT: {
+        std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!display_text) {
+            break;
+        }
+
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+
+        SetTextColor(hdc, RGB(0, 0, 255));
+        SetBkMode(hdc, TRANSPARENT);
+
+        HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
+        SetTextColor(hdc, RGB(0, 0, 0));
+        SetBkMode(hdc, TRANSPARENT);
+
+        RECT rect;
+        GetClientRect(hWnd, &rect);
+        rect.left = 10;
+        rect.top = 10;
+
+        DrawText(hdc, display_text->c_str(), -1, &rect, DT_LEFT | DT_WORDBREAK);
+
+        EndPaint(hWnd, &ps);
+        break;
+    }
+
+    case WM_DATA_INTERFACE_REFRESH: {
+        std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (display_text) {
+            *display_text = source_file_data.empty() ? L"没有数据可显示。" : source_file_data;
+            InvalidateRect(hWnd, NULL, TRUE);
+        }
+
+        return 0;
+    }
+
+    case WM_DESTROY:
+        std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        delete display_text;
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+        return 0;
+    }
 
     return DefWindowProc(hWnd, msg, wp, lp);
 }
@@ -326,7 +335,7 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_main.hInstance = hInstance;
     wc_main.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
     wc_main.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc_main.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc_main.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc_main.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
     wc_main.lpszClassName = L"MainClass";
 
@@ -340,11 +349,11 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_navigation.style = CS_DBLCLKS;
     wc_navigation.lpfnWndProc = NavigationWindowProc;
     wc_navigation.cbClsExtra = 0;
-    wc_navigation.cbWndExtra = 0;
+    wc_navigation.cbWndExtra = sizeof(std::wstring*);
     wc_navigation.hInstance = hInstance;
     wc_navigation.hIcon = NULL;
     wc_navigation.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc_navigation.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc_navigation.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc_navigation.lpszMenuName = NULL;
     wc_navigation.lpszClassName = L"NavigationBar";
 
@@ -358,11 +367,11 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_message.style = 0;
     wc_message.lpfnWndProc = MessageWindowProc;
     wc_message.cbClsExtra = 0;
-    wc_message.cbWndExtra = 0;
+    wc_message.cbWndExtra = sizeof(std::wstring*);
     wc_message.hInstance = hInstance;
     wc_message.hIcon = NULL;
     wc_message.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc_message.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc_message.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc_message.lpszMenuName = NULL;
     wc_message.lpszClassName = L"InformationBar";
 
@@ -376,11 +385,11 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_display_box.style = 0;
     wc_display_box.lpfnWndProc = DisplayWindowProc;
     wc_display_box.cbClsExtra = 0;
-    wc_display_box.cbWndExtra = 0;
+    wc_display_box.cbWndExtra = sizeof(std::wstring*);
     wc_display_box.hInstance = hInstance;
     wc_display_box.hIcon = NULL;
     wc_display_box.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc_display_box.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc_display_box.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc_display_box.lpszMenuName = NULL;
     wc_display_box.lpszClassName = L"DisplayBox";
 

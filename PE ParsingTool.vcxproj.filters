@@ -18,6 +18,9 @@
     <Filter Include="gui\src">
       <UniqueIdentifier>{bee00baf-c995-44ea-b44f-611e4c3cefde}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gui\include">
+      <UniqueIdentifier>{1c357935-8ec2-49fa-9adf-e1d2cd43c442}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="database.cpp">
@@ -73,6 +76,12 @@
     <ClInclude Include="resource.h">
       <Filter>core\include</Filter>
     </ClInclude>
+    <ClInclude Include="translator.h">
+      <Filter>gui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="custom_message.h">
+      <Filter>gui\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -84,6 +93,6 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons\icon32x32.ico" />
+    <Image Include="icons\myicon.ico" />
   </ItemGroup>
 </Project>

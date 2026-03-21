@@ -44,26 +44,18 @@ struct StructuralImformation {
 };
 
 struct Diaresults {
-    std::string component_name_;    // 结构名称
-    std::string component_type_;    // 结构类型"header", "section", "table"
+    std::string component_name_;        // 结构名称
+    std::string component_type_;        // 结构类型"header", "section", "table"
+    uint32_t file_offset_ = 0;          // 在文件中的偏移
+    uint32_t data_size_ = 0;            // 数据大小
 
-    bool isvalid = true;          // 格式是否有效
-    bool issuspicious = false;    // 是否可疑
+    bool isvalid = true;                // 格式是否有效
+    bool issuspicious = false;          // 是否可疑
+    uint32_t confidence_level_ = 100;   // 置信度 (0-100)，暂时闲置
+    std::vector<std::string> evidence_; // 判断依据，暂时闲置
 
 	std::vector<Core::Diagnostic> information_list_; // 扫描信息表
-    std::vector<Core::Diagnostic> additional_information; // 额外信息
-
-    /*std::vector<std::string> field_anomalies_;     // 字段异常列表
-    std::vector<std::string> excursion_anomalies_; // 地址（解析段本身地址异常，不是指地址值）异常列表
-    std::vector<std::string> warnings_;            // 警告信息
-    std::vector<std::string> informations_;        // 普通信息*/
-    
-
-    uint32_t confidence_level_ = 100;               // 置信度 (0-100)
-    std::vector<std::string> evidence_;             // 判断依据
-
-    uint32_t file_offset_ = 0;                      // 在文件中的偏移
-    uint32_t data_size_ = 0;                        // 数据大小
+    std::vector<Core::Diagnostic> additional_information; // 额外信息，暂时闲置
 };
 
 struct BreakDown {
@@ -295,6 +287,7 @@ public:
         5 - 输出文件头部内容所有扫描结果
     */
     int output_range = 5;
+    uint8_t file_identification = 32; // 32位、64位或其他
     StructuralImformation structures_attributes;
 
     // 诊断数据

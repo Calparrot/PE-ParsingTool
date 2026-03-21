@@ -129,4 +129,5 @@ public:
 
     PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
 };
+
 #endif // £¡PEANALYZER_H

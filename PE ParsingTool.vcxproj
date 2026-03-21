@@ -140,12 +140,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api.h" />
+    <ClInclude Include="custom_message.h" />
     <ClInclude Include="database.h" />
     <ClInclude Include="diagnostic_codes.h" />
     <ClInclude Include="peanalyzer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="shellextension.h" />
     <ClInclude Include="siganalyzer.h" />
+    <ClInclude Include="translator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
@@ -160,7 +162,7 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons\icon32x32.ico" />
+    <Image Include="icons\myicon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

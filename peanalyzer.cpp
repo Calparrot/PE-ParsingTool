@@ -493,7 +493,7 @@ bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 	result.data_size_ = 64;
 
 	std::memcpy(&data_container.dosheader, mulbuffer, sizeof(DOSHeader));
-	shared_structure.peheader_offset_ = (mulbuffer[60] << 24) | (mulbuffer[61] << 16) | (mulbuffer[62] << 8) | mulbuffer[63];
+	shared_structure.peheader_offset_ = mulbuffer[60] | (mulbuffer[61] << 8) | (mulbuffer[62] << 16) | (mulbuffer[63] << 24);
 	// 异常：不合法的MZ签名
 	if (mulbuffer[0] != 'M' && mulbuffer[1] != 'Z') {
 		data_container.dosheader.e_magic = (mulbuffer[0] << 8) | mulbuffer[1];
@@ -887,6 +887,8 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader32.SizeOfHeaders;
 
+		data_container.file_identification = 32;
+
 		// 异常：imagebase字段为0
 		if (shared_structure.imagebase32_ == 0) {
 			shared_structure.image_base_isvalid_ = EleCorrectness::not_valid;
@@ -939,6 +941,8 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader64.SizeOfHeaders;
 
+		data_container.file_identification = 64;
+
 		// 异常：imagebase预设地址超过64位地址上限
 		if (shared_structure.imagebase64_ <= 0x100000 || 
 		shared_structure.imagebase64_ >= 0x7FFF00000000) {
@@ -976,6 +980,8 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 		shared_structure.size_of_code_ = data_container.optionalheaderrom.SizeOfCode;
 		shared_structure.size_of_initialized_data_ = data_container.optionalheaderrom.SizeOfInitializedData;
 		shared_structure.size_of_uninitialized_data_ = data_container.optionalheaderrom.SizeOfUninitializedData;
+
+		data_container.file_identification = 82;
 		/* 暂定区域，ROM架构的字段处理 */
 	}
 	else {
