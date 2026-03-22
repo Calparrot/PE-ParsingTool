@@ -855,7 +855,6 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 	int headerlength = 222;
 
 	shared_structure.magic_ = (mulbuffer[read_offset] << 8) | mulbuffer[read_offset + 1];
-	read_offset += 2;
 	/* 架构确定、magic字段验证 */
 	PEanalyzer::magic_check(shared_structure.magic_, result, headerlength);
 	result.component_name_ = "Optional Header";

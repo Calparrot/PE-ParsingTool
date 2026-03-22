@@ -15,12 +15,15 @@
 #include "custom_message.h"
 
 /* 全局变量 */
-RECT client_rect;                 // 客户区窗口大小
-wchar_t szFile[MAX_PATH] = { 0 }; // 接收文件路径的缓冲区
-std::wstring source_file_data;    // 源文件数据
-static HWND g_navigation_window = NULL;
-static HWND g_message_window = NULL;
-static HWND g_data_window = NULL;
+RECT client_rect;                       // 客户区窗口大小
+wchar_t szFile[MAX_PATH] = { 0 };       // 接收文件路径的缓冲区
+static HWND g_navigation_window = NULL; // 导航窗口句柄
+static HWND g_message_window = NULL;    // 信息窗口句柄
+static HWND g_data_window = NULL;       // 数据窗口句柄
+
+bool file_loaded = false;               // 文件是否已加载
+FundamentalAnalysis object;             // 分析对象
+std::wstring source_file_data;          // 源文件数据
 
 /* 字体设置 */
 HFONT consolas = CreateFont(
@@ -125,10 +128,16 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
                 std::string file_path = converter.to_bytes(szFile);
 
-                FundamentalAnalysis object;
-                object.analysis_file(file_path);
-                source_file_data = generate_file_display(object.data_container);
-                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 0, 0);
+                if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
+                    file_loaded = true;
+                    std::wstring* p_data_a = new std::wstring(generate_file_display(object.data_container));
+                    std::wstring* p_data_b = new std::wstring(scan_summary(object.data_container));
+                    SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
+					SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
+                }
+                else {
+                    MessageBox(hWnd, L"文件打开失败。", L"提示", MB_OK);
+                }
             }
             break;
         }
@@ -216,21 +225,32 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_COMMAND: {
         WORD wID = LOWORD(wp);
 
-        if (HIWORD(wp) == STN_DBLCLK) {
+        if (HIWORD(wp) == STN_DBLCLK && file_loaded) {
+            std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-
+                p_data = new std::wstring(generate_file_display(object.data_container));
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
+                
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
+                p_data = new std::wstring(L"还在开发中。");
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
 
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
+                p_data = new std::wstring(L"Still under development.");
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 3, (LPARAM)p_data);
 
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
+                p_data = new std::wstring(L"Todavía en desarrollo.");
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
 
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
+                p_data = new std::wstring(L"還在開發中。");
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
 
                 break;
             }
@@ -249,11 +269,10 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 // 右
 LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-	// std::wstring displaytext = L"点击菜单栏 -> 文件 -> 打开，\n选择文件，双击左侧导航栏项目以显示详细信息";
-
     switch (msg) {
     case WM_NCCREATE: {
-        std::wstring* display_text = new std::wstring(L"点击菜单栏 -> 文件 -> 打开，\n选择文件，双击左侧导航栏项目以显示详细信息");
+        std::wstring* display_text = new std::wstring(
+            L"点击菜单栏 -> 文件 -> 打开，\n选择文件后双击左侧导航栏项目以显示详细信息。\n\n注意：目前仅支持小端序架构");
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)display_text);
         return DefWindowProc(hWnd, msg, wp, lp);
     }
@@ -283,22 +302,25 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         EndPaint(hWnd, &ps);
         break;
     }
-
     case WM_DATA_INTERFACE_REFRESH: {
         std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        if (display_text) {
-            *display_text = source_file_data.empty() ? L"没有数据可显示。" : source_file_data;
-            InvalidateRect(hWnd, NULL, TRUE);
+        std::wstring* p_data = (std::wstring*)lp;
+        if (display_text && p_data) {
+            *display_text = p_data->empty() ? L"没有数据可显示。" : *p_data;
+        }
+        InvalidateRect(hWnd, NULL, TRUE);
+        if (p_data) {
+            delete p_data;
         }
 
         return 0;
     }
-
-    case WM_DESTROY:
+    case WM_DESTROY:{
         std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         delete display_text;
         SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
         return 0;
+    }
     }
 
     return DefWindowProc(hWnd, msg, wp, lp);

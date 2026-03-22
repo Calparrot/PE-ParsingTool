@@ -6,14 +6,16 @@
 #include <sstream>
 #include <cstdint>
 
-#include "database.h"
-
 /*
-    struct_to_hexstring()  ：将任意结构体转换为16进制字符串
-    byte_to_ascii()        ：将字节值转换为ASCII字符（不可见字符替换为点）
-    generate_file_display()：源文件信息整理
+    struct_to_hexstring()   ：将任意结构体转换为16进制字符串
+    vector_to_hexstring()   ：uint_8型vector转十六进制wstring类
+    hexstring_to_ascii      ：十六进制wstring类转ascii码wstring类
+    generate_file_display() ：源文件信息整理
+    
+    scan_summary()          ：扫描结果汇总
 */
 
+/* 工具函数 */
 template<typename T>
 std::wstring struct_to_hexstring(const T& data) {
     if constexpr (std::is_empty_v<T>) {
@@ -30,9 +32,14 @@ std::wstring struct_to_hexstring(const T& data) {
 
     return wss.str();
 }
-
 std::wstring vector_to_hexstring(const std::vector<uint8_t>& data);
 std::wstring hexstring_to_ascii(const std::wstring& hexstring);
+std::wstring degree_judgement(Core::Severity severity);
+std::wstring string_to_wstring(const std::string& str, UINT code_page = CP_UTF8);
+
+/* 翻译函数 */
 std::wstring generate_file_display(structuresults data_container);
+std::wstring result_translator(Core::Diagnostic structured_results);
+std::wstring scan_summary(structuresults data_container);
 
 #endif // !TRANSLATOR_H
