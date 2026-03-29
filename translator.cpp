@@ -230,6 +230,19 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += L"区域缺失";
         break;
     }
+    case Core::DiagCategory::VALUE_MISMATCH: {
+        individual_result += degree_judgement(structured_results.severity);
+        individual_result += string_to_wstring(structured_results.description);
+        individual_result += L" -> ";
+        individual_result += string_to_wstring(structured_results.field_name);
+        individual_result += L"字段异常，期望/阈值/参考值：";
+        std::wstringstream wss;
+        wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.expected_value;
+        individual_result += wss.str();
+        individual_result += L"，实际值：";
+        wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.actual_value;
+        individual_result += wss.str();
+    }
     }
 
     return individual_result;
@@ -239,8 +252,8 @@ std::wstring scan_summary(structuresults data_container) {
     std::wstring scan_results;
 
     if (data_container.output_range >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range - 1); ++i) {
-            for(size_t j = 0; j < data_container.diarelist[i].information_list_.size(); ++j) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range - 1); i++) {
+            for(size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
                 scan_results += result_translator(data_container.diarelist[i].information_list_[j]);
                 scan_results += L"\n";
 			}

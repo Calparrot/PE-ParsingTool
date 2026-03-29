@@ -24,6 +24,7 @@
     <ProjectGuid>{eb8c0c7e-2db7-4fd6-ae3d-94b4c7ba4ff6}</ProjectGuid>
     <RootNamespace>PEParsingTool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>PE Cartographer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

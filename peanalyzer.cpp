@@ -495,7 +495,7 @@ bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 	std::memcpy(&data_container.dosheader, mulbuffer, sizeof(DOSHeader));
 	shared_structure.peheader_offset_ = mulbuffer[60] | (mulbuffer[61] << 8) | (mulbuffer[62] << 16) | (mulbuffer[63] << 24);
 	// 异常：不合法的MZ签名
-	if (mulbuffer[0] != 'M' && mulbuffer[1] != 'Z') {
+	if (mulbuffer[0] != 'M' || mulbuffer[1] != 'Z') {
 		data_container.dosheader.e_magic = (mulbuffer[0] << 8) | mulbuffer[1];
 		data_container.structures_attributes.dos_header_normal_ = false;
 		result.information_list_.push_back(
@@ -1133,8 +1133,9 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 			data_container.structures_attributes.optional_header_normal_ = false;
 			shared_structure.size_of_image_isvalid_ = EleCorrectness::uncertain;
 		}
-		// 异常：sizeofimage值非sectionalignment倍数
-		else if (shared_structure.size_of_image_ % shared_structure.section_alignment_ != 0) {
+		// 异常：sizeofimage值非sectionalignment倍数 /* ！！！！需要修复除零错误！！！！ */
+		else if (shared_structure.section_alignment_ != 0 
+			&& shared_structure.size_of_image_ % shared_structure.section_alignment_ != 0 ) {
 			shared_structure.size_of_image_isvalid_ = EleCorrectness::not_valid;
 			data_container.structures_attributes.optional_header_normal_ = false;
 			result.information_list_.push_back(
@@ -1308,31 +1309,31 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 					)
 				);
 			}
-		}
-		// 异常：dataderectory[9]->virtualaddress所示地址超过内存大小
-		if (shared_structure.tls_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
-			data_container.structures_attributes.optional_header_normal_ = false;
-			result.information_list_.push_back(
-				address_out_of_range(
-					Core::Severity::WARNING_MED,
-					"Data Directory[9] VirtualAddress",
-					"Optional Header",
-					shared_structure.tls_table_RVA_
-				)
-			);
-		}
-		// 可疑：dataderectory[9]->virtualaddress未按四字节对齐
-		if ((shared_structure.tls_table_RVA_ & 0x3) != 0) {
-			data_container.structures_attributes.optional_header_normal_ = false;
-			result.information_list_.push_back(
-				detailed_information(
-					Core::Severity::SUSPICIOUS,
-					"Data Directory[9] VirtualAddress",
-					"Optional Header",
-					"Not aligned to 4 bytes.",
-					shared_structure.peheader_offset_ + 24 + 168
-				)
-			);
+			// 异常：dataderectory[9]->virtualaddress所示地址超过内存大小
+			if (shared_structure.tls_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+				data_container.structures_attributes.optional_header_normal_ = false;
+				result.information_list_.push_back(
+					address_out_of_range(
+						Core::Severity::WARNING_MED,
+						"Data Directory[9] VirtualAddress",
+						"Optional Header",
+						shared_structure.tls_table_RVA_
+					)
+				);
+			}
+			// 可疑：dataderectory[9]->virtualaddress未按四字节对齐
+			if ((shared_structure.tls_table_RVA_ & 0x3) != 0) {
+				data_container.structures_attributes.optional_header_normal_ = false;
+				result.information_list_.push_back(
+					detailed_information(
+						Core::Severity::SUSPICIOUS,
+						"Data Directory[9] VirtualAddress",
+						"Optional Header",
+						"Not aligned to 4 bytes.",
+						shared_structure.peheader_offset_ + 24 + 168
+					)
+				);
+			}
 		}
 	}
 	data_container.diarelist.push_back(result);

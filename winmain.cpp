@@ -15,15 +15,23 @@
 #include "custom_message.h"
 
 /* 全局变量 */
-RECT client_rect;                       // 客户区窗口大小
+RECT main_client_rect;                  // 客户区主窗口大小
 wchar_t szFile[MAX_PATH] = { 0 };       // 接收文件路径的缓冲区
 static HWND g_navigation_window = NULL; // 导航窗口句柄
 static HWND g_message_window = NULL;    // 信息窗口句柄
 static HWND g_data_window = NULL;       // 数据窗口句柄
 
 bool file_loaded = false;               // 文件是否已加载
-FundamentalAnalysis object;             // 分析对象
-std::wstring source_file_data;          // 源文件数据
+
+struct WindowData {
+    std::wstring display_text;
+    int total_height;  // 文本总高度
+    int scroll_pos;    // 当前滚动位置
+    int client_height; // 客户区高度
+    int client_width;  // 客户区宽度
+
+    WindowData() : total_height(0), scroll_pos(0), client_height(0), client_width(0) {}
+};
 
 /* 字体设置 */
 HFONT consolas = CreateFont(
@@ -48,7 +56,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     RegisterAllWindowClasses(hInstance);
 
     HWND main_window = CreateWindowEx(
-        0, L"MainClass", L"PE_Cartographer", 
+        0, L"MainClass", L"PE Cartographer", 
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         CW_USEDEFAULT,  CW_USEDEFAULT, 1024, 640,
         NULL, NULL, hInstance, NULL
@@ -70,16 +78,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 }
 
 /* 回调函数实现 */
-// 主窗口
 LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
-    GetClientRect(hWnd, &client_rect);
+    GetClientRect(hWnd, &main_client_rect);
 
-	int client_width = client_rect.right;   // 客户区域总宽度
-    int client_height = client_rect.bottom; // 客户区域总高度
-	int x_position = 0;                     // 初始x坐标
-	int y_position = 0;                     // 初始y坐标
-	int child_width = 0;                    // 子窗口宽度
-    int child_height = 0;                   // 子窗口高度
+	int client_width = main_client_rect.right - main_client_rect.left;  // 客户区域总宽度
+    int client_height = main_client_rect.bottom - main_client_rect.top; // 客户区域总高度
+	int x_position = 0;   // 初始x坐标
+	int y_position = 0;   // 初始y坐标
+	int child_width = 0;  // 子窗口宽度
+    int child_height = 0; // 子窗口高度
 
     int wmId = LOWORD(wParam);
 
@@ -120,7 +127,9 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         break;
     }  
-    case WM_COMMAND:{
+    case WM_COMMAND: {
+        FundamentalAnalysis object;
+        
         switch (wmId) {
         case ID_40001:{ // 菜单栏：文件 -> 打开
             OnFileOpen(hWnd);
@@ -164,7 +173,6 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-// 左上
 LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     HWND hText_a = NULL; // "Source File Information"，ID-1001
     HWND hText_b = NULL; // "IMAGE_DOS_HEADER"，ID-1002
@@ -177,7 +185,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         hText_a = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" Source File Information",
             WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
-            0, 0, (client_rect.right - 16) / 4, 25,
+            0, 0, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1001, NULL, NULL
         );
         SendMessage(hText_a, WM_SETFONT, (WPARAM)consolas, TRUE);
@@ -185,7 +193,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         hText_b = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_DOS_HEADER",
             WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
-            0, 30, (client_rect.right - 16) / 4, 25,
+            0, 30, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1002, NULL, NULL
         );
         SendMessage(hText_b, WM_SETFONT, (WPARAM)consolas, TRUE);
@@ -193,7 +201,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         hText_c = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" DOS Stub Program",
             WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
-            0, 55, (client_rect.right - 16) / 4, 25,
+            0, 55, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1003, NULL, NULL
         );
         SendMessage(hText_c, WM_SETFONT, (WPARAM)consolas, TRUE);
@@ -201,7 +209,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         hText_d = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_FILE_HEADER",
             WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
-            0, 80, (client_rect.right - 16) / 4, 25,
+            0, 80, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1004, NULL, NULL
         );
         SendMessage(hText_d, WM_SETFONT, (WPARAM)consolas, TRUE);
@@ -209,7 +217,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         hText_e = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_OPTIONAL_HEADER",
             WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
-            0, 105, (client_rect.right - 16) / 4, 25,
+            0, 105, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1005, NULL, NULL
         );
         SendMessage(hText_e, WM_SETFONT, (WPARAM)consolas, TRUE);
@@ -229,96 +237,524 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-                p_data = new std::wstring(generate_file_display(object.data_container));
-                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
-                
+                //p_data = new std::wstring(generate_file_display(object.data_container));
+                //SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
+
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                p_data = new std::wstring(L"还在开发中。");
+                p_data = new std::wstring(L"还在开发中:(");
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
 
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
-                p_data = new std::wstring(L"Still under development.");
+                p_data = new std::wstring(L"这个也在开发中:(");
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 3, (LPARAM)p_data);
 
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
-                p_data = new std::wstring(L"Todavía en desarrollo.");
+                p_data = new std::wstring(L"这个也是还在开发:(");
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
 
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
-                p_data = new std::wstring(L"還在開發中。");
+                p_data = new std::wstring(L"这个也:(");
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
 
                 break;
             }
         }
-    }      
+    }
     }
 
 	return DefWindowProc(hWnd, msg, wp, lp);
 }
 
-// 左下
 LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+    switch (msg) {
+    case WM_NCCREATE: {
+        WindowData* nit_data = new WindowData();
+        nit_data->display_text = L"空空如也。";
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
+        return DefWindowProc(hWnd, msg, wp, lp);
+    }
+    case WM_CREATE: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (p_data) {
+            HDC hdc = GetDC(hWnd);
+            HFONT h_old_font = (HFONT)SelectObject(hdc, consolas);
+
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+
+            RECT text_rect = { 10, 10, rect.right - rect.left - 10, 0 };
+            p_data->client_height = rect.bottom - rect.top;
+            DrawText(hdc, p_data->display_text.c_str(), -1, &text_rect,
+                DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
+            p_data->total_height = text_rect.bottom - text_rect.top + 20;
+
+            SelectObject(hdc, h_old_font);
+            ReleaseDC(hWnd, hdc);
+
+            SCROLLINFO si = { 0 };
+            si.cbSize = sizeof(SCROLLINFO);
+            si.fMask = SIF_RANGE | SIF_PAGE;
+            si.nMin = 0;
+            si.nMax = p_data->total_height;
+            si.nPage = p_data->client_height;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+        }
+        return 0;
+    }
+    case WM_MSG_INTERFACE_REFRESH: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        std::wstring* p_input = (std::wstring*)lp;
+
+        if (p_data && p_input) {
+            p_data -> display_text = p_input->empty() ? L"没有数据可显示。" : *p_input;
+            p_data->scroll_pos = 0;
+
+            HDC hdc = GetDC(hWnd);
+            HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
+
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+            int clientHeight = rect.bottom - rect.top;
+            rect.left = 10;
+            rect.top = 10;
+            rect.right -= 20;
+            p_data->client_height = clientHeight;
+
+            RECT calcRect = rect;
+            DrawText(hdc, p_data->display_text.c_str(), -1, &calcRect,
+                DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
+            p_data->total_height = calcRect.bottom - calcRect.top + 20;
+
+            SelectObject(hdc, hOldFont);
+            ReleaseDC(hWnd, hdc);
+
+            p_data->client_height = rect.bottom - rect.top;
+            SCROLLINFO si = { 0 };
+            si.cbSize = sizeof(SCROLLINFO);
+            si.fMask = SIF_RANGE | SIF_PAGE;
+            si.nMin = 0;
+            si.nMax = p_data->total_height;
+            si.nPage = p_data->client_height;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+
+            int maxscroll_pos = p_data->total_height - p_data->client_height;
+            if (maxscroll_pos < 0) {
+                maxscroll_pos = 0;
+            }
+            if (p_data->scroll_pos > maxscroll_pos) {
+                p_data->scroll_pos = maxscroll_pos;
+                si.fMask = SIF_POS;
+                si.nPos = p_data->scroll_pos;
+                SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+            }
+        }
+
+        InvalidateRect(hWnd, NULL, TRUE);
+        if (p_input) {
+            delete p_input;
+        }
+
+        return 0;
+    }
+    case WM_VSCROLL: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!p_data) break;
+
+        SCROLLINFO si = { 0 };
+        si.cbSize = sizeof(SCROLLINFO);
+        si.fMask = SIF_TRACKPOS | SIF_POS | SIF_RANGE | SIF_PAGE;
+        GetScrollInfo(hWnd, SB_VERT, &si);
+
+        int newPos = p_data->scroll_pos;
+
+        switch (LOWORD(wp)) {
+        case SB_LINEUP:      // 向上滚动一行（20像素）
+            newPos -= 20;
+            break;
+
+        case SB_LINEDOWN:    // 向下滚动一行（20像素）
+            newPos += 20;
+            break;
+
+        case SB_PAGEUP:      // 向上滚动一页
+            newPos -= si.nPage;
+            break;
+
+        case SB_PAGEDOWN:    // 向下滚动一页
+            newPos += si.nPage;
+            break;
+
+        case SB_THUMBTRACK:  // 拖动滚动条
+            newPos = si.nTrackPos;
+            break;
+
+        case SB_TOP:         // 滚动到顶部
+            newPos = si.nMin;
+            break;
+
+        case SB_BOTTOM:      // 滚动到底部
+            newPos = si.nMax - si.nPage;
+            break;
+
+        default:
+            break;
+        }
+
+        // 限制滚动范围
+        int maxPos = p_data->total_height - p_data->client_height;
+        if (maxPos < 0) maxPos = 0;
+        newPos = max(si.nMin, min(newPos, maxPos));
+
+        // 如果位置改变，更新滚动条并重绘
+        if (newPos != p_data->scroll_pos) {
+            int delta = p_data->scroll_pos - newPos;
+            p_data->scroll_pos = newPos;
+
+            // 更新滚动条位置
+            si.fMask = SIF_POS;
+            si.nPos = p_data->scroll_pos;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+
+            // 滚动窗口内容（优化性能）
+            ScrollWindow(hWnd, 0, delta, NULL, NULL);
+            // 或者简单重绘：InvalidateRect(hWnd, NULL, TRUE);
+        }
+
+        return 0;
+    }
+    case WM_MOUSEWHEEL: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!p_data) break;
+
+        int delta = GET_WHEEL_DELTA_WPARAM(wp);
+        int scrollAmount = (delta / WHEEL_DELTA) * 30;  // 每次滚动30像素
+
+        SCROLLINFO si = { 0 };
+        si.cbSize = sizeof(SCROLLINFO);
+        si.fMask = SIF_POS | SIF_RANGE | SIF_PAGE;
+        GetScrollInfo(hWnd, SB_VERT, &si);
+
+        int newPos = p_data->scroll_pos - scrollAmount;
+        int maxPos = p_data->total_height - p_data->client_height;
+        if (maxPos < 0) maxPos = 0;
+        newPos = max(si.nMin, min(newPos, maxPos));
+
+        if (newPos != p_data->scroll_pos) {
+            int deltaScroll = p_data->scroll_pos - newPos;
+            p_data->scroll_pos = newPos;
+
+            si.fMask = SIF_POS;
+            si.nPos = p_data->scroll_pos;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+
+            ScrollWindow(hWnd, 0, deltaScroll, NULL, NULL);
+        }
+
+        return 0;
+    }
+    case WM_PAINT: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!p_data) break;
+
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+
+        // 设置字体和颜色
+        HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
+        SetTextColor(hdc, RGB(0, 0, 0));
+        SetBkMode(hdc, TRANSPARENT);
+
+        // 获取客户区矩形
+        RECT clientRect;
+        GetClientRect(hWnd, &clientRect);
+
+        // 创建文本绘制矩形（考虑滚动偏移）
+        RECT textRect;
+        textRect.left = 10;
+        textRect.top = 10 - p_data->scroll_pos;  // 应用滚动偏移
+        textRect.right = clientRect.right - 10;
+        textRect.bottom = textRect.top + p_data->total_height;
+
+        // 设置剪裁区域，只绘制可见部分
+        HRGN clipRegion = CreateRectRgn(clientRect.left, clientRect.top,
+            clientRect.right, clientRect.bottom);
+        SelectClipRgn(hdc, clipRegion);
+        
+        // 绘制文本
+        DrawText(hdc, p_data->display_text.c_str(), -1, &textRect,
+            DT_LEFT | DT_WORDBREAK);
+
+        // 恢复剪裁区域
+        SelectClipRgn(hdc, NULL);
+        DeleteObject(clipRegion);
+        
+
+        SelectObject(hdc, hOldFont);
+        EndPaint(hWnd, &ps);
+
+        break;
+    }
+    case WM_DESTROY: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (p_data) {
+            delete p_data;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+        }
+        return 0;
+    }
+    }
 
     return DefWindowProc(hWnd, msg, wp, lp);
 }
 
-// 右
 LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_NCCREATE: {
-        std::wstring* display_text = new std::wstring(
-            L"点击菜单栏 -> 文件 -> 打开，\n选择文件后双击左侧导航栏项目以显示详细信息。\n\n注意：目前仅支持小端序架构");
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)display_text);
-        return DefWindowProc(hWnd, msg, wp, lp);
+        WindowData* nit_data = new WindowData();
+        nit_data->display_text = L"点击菜单栏 -> 文件 -> 打开，\n选择文件后双击左侧导航栏项目以显示详细信息。\n\n注意：目前仅支持小端序架构";
+
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
+        LRESULT result = DefWindowProc(hWnd, msg, wp, lp);
+        if (result == FALSE) {
+            delete nit_data;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+        }
+        return result;
+    }
+    case WM_CREATE: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (p_data) {
+            HDC hdc = GetDC(hWnd);
+            HFONT h_old_font = (HFONT)SelectObject(hdc, consolas);
+
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+
+            RECT text_rect = { 10, 10, rect.right - rect.left - 10, 0 };
+            p_data->client_height = rect.bottom - rect.top;
+            DrawText(hdc, p_data->display_text.c_str(), -1, &text_rect,
+                DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
+            p_data->total_height = text_rect.bottom - text_rect.top + 20;
+
+            SelectObject(hdc, h_old_font);
+            ReleaseDC(hWnd, hdc);
+
+            SCROLLINFO si = { 0 };
+            si.cbSize = sizeof(SCROLLINFO);
+            si.fMask = SIF_RANGE | SIF_PAGE;
+            si.nMin = 0;
+            si.nMax = p_data->total_height;
+            si.nPage = p_data->client_height;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+        }
+        return 0;
+    }
+    case WM_DATA_INTERFACE_REFRESH: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        std::wstring* p_input = (std::wstring*)lp;
+
+        if (p_data && p_input) {
+            HDC hdc = GetDC(hWnd);
+            HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
+
+            p_data->scroll_pos = 0;
+
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+            p_data->client_height = rect.bottom - rect.top;
+            p_data->display_text = p_input->empty() ? L"没有数据可显示。" : *p_input;
+
+            RECT calcRect = { 10, 10, rect.right - rect.left - 10, 0 };
+            DrawText(hdc, p_data->display_text.c_str(), -1, &calcRect,
+                DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
+            p_data->total_height = calcRect.bottom - calcRect.top + 20;
+
+            SelectObject(hdc, hOldFont);
+            ReleaseDC(hWnd, hdc);
+
+            // 更新滚动条范围
+            SCROLLINFO si = { 0 };
+            si.cbSize = sizeof(SCROLLINFO);
+            si.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
+            si.nMin = 0;
+            si.nMax = p_data->total_height;
+            si.nPage = p_data->client_height;
+            si.nPos = 0;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+
+            // 确保滚动位置不超出范围
+            int maxscroll_pos = p_data->total_height - p_data->client_height;
+            if (maxscroll_pos < 0) {
+                maxscroll_pos = 0;
+            }
+            if (p_data->scroll_pos > maxscroll_pos) {
+                p_data->scroll_pos = maxscroll_pos;
+                si.fMask = SIF_POS;
+                si.nPos = p_data->scroll_pos;
+                SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+            }
+        }
+        InvalidateRect(hWnd, NULL, TRUE);
+        UpdateWindow(hWnd);
+        if (p_input) {
+            delete p_input;
+        }
+
+        return 0;
+    }
+    case WM_VSCROLL: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!p_data) break;
+
+        SCROLLINFO si = { 0 };
+        si.cbSize = sizeof(SCROLLINFO);
+        si.fMask = SIF_TRACKPOS | SIF_POS | SIF_RANGE | SIF_PAGE;
+        GetScrollInfo(hWnd, SB_VERT, &si);
+
+        int newPos = p_data->scroll_pos;
+
+        switch (LOWORD(wp)) {
+        case SB_LINEUP:      // 向上滚动一行（20像素）
+            newPos -= 20;
+            break;
+
+        case SB_LINEDOWN:    // 向下滚动一行（20像素）
+            newPos += 20;
+            break;
+
+        case SB_PAGEUP:      // 向上滚动一页
+            newPos -= si.nPage;
+            break;
+
+        case SB_PAGEDOWN:    // 向下滚动一页
+            newPos += si.nPage;
+            break;
+
+        case SB_THUMBTRACK:  // 拖动滚动条
+            newPos = si.nTrackPos;
+            break;
+
+        case SB_TOP:         // 滚动到顶部
+            newPos = si.nMin;
+            break;
+
+        case SB_BOTTOM:      // 滚动到底部
+            newPos = si.nMax - si.nPage;
+            break;
+
+        default:
+            break;
+        }
+
+        // 限制滚动范围
+        int maxPos = p_data->total_height - p_data->client_height;
+        if (maxPos < 0) maxPos = 0;
+        newPos = max(si.nMin, min(newPos, maxPos));
+
+        // 如果位置改变，更新滚动条并重绘
+        if (newPos != p_data->scroll_pos) {
+            int delta = p_data->scroll_pos - newPos;
+            p_data->scroll_pos = newPos;
+
+            // 更新滚动条位置
+            si.fMask = SIF_POS;
+            si.nPos = p_data->scroll_pos;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+
+            // 滚动窗口内容
+            ScrollWindow(hWnd, 0, delta, NULL, NULL);
+        }
+
+        return 0;
+    }
+    case WM_MOUSEWHEEL: {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!p_data) break;
+
+        int delta = GET_WHEEL_DELTA_WPARAM(wp);
+        int scrollAmount = (delta / WHEEL_DELTA) * 30;  // 每次滚动30像素
+
+        SCROLLINFO si = { 0 };
+        si.cbSize = sizeof(SCROLLINFO);
+        si.fMask = SIF_POS | SIF_RANGE | SIF_PAGE;
+        GetScrollInfo(hWnd, SB_VERT, &si);
+
+        int newPos = p_data->scroll_pos - scrollAmount;
+        int maxPos = p_data->total_height - p_data->client_height;
+        if (maxPos < 0) maxPos = 0;
+        newPos = max(si.nMin, min(newPos, maxPos));
+
+        if (newPos != p_data->scroll_pos) {
+            int deltaScroll = p_data->scroll_pos - newPos;
+            p_data->scroll_pos = newPos;
+
+            si.fMask = SIF_POS;
+            si.nPos = p_data->scroll_pos;
+            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+
+            ScrollWindow(hWnd, 0, deltaScroll, NULL, NULL);
+        }
+
+        return 0;
     }
     case WM_PAINT: {
-        std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        if (!display_text) {
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (!p_data) {
             break;
         }
 
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
 
-        SetTextColor(hdc, RGB(0, 0, 255));
-        SetBkMode(hdc, TRANSPARENT);
-
+        // 设置字体和颜色
         HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
         SetTextColor(hdc, RGB(0, 0, 0));
         SetBkMode(hdc, TRANSPARENT);
 
-        RECT rect;
-        GetClientRect(hWnd, &rect);
-        rect.left = 10;
-        rect.top = 10;
+        // 获取客户区矩形
+        RECT clientRect;
+        GetClientRect(hWnd, &clientRect);
+        FillRect(hdc, &clientRect, (HBRUSH)(COLOR_WINDOW + 1));
 
-        DrawText(hdc, display_text->c_str(), -1, &rect, DT_LEFT | DT_WORDBREAK);
+        // 创建文本绘制矩形（考虑滚动偏移）
+        RECT text_rect;
+        text_rect.left = 10;
+        text_rect.top = 10 - p_data->scroll_pos;
+        text_rect.right = clientRect.right - 10;
+        text_rect.bottom = text_rect.top + p_data->total_height;
 
+        // 设置剪裁区域，只绘制可见部分
+        HRGN clipRegion = CreateRectRgn(clientRect.left, clientRect.top,
+            clientRect.right, clientRect.bottom);
+        SelectClipRgn(hdc, clipRegion);
+
+        // 绘制文本
+        DrawText(hdc, p_data->display_text.c_str(), -1, &text_rect,
+            DT_LEFT | DT_WORDBREAK);
+
+        // 恢复剪裁区域
+        SelectClipRgn(hdc, NULL);
+        DeleteObject(clipRegion);
+
+        SelectObject(hdc, hOldFont);
         EndPaint(hWnd, &ps);
+
         break;
     }
-    case WM_DATA_INTERFACE_REFRESH: {
-        std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        std::wstring* p_data = (std::wstring*)lp;
-        if (display_text && p_data) {
-            *display_text = p_data->empty() ? L"没有数据可显示。" : *p_data;
-        }
-        InvalidateRect(hWnd, NULL, TRUE);
-        if (p_data) {
-            delete p_data;
-        }
-
-        return 0;
-    }
     case WM_DESTROY:{
-        std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        /*std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         delete display_text;
         SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+        return 0;*/
+        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+        if (p_data) {
+            delete p_data;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+        }
         return 0;
     }
     }
@@ -389,7 +825,7 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_message.style = 0;
     wc_message.lpfnWndProc = MessageWindowProc;
     wc_message.cbClsExtra = 0;
-    wc_message.cbWndExtra = sizeof(std::wstring*);
+    wc_message.cbWndExtra = sizeof(WindowData*);
     wc_message.hInstance = hInstance;
     wc_message.hIcon = NULL;
     wc_message.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -407,7 +843,7 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_display_box.style = 0;
     wc_display_box.lpfnWndProc = DisplayWindowProc;
     wc_display_box.cbClsExtra = 0;
-    wc_display_box.cbWndExtra = sizeof(std::wstring*);
+    wc_display_box.cbWndExtra = sizeof(WindowData*);
     wc_display_box.hInstance = hInstance;
     wc_display_box.hIcon = NULL;
     wc_display_box.hCursor = LoadCursor(NULL, IDC_ARROW);
