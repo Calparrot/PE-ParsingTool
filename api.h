@@ -16,6 +16,7 @@ private:
     uint64_t file_size;
 
     bool readfile(std::string filepath);
+    bool check_little_endian();
 
 public:
     structuresults data_container;
@@ -23,8 +24,17 @@ public:
         SUCCESS = 0,
         FILE_NOT_FOUND,
         FILE_ACCESS_DENIED,
+        PLATFORM_NOT_SUPPORTED,
         UNKNOWN_ERROR
     };
+
+    FundamentalAnalysis& operator=(const FundamentalAnalysis& other) {
+        if (this != &other) {
+            data_container = other.data_container;
+            file_size = other.file_size;
+        }
+        return *this;
+    }
 
     error_code analysis_file(const std::string input_filepath);
 };

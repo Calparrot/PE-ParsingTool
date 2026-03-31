@@ -146,7 +146,7 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += degree_judgement(structured_results.severity);
 		individual_result += string_to_wstring(structured_results.description);
 		individual_result += L"长度异常，实际长度：";
-		individual_result += std::to_wstring(structured_results.actual_value);
+        individual_result += std::to_wstring(structured_results.actual_value);
 		individual_result += L"字节";
         break;
     }
@@ -159,10 +159,11 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += string_to_wstring(structured_results.description);
 		individual_result += L" -> ";
 		individual_result += string_to_wstring(structured_results.field_name);
-		individual_result += L"地址超过文件/内存范围，值：0x";
-		std::wstringstream wss;
+		individual_result += L"地址超过文件/内存范围，值：";
+		individual_result += uint_to_hex_wstring(structured_results.address);
+        /*std::wstringstream wss;
 		wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.address;
-		individual_result += wss.str();
+		individual_result += wss.str();*/
         break;
     }
     case Core::DiagCategory::DETAILED_INFORMATION: {
@@ -180,9 +181,10 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += L" -> ";
 		individual_result += string_to_wstring(structured_results.field_name);
 		individual_result += L"所示地址异常，值：0x";
-		std::wstringstream wss;
+		individual_result += uint_to_hex_wstring(structured_results.address);
+        /*std::wstringstream wss;
 		wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.address;
-		individual_result += wss.str();
+		individual_result += wss.str();*/
         break;
     }
     case Core::DiagCategory::INDEXED_ISSUE: {
@@ -200,9 +202,7 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += L" -> ";
 		individual_result += string_to_wstring(structured_results.field_name);
 		individual_result += L"字段值无效，实际值：";
-		std::wstringstream wss;
-		wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.actual_value;
-		individual_result += wss.str();
+		individual_result += uint_to_hex_wstring(structured_results.actual_value);
         break;
     }
     case Core::DiagCategory::REGULAR_ISSUE: {
@@ -247,7 +247,6 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 
     return individual_result;
 }
-
 std::wstring scan_summary(structuresults data_container) {
     std::wstring scan_results;
 
@@ -264,4 +263,28 @@ std::wstring scan_summary(structuresults data_container) {
     }
 
     return scan_results;
+}
+
+std::wstring structure_summary(structuresults data_container, int select) {
+    if (select < 1 || select > data_container.output_range) {
+		return L"输出范围指定有误，无法读取信息。";
+    }
+
+	std::wstring s_sum;
+
+    s_sum += L"【结构基本信息】\n";
+
+    s_sum += L"结构名称\t|";
+    s_sum += string_to_wstring(data_container.diarelist[select - 1].component_name_);
+    s_sum += L"\n起始偏移\t|";
+    s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].file_offset_);
+	s_sum += L"\n数据长度\t|";
+    s_sum += std::to_wstring(data_container.diarelist[select - 1].data_size_);
+	s_sum += L"字节";
+
+    s_sum += L"\n\n【字段详细信息】\n";
+
+	s_sum += L"字段名称\t|字段值\t|其他信息\n";
+    s_sum += L" \t \t|偏移\t|存在异常\t|异常信息\n";
+    return s_sum;
 }

@@ -15,13 +15,14 @@
 #include "custom_message.h"
 
 /* 全局变量 */
-RECT main_client_rect;                  // 客户区主窗口大小
-wchar_t szFile[MAX_PATH] = { 0 };       // 接收文件路径的缓冲区
-static HWND g_navigation_window = NULL; // 导航窗口句柄
-static HWND g_message_window = NULL;    // 信息窗口句柄
-static HWND g_data_window = NULL;       // 数据窗口句柄
+RECT main_client_rect;                    // 客户区主窗口大小
+static HWND g_navigation_window = NULL;   // 导航窗口句柄
+static HWND g_message_window = NULL;      // 信息窗口句柄
+static HWND g_data_window = NULL;         // 数据窗口句柄
 
-bool file_loaded = false;               // 文件是否已加载
+FundamentalAnalysis g_analysis_object;    // 全局分析对象
+bool file_loaded = false;                 // 文件是否已加载
+wchar_t szFile[MAX_PATH] = { 0 };         // 接收文件路径的缓冲区
 
 struct WindowData {
     std::wstring display_text;
@@ -56,7 +57,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     RegisterAllWindowClasses(hInstance);
 
     HWND main_window = CreateWindowEx(
-        0, L"MainClass", L"PE Cartographer", 
+        0, L"MainClass", L"PE ParsingTool", 
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         CW_USEDEFAULT,  CW_USEDEFAULT, 1024, 640,
         NULL, NULL, hInstance, NULL
@@ -139,6 +140,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
                 if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
                     file_loaded = true;
+					g_analysis_object = object;
                     std::wstring* p_data_a = new std::wstring(generate_file_display(object.data_container));
                     std::wstring* p_data_b = new std::wstring(scan_summary(object.data_container));
                     SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
@@ -233,16 +235,18 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_COMMAND: {
         WORD wID = LOWORD(wp);
 
-        if (HIWORD(wp) == STN_DBLCLK && file_loaded) {
+        if (HIWORD(wp) == STN_CLICKED && file_loaded) {
             std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-                //p_data = new std::wstring(generate_file_display(object.data_container));
-                //SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
+                /*p_data = new std::wstring(g_display_text);
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);*/
+				p_data = new std::wstring(generate_file_display(g_analysis_object.data_container));
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
 
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                p_data = new std::wstring(L"还在开发中:(");
+                p_data = new std::wstring(structure_summary(g_analysis_object.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
 
                 break;
@@ -273,10 +277,11 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_NCCREATE: {
         WindowData* nit_data = new WindowData();
-        nit_data->display_text = L"空空如也。";
+        nit_data->display_text = L"选择文件后显示数据。";
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
         return DefWindowProc(hWnd, msg, wp, lp);
     }
+    
     case WM_CREATE: {
         WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         if (p_data) {
@@ -515,7 +520,7 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_NCCREATE: {
         WindowData* nit_data = new WindowData();
-        nit_data->display_text = L"点击菜单栏 -> 文件 -> 打开，\n选择文件后双击左侧导航栏项目以显示详细信息。\n\n注意：目前仅支持小端序架构";
+        nit_data->display_text = L"点击菜单栏 -> 文件 -> 打开，\n选择文件后单击左侧导航栏项目以显示详细信息。\n\n注意：仅支持小端序设备。";
 
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
         LRESULT result = DefWindowProc(hWnd, msg, wp, lp);
@@ -746,10 +751,6 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         break;
     }
     case WM_DESTROY:{
-        /*std::wstring* display_text = (std::wstring*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        delete display_text;
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
-        return 0;*/
         WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         if (p_data) {
             delete p_data;

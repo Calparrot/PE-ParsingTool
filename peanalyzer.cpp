@@ -487,7 +487,7 @@ bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 		return false;
 	}
 
-	result.component_name_ = "DOS Header";
+	result.component_name_ = "IMAGE_DOS_HEADER";
 	result.component_type_ = "header";
 	result.file_offset_ = 0;
 	result.data_size_ = 64;
