@@ -274,17 +274,23 @@ std::wstring structure_summary(structuresults data_container, int select) {
 
     s_sum += L"【结构基本信息】\n";
 
-    s_sum += L"结构名称\t|";
+    s_sum += L"结构名称  |";
     s_sum += string_to_wstring(data_container.diarelist[select - 1].component_name_);
-    s_sum += L"\n起始偏移\t|";
+    s_sum += L"\n起始偏移  |";
     s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].file_offset_);
-	s_sum += L"\n数据长度\t|";
+	s_sum += L"\n数据长度  |";
     s_sum += std::to_wstring(data_container.diarelist[select - 1].data_size_);
 	s_sum += L"字节";
 
     s_sum += L"\n\n【字段详细信息】\n";
 
-	s_sum += L"字段名称\t|字段值\t|其他信息\n";
-    s_sum += L" \t \t|偏移\t|存在异常\t|异常信息\n";
+    s_sum += L"字段名称    |字段值     |偏移      |存在异常|异常信息    \n";
+    for (size_t i = 0; i < data_container.diarelist[select - 1].information_list_.size(); i++) {
+        s_sum += string_to_wstring(data_container.diarelist[select - 1].information_list_[i].field_name);
+        s_sum += L"  |";
+        if (data_container.diarelist[select - 1].information_list_[i].actual_value != NULL) {
+            s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].information_list_[i].actual_value);
+        }
+    }
     return s_sum;
 }

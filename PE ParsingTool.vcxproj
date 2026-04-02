@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClInclude Include="api.h" />
     <ClInclude Include="custom_message.h" />
+    <ClInclude Include="custom_window.h" />
     <ClInclude Include="database.h" />
     <ClInclude Include="diagnostic_codes.h" />
     <ClInclude Include="peanalyzer.h" />

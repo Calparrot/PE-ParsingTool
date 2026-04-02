@@ -82,6 +82,9 @@
     <ClInclude Include="custom_message.h">
       <Filter>gui\include</Filter>
     </ClInclude>
+    <ClInclude Include="custom_window.h">
+      <Filter>gui\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

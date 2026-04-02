@@ -256,12 +256,12 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
-                p_data = new std::wstring(L"这个也是还在开发:(");
+                p_data = new std::wstring(structure_summary(g_analysis_object.data_container, 3));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
 
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
-                p_data = new std::wstring(L"这个也:(");
+                p_data = new std::wstring(structure_summary(g_analysis_object.data_container, 4));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
 
                 break;
