@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <fstream>
 
 /* 前置声明 */
 class structuresults;
@@ -35,8 +36,6 @@ struct Diaresults;
     optional_header_analysis()     ：可选头分析函数
     section_headers_analisis()     ：节区头分析函数
 */
-
-extern uint64_t file_size;
 
 enum class EleCorrectness : uint8_t {
     not_valid = 0,
@@ -90,7 +89,7 @@ struct SharedStructure {
     uint32_t tls_table_size_;          // TLS表大小
 
     uint32_t size_of_headers_;         // 所有头的大小
-    int64_t size_of_file_; // 文件大小
+    int64_t size_of_file_;             // 文件大小
 
     uint32_t section_table_offset_;    // 节区在文件中的偏移
     uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
@@ -107,7 +106,10 @@ private:
     std::ifstream& pedata_;
     uint8_t mulbuffer[5600] = { 0 };
     size_t read_offset = 0;
+public:
+    int64_t file_size_ = 0;
 
+private:
     /* 临时工具函数 */
     void clear_buffer();
     std::string field_interpretation(uint16_t inputmachine);
@@ -118,7 +120,6 @@ private:
     void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container);
 	int section_name_match(const uint8_t input_name[8]);
     void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container);
-
 public:
     /* 调用时一定要按顺序调用，用户不可管理，由API统一封装 */
     bool dosheader_analysis(structuresults& data_container);
@@ -127,7 +128,14 @@ public:
     bool optional_header_analysis(structuresults& data_container);
     bool section_headers_analysis(structuresults& data_container);
 
-    PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {}
+    /* 构造函数 */
+    PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {
+        auto& file = pedata_;
+        auto current = file.tellg();
+        file.seekg(0, std::ios::end);
+        file_size_ = static_cast<int64_t>(file.tellg());
+        file.seekg(current);
+    }
 };
 
 #endif // ！PEANALYZER_H

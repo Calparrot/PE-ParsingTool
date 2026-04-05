@@ -13,6 +13,7 @@
 /* 工具函数 */
 std::wstring vector_to_hexstring(const std::vector<uint8_t>& data) {
     std::wstringstream wss;
+    wss << std::hex << std::uppercase;
     for (uint8_t byte : data) {
         wss << std::hex << std::setw(2) << std::setfill(L'0')
             << static_cast<int>(byte);
@@ -103,16 +104,22 @@ std::wstring generate_file_display(structuresults data_container) {
     else {
         raw_data.append(struct_to_hexstring(data_container.optionalheaderrom));
     }
+
+    for (size_t i = 0; i < data_container.sectionheaders.size(); i++) {
+		raw_data.append(struct_to_hexstring(data_container.sectionheaders[i]));
+    }
+
     ascii = hexstring_to_ascii(raw_data);
 
     size_t num = raw_data.length();
 	source_file_information.assign(
-        L"RVA         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F    ASCCI\n\n"
+        L"RVA         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F    ASCCI\r\n\r\n"
     );
     for (size_t i = 0; i < num; i++) {
         if (i % 32 == 0) {
             wss.str(L"");
             wss.clear();
+            wss << std::hex << std::uppercase;
             wss << std::hex << std::setw(8) << std::setfill(L'0') << temporary_address;
             source_file_information.append(wss.str());
             source_file_information.append(L"    ");
@@ -126,7 +133,7 @@ std::wstring generate_file_display(structuresults data_container) {
         if (i % 32 == 31) {
             source_file_information += L"   ";
             source_file_information.append(ascii, (i+1)/2 - 16, 16);
-            source_file_information += L"\n";
+            source_file_information += L"\r\n";
         }
     }
     if ((num - 1) % 32 != 31) {
@@ -247,14 +254,15 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 
     return individual_result;
 }
+
 std::wstring scan_summary(structuresults data_container) {
     std::wstring scan_results;
 
     if (data_container.output_range >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range - 1); i++) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range); i++) {
             for(size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
                 scan_results += result_translator(data_container.diarelist[i].information_list_[j]);
-                scan_results += L"\n";
+                scan_results += L"\r\n";
 			}
         }
     }
@@ -265,31 +273,44 @@ std::wstring scan_summary(structuresults data_container) {
     return scan_results;
 }
 
-std::wstring structure_summary(structuresults data_container, int select) {
+std::wstring sctheader_summary(structuresults data_container) {
+    std::wstring sheader_results;
+    
+
+
+	return sheader_results;
+}
+
+std::wstring structure_display(structuresults data_container, int select) {
     if (select < 1 || select > data_container.output_range) {
 		return L"输出范围指定有误，无法读取信息。";
     }
 
 	std::wstring s_sum;
 
-    s_sum += L"【结构基本信息】\n";
+    s_sum += L"【结构基本信息】\r\n";
 
     s_sum += L"结构名称  |";
     s_sum += string_to_wstring(data_container.diarelist[select - 1].component_name_);
-    s_sum += L"\n起始偏移  |";
+    s_sum += L"\r\n起始偏移  |";
     s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].file_offset_);
-	s_sum += L"\n数据长度  |";
+	s_sum += L"\r\n数据长度  |";
     s_sum += std::to_wstring(data_container.diarelist[select - 1].data_size_);
 	s_sum += L"字节";
 
-    s_sum += L"\n\n【字段详细信息】\n";
+    s_sum += L"\r\n\r\n【字段详细信息】\r\n";
 
-    s_sum += L"字段名称    |字段值     |偏移      |存在异常|异常信息    \n";
-    for (size_t i = 0; i < data_container.diarelist[select - 1].information_list_.size(); i++) {
-        s_sum += string_to_wstring(data_container.diarelist[select - 1].information_list_[i].field_name);
-        s_sum += L"  |";
-        if (data_container.diarelist[select - 1].information_list_[i].actual_value != NULL) {
-            s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].information_list_[i].actual_value);
+    if (data_container.diarelist[select - 1].information_list_.size() == 0) {
+		s_sum += L"文件没有异常！";
+    }
+    else {
+        s_sum += L"字段名称    |字段值     |偏移      |存在异常|异常信息    \r\n";
+        for (size_t i = 0; i < data_container.diarelist[select - 1].information_list_.size(); i++) {
+            s_sum += string_to_wstring(data_container.diarelist[select - 1].information_list_[i].field_name);
+            s_sum += L"  |";
+            if (data_container.diarelist[select - 1].information_list_[i].actual_value != NULL) {
+                s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].information_list_[i].actual_value);
+            }
         }
     }
     return s_sum;

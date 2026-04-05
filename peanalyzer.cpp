@@ -45,7 +45,7 @@ static void interval_insertion_sort(std::vector<SectionRange>& input_vector) {
 	size_t n = input_vector.size();
 	for (size_t i = 1; i < n; i++) {
 		SectionRange current = input_vector[i];
-		size_t j = i - 1;
+		int64_t j = i - 1;/*无符号整数死循环问题，已修复*/
 		while (j >= 0) {
 			if (current.begin < input_vector[j].begin) {
 				input_vector[j + 1] = input_vector[j];
@@ -462,6 +462,9 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 
 /* public函数 */
 bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
+	shared_structure = SharedStructure();        // 历史遗留问题，本来都不想要这个结构体了
+	shared_structure.size_of_file_ = file_size_; // 历史遗留问题
+
 	clear_buffer();
 	Diaresults result;
 	pedata_.seekg(0, std::ios::beg);
@@ -509,7 +512,24 @@ bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 			)
 		);
 	}
-	
+
+	if (data_container.dosheader.e_lfanew < 0x40 && data_container.dosheader.e_lfanew > 0) {
+		int start_index = data_container.dosheader.e_lfanew;
+		int copy_length = 0x40 - data_container.dosheader.e_lfanew;
+
+		data_container.overlapping_area.emplace_back();
+		auto& item = data_container.overlapping_area.back();
+		item.overlapping_data.assign(mulbuffer + start_index,
+			mulbuffer + start_index + copy_length);
+		item.length = copy_length;
+		item.expectation_offset = 0;
+		item.actual_offset = 0;
+
+		data_container.overlapping_area.back().length = copy_length;
+		data_container.overlapping_area.back().expectation_offset = 0x40;
+		data_container.overlapping_area.back().actual_offset = data_container.dosheader.e_lfanew;
+	}
+
 	data_container.diarelist.push_back(result);
 	return true;
 }
@@ -532,7 +552,10 @@ bool PEanalyzer::dosstub_analysis(structuresults& data_container) {
 		data_container.diarelist.push_back(result);
 		return false;
 	}
-	int count = shared_structure.peheader_offset_ - 64 > 0 ? shared_structure.peheader_offset_ - 64 : 0;
+
+	/* 这里有无符号整数的坑，已修复
+	int count = shared_structure.peheader_offset_ - 64 > 0 ? shared_structure.peheader_offset_ - 64 : 0;*/
+	int count = shared_structure.peheader_offset_ > 64 ? shared_structure.peheader_offset_ - 64 : 0;
 
 	result.component_name_ = "DOS Stub";
 	result.component_type_ = "header";
@@ -714,7 +737,13 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	result.file_offset_ = shared_structure.peheader_offset_;
 	result.data_size_ = 24; // 这里长度加上了PE签名的4字节
 
-	read_offset += 24;
+	if (!data_container.overlapping_area.empty() && 
+		data_container.overlapping_area.back().actual_offset < 0x40) {
+		;
+	}
+	else {
+		read_offset += 24;
+	}
 
 	std::memcpy(&data_container.fileheader, mulbuffer, sizeof(FileHeader));
 	shared_structure.machine_ = data_container.fileheader.machine;
@@ -1337,6 +1366,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 		}
 	}
 	data_container.diarelist.push_back(result);
+	read_offset += 2; // 预留magic字段长度，已在前面处理
 	return true;
 }
 
@@ -1400,7 +1430,9 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 			shared_structure.detected_section_count_ += 1;
 			continue;
 		}
-		section_error_status_code = is_this_section_valid(current_section, shared_structure);
+		else {
+			section_error_status_code = is_this_section_valid(current_section, shared_structure);
+		}
 		break;
 	}
 
@@ -1464,6 +1496,10 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 				return false;
 			}
 		}
+
+		/*测试代码*/
+		data_container.sectionheaders.push_back(current_section);
+		/*测试代码完*/
 
 		SectionImformation section_imformation_element;
 		data_container.section_attributes.push_back(section_imformation_element); // 创建记录节区属性的结构体
@@ -1674,5 +1710,6 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 		read_offset += sizeof(SectionHeader);
 	}
 
+	data_container.diarelist.push_back(result);
 	return true;
 }

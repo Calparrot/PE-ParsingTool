@@ -12,8 +12,11 @@
     hexstring_to_ascii      ：十六进制wstring类转ascii码wstring类
 
     generate_file_display() ：源文件信息整理
+
 	result_translator()     ：单条扫描结果翻译
-    scan_summary()          ：扫描结果汇总
+    scan_summary()          ：结构扫描结果汇总
+    sheader_summary()       ：节区头扫描结果汇总
+
 	structure_summary()     ：结构信息汇总
 */
 
@@ -25,6 +28,7 @@ std::wstring struct_to_hexstring(const T& data) {
     }
 
     std::wstringstream wss;
+    wss << std::hex << std::uppercase;
     const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&data);
 
     for (size_t i = 0; i < sizeof(T); i++) {
@@ -58,8 +62,11 @@ std::wstring string_to_wstring(const std::string& str, UINT code_page = CP_UTF8)
 
 /* 翻译函数 */
 std::wstring generate_file_display(structuresults data_container);
+
 std::wstring result_translator(Core::Diagnostic structured_results);
 std::wstring scan_summary(structuresults data_container);
-std::wstring structure_summary(structuresults data_container, int select);
+std::wstring sctheader_summary(structuresults data_container);
+
+std::wstring structure_display(structuresults data_container, int select);
 
 #endif // !TRANSLATOR_H

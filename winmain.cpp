@@ -5,7 +5,6 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <iostream>
-#include <locale>
 #include <codecvt>
 #include <string>
 
@@ -18,7 +17,9 @@
 RECT main_client_rect;                    // 客户区主窗口大小
 static HWND g_navigation_window = NULL;   // 导航窗口句柄
 static HWND g_message_window = NULL;      // 信息窗口句柄
+static HWND hedit_message = NULL;         // 信息窗口显示文本控件句柄
 static HWND g_data_window = NULL;         // 数据窗口句柄
+static HWND hedit_data = NULL;            // 数据窗口显示文本控件句柄
 
 FundamentalAnalysis g_analysis_object;    // 全局分析对象
 bool file_loaded = false;                 // 文件是否已加载
@@ -110,7 +111,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         child_height = client_height - child_height - 20;
         g_message_window = CreateWindowEx(
             0, L"InformationBar", NULL,
-            WS_CHILD | WS_BORDER | WS_VISIBLE | WS_VSCROLL,
+            WS_CHILD | WS_BORDER | WS_VISIBLE,
             x_position, y_position, child_width, child_height,
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
@@ -121,7 +122,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         child_height = client_height - 16;
         g_data_window = CreateWindowEx(
             0, L"DisplayBox", NULL,
-            WS_CHILD | WS_BORDER | WS_VISIBLE | WS_VSCROLL,
+            WS_CHILD | WS_VISIBLE,
             x_position, y_position, child_width, child_height,
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
@@ -246,7 +247,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                p_data = new std::wstring(structure_summary(g_analysis_object.data_container, 1));
+                p_data = new std::wstring(structure_display(g_analysis_object.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
 
                 break;
@@ -256,12 +257,12 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
-                p_data = new std::wstring(structure_summary(g_analysis_object.data_container, 3));
+                p_data = new std::wstring(structure_display(g_analysis_object.data_container, 3));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
 
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
-                p_data = new std::wstring(structure_summary(g_analysis_object.data_container, 4));
+                p_data = new std::wstring(structure_display(g_analysis_object.data_container, 4));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
 
                 break;
@@ -518,237 +519,43 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
-    case WM_NCCREATE: {
-        WindowData* nit_data = new WindowData();
-        nit_data->display_text = L"点击菜单栏 -> 文件 -> 打开，\n选择文件后单击左侧导航栏项目以显示详细信息。\n\n注意：仅支持小端序设备。";
-
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
-        LRESULT result = DefWindowProc(hWnd, msg, wp, lp);
-        if (result == FALSE) {
-            delete nit_data;
-            SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
-        }
-        return result;
-    }
     case WM_CREATE: {
-        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        if (p_data) {
-            HDC hdc = GetDC(hWnd);
-            HFONT h_old_font = (HFONT)SelectObject(hdc, consolas);
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+        hedit_data = CreateWindowEx(
+            0, L"EDIT",
+            L"点击菜单栏 -> 文件 -> 打开，\r\n选择文件后单击左侧导航栏项目以显示详细信息。\r\n\r\n注意：所有扫描结果仅作参考，可根据前标注的严重程度辅助判断。",
+            WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY,
+            0, 0, rc.right, rc.bottom,
+            hWnd, NULL, GetModuleHandle(NULL), NULL
+        );
+        SendMessage(hedit_data, WM_SETFONT, (WPARAM)consolas, TRUE);
+        break;
+    }
+    case WM_CTLCOLORSTATIC: {
+        HWND hwndCtrl = (HWND)lp;
 
-            RECT rect;
-            GetClientRect(hWnd, &rect);
+        if (hwndCtrl == hedit_data) {
+            HDC hdcEdit = (HDC)wp;
 
-            RECT text_rect = { 10, 10, rect.right - rect.left - 10, 0 };
-            p_data->client_height = rect.bottom - rect.top;
-            DrawText(hdc, p_data->display_text.c_str(), -1, &text_rect,
-                DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
-            p_data->total_height = text_rect.bottom - text_rect.top + 20;
+            SetBkMode(hdcEdit, OPAQUE);
+            SetBkColor(hdcEdit, RGB(255, 255, 255));
+            SetTextColor(hdcEdit, RGB(0, 0, 0));
 
-            SelectObject(hdc, h_old_font);
-            ReleaseDC(hWnd, hdc);
-
-            SCROLLINFO si = { 0 };
-            si.cbSize = sizeof(SCROLLINFO);
-            si.fMask = SIF_RANGE | SIF_PAGE;
-            si.nMin = 0;
-            si.nMax = p_data->total_height;
-            si.nPage = p_data->client_height;
-            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+            static HBRUSH hBrushWhite = CreateSolidBrush(RGB(255, 255, 255));
+            return (LRESULT)hBrushWhite;
         }
-        return 0;
+        break;
     }
     case WM_DATA_INTERFACE_REFRESH: {
-        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         std::wstring* p_input = (std::wstring*)lp;
 
-        if (p_data && p_input) {
-            HDC hdc = GetDC(hWnd);
-            HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
-
-            p_data->scroll_pos = 0;
-
-            RECT rect;
-            GetClientRect(hWnd, &rect);
-            p_data->client_height = rect.bottom - rect.top;
-            p_data->display_text = p_input->empty() ? L"没有数据可显示。" : *p_input;
-
-            RECT calcRect = { 10, 10, rect.right - rect.left - 10, 0 };
-            DrawText(hdc, p_data->display_text.c_str(), -1, &calcRect,
-                DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
-            p_data->total_height = calcRect.bottom - calcRect.top + 20;
-
-            SelectObject(hdc, hOldFont);
-            ReleaseDC(hWnd, hdc);
-
-            // 更新滚动条范围
-            SCROLLINFO si = { 0 };
-            si.cbSize = sizeof(SCROLLINFO);
-            si.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
-            si.nMin = 0;
-            si.nMax = p_data->total_height;
-            si.nPage = p_data->client_height;
-            si.nPos = 0;
-            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
-
-            // 确保滚动位置不超出范围
-            int maxscroll_pos = p_data->total_height - p_data->client_height;
-            if (maxscroll_pos < 0) {
-                maxscroll_pos = 0;
-            }
-            if (p_data->scroll_pos > maxscroll_pos) {
-                p_data->scroll_pos = maxscroll_pos;
-                si.fMask = SIF_POS;
-                si.nPos = p_data->scroll_pos;
-                SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
-            }
-        }
-        InvalidateRect(hWnd, NULL, TRUE);
-        UpdateWindow(hWnd);
-        if (p_input) {
+        if (p_input && hedit_data) {
+            SetWindowText(hedit_data, p_input->c_str());
             delete p_input;
         }
 
         return 0;
-    }
-    case WM_VSCROLL: {
-        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        if (!p_data) break;
-
-        SCROLLINFO si = { 0 };
-        si.cbSize = sizeof(SCROLLINFO);
-        si.fMask = SIF_TRACKPOS | SIF_POS | SIF_RANGE | SIF_PAGE;
-        GetScrollInfo(hWnd, SB_VERT, &si);
-
-        int newPos = p_data->scroll_pos;
-
-        switch (LOWORD(wp)) {
-        case SB_LINEUP:      // 向上滚动一行（20像素）
-            newPos -= 20;
-            break;
-
-        case SB_LINEDOWN:    // 向下滚动一行（20像素）
-            newPos += 20;
-            break;
-
-        case SB_PAGEUP:      // 向上滚动一页
-            newPos -= si.nPage;
-            break;
-
-        case SB_PAGEDOWN:    // 向下滚动一页
-            newPos += si.nPage;
-            break;
-
-        case SB_THUMBTRACK:  // 拖动滚动条
-            newPos = si.nTrackPos;
-            break;
-
-        case SB_TOP:         // 滚动到顶部
-            newPos = si.nMin;
-            break;
-
-        case SB_BOTTOM:      // 滚动到底部
-            newPos = si.nMax - si.nPage;
-            break;
-
-        default:
-            break;
-        }
-
-        // 限制滚动范围
-        int maxPos = p_data->total_height - p_data->client_height;
-        if (maxPos < 0) maxPos = 0;
-        newPos = max(si.nMin, min(newPos, maxPos));
-
-        // 如果位置改变，更新滚动条并重绘
-        if (newPos != p_data->scroll_pos) {
-            int delta = p_data->scroll_pos - newPos;
-            p_data->scroll_pos = newPos;
-
-            // 更新滚动条位置
-            si.fMask = SIF_POS;
-            si.nPos = p_data->scroll_pos;
-            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
-
-            // 滚动窗口内容
-            ScrollWindow(hWnd, 0, delta, NULL, NULL);
-        }
-
-        return 0;
-    }
-    case WM_MOUSEWHEEL: {
-        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        if (!p_data) break;
-
-        int delta = GET_WHEEL_DELTA_WPARAM(wp);
-        int scrollAmount = (delta / WHEEL_DELTA) * 30;  // 每次滚动30像素
-
-        SCROLLINFO si = { 0 };
-        si.cbSize = sizeof(SCROLLINFO);
-        si.fMask = SIF_POS | SIF_RANGE | SIF_PAGE;
-        GetScrollInfo(hWnd, SB_VERT, &si);
-
-        int newPos = p_data->scroll_pos - scrollAmount;
-        int maxPos = p_data->total_height - p_data->client_height;
-        if (maxPos < 0) maxPos = 0;
-        newPos = max(si.nMin, min(newPos, maxPos));
-
-        if (newPos != p_data->scroll_pos) {
-            int deltaScroll = p_data->scroll_pos - newPos;
-            p_data->scroll_pos = newPos;
-
-            si.fMask = SIF_POS;
-            si.nPos = p_data->scroll_pos;
-            SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
-
-            ScrollWindow(hWnd, 0, deltaScroll, NULL, NULL);
-        }
-
-        return 0;
-    }
-    case WM_PAINT: {
-        WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        if (!p_data) {
-            break;
-        }
-
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-
-        // 设置字体和颜色
-        HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
-        SetTextColor(hdc, RGB(0, 0, 0));
-        SetBkMode(hdc, TRANSPARENT);
-
-        // 获取客户区矩形
-        RECT clientRect;
-        GetClientRect(hWnd, &clientRect);
-        FillRect(hdc, &clientRect, (HBRUSH)(COLOR_WINDOW + 1));
-
-        // 创建文本绘制矩形（考虑滚动偏移）
-        RECT text_rect;
-        text_rect.left = 10;
-        text_rect.top = 10 - p_data->scroll_pos;
-        text_rect.right = clientRect.right - 10;
-        text_rect.bottom = text_rect.top + p_data->total_height;
-
-        // 设置剪裁区域，只绘制可见部分
-        HRGN clipRegion = CreateRectRgn(clientRect.left, clientRect.top,
-            clientRect.right, clientRect.bottom);
-        SelectClipRgn(hdc, clipRegion);
-
-        // 绘制文本
-        DrawText(hdc, p_data->display_text.c_str(), -1, &text_rect,
-            DT_LEFT | DT_WORDBREAK);
-
-        // 恢复剪裁区域
-        SelectClipRgn(hdc, NULL);
-        DeleteObject(clipRegion);
-
-        SelectObject(hdc, hOldFont);
-        EndPaint(hWnd, &ps);
-
-        break;
     }
     case WM_DESTROY:{
         WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);

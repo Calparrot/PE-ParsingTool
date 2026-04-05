@@ -19,6 +19,7 @@
     SectionRange                   ：节区范围
 	error_category                 ：错误码枚举
 	CrashReport                    ：崩溃报告
+    OverlapProcessing              ：重叠数据信息
 类说明
 	structuresults                 ：输出结果&数据库
 类成员说明
@@ -135,6 +136,13 @@ enum error_category {
 struct CrashReport {
     std::string error_code_;
     std::string message_;
+};
+
+struct OverlapProcessing {
+    std::vector<uint8_t> overlapping_data;
+    unsigned int length;
+    size_t expectation_offset;
+    size_t actual_offset;
 };
 
 #pragma pack(push, 1)
@@ -301,6 +309,8 @@ public:
     std::vector<SectionRange> storage_interval_table;
 
     // 原始文件数据
+    std::vector<OverlapProcessing> overlapping_area;
+
     DOSHeader dosheader{};
     std::vector<uint8_t> dosstub;
     FileHeader fileheader{};
