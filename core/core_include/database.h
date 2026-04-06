@@ -29,6 +29,7 @@
     memory_interval_table          ：节区内存分布区间表
     storage_interval_table         ：节区文件分布区间表
     is_this_section_valid()        ：某40字节数据是否可能为节区头的检查函数
+    source_file_data               ：源文件数据
 */
 
 struct StructuralImformation {
@@ -308,9 +309,11 @@ public:
     std::vector<SectionRange> memory_interval_table;
     std::vector<SectionRange> storage_interval_table;
 
-    // 原始文件数据
+    // 原始文件数据（数据显示使用）
     std::vector<OverlapProcessing> overlapping_area;
+    std::vector<uint8_t> source_file_data;
 
+    // 原始文件映射数据（数据处理使用）
     DOSHeader dosheader{};
     std::vector<uint8_t> dosstub;
     FileHeader fileheader{};

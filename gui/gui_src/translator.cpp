@@ -90,6 +90,7 @@ std::wstring generate_file_display(structuresults data_container) {
     int temporary_address = 0;
     size_t j = 0;
 
+    /* 测试代码
     raw_data.append(struct_to_hexstring(data_container.dosheader));
     if (data_container.structures_attributes.dos_stub_exist_ == true) {
         raw_data += (vector_to_hexstring(data_container.dosstub));
@@ -104,11 +105,22 @@ std::wstring generate_file_display(structuresults data_container) {
     else {
         raw_data.append(struct_to_hexstring(data_container.optionalheaderrom));
     }
-
+    
     for (size_t i = 0; i < data_container.sectionheaders.size(); i++) {
 		raw_data.append(struct_to_hexstring(data_container.sectionheaders[i]));
+    }*/
+    
+    // 临时方案，仅显示文件前1024字节，避免控件无法处理过大数据导致崩溃
+    std::vector<uint8_t> test_data;
+    if (data_container.source_file_data.size() > 1024) {
+        test_data.assign(data_container.source_file_data.begin(),
+            data_container.source_file_data.begin() + 1024);
+        raw_data.append(vector_to_hexstring(test_data));
     }
-
+    else {
+        raw_data.append(vector_to_hexstring(data_container.source_file_data));
+    }
+	
     ascii = hexstring_to_ascii(raw_data);
 
     size_t num = raw_data.length();
@@ -168,9 +180,6 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += string_to_wstring(structured_results.field_name);
 		individual_result += L"地址超过文件/内存范围，值：";
 		individual_result += uint_to_hex_wstring(structured_results.address);
-        /*std::wstringstream wss;
-		wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.address;
-		individual_result += wss.str();*/
         break;
     }
     case Core::DiagCategory::DETAILED_INFORMATION: {
@@ -187,11 +196,8 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 		individual_result += string_to_wstring(structured_results.description);
 		individual_result += L" -> ";
 		individual_result += string_to_wstring(structured_results.field_name);
-		individual_result += L"所示地址异常，值：0x";
+		individual_result += L"所示地址异常，值：";
 		individual_result += uint_to_hex_wstring(structured_results.address);
-        /*std::wstringstream wss;
-		wss << std::hex << std::setw(16) << std::setfill(L'0') << structured_results.address;
-		individual_result += wss.str();*/
         break;
     }
     case Core::DiagCategory::INDEXED_ISSUE: {

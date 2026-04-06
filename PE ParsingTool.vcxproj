@@ -77,12 +77,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>wWinMainCRTStartup</EntryPointSymbol>
     </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)gui\gui_include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -92,12 +96,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>wWinMainCRTStartup</EntryPointSymbol>
     </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)gui\gui_include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -105,12 +113,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>wWinMainCRTStartup</EntryPointSymbol>
     </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)gui\gui_include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -120,36 +132,36 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>wWinMainCRTStartup</EntryPointSymbol>
     </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)gui\gui_include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="database.cpp" />
-    <ClCompile Include="diagnostic_helpers.cpp" />
-    <ClCompile Include="functool.cpp" />
-    <ClCompile Include="winmain.cpp" />
-    <ClCompile Include="api.cpp" />
-    <ClCompile Include="peanalyzer.cpp" />
-    <ClCompile Include="shellextension.cpp" />
-    <ClCompile Include="siganalyzer.cpp" />
-    <ClCompile Include="window.cpp" />
-    <ClCompile Include="translator.cpp" />
+    <ClCompile Include="core\core_src\api.cpp" />
+    <ClCompile Include="core\core_src\database.cpp" />
+    <ClCompile Include="core\core_src\diagnostic_helpers.cpp" />
+    <ClCompile Include="core\core_src\peanalyzer.cpp" />
+    <ClCompile Include="core\core_src\shellextension.cpp" />
+    <ClCompile Include="core\core_src\siganalyzer.cpp" />
+    <ClCompile Include="gui\gui_src\translator.cpp" />
+    <ClCompile Include="gui\gui_src\winmain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="api.h" />
-    <ClInclude Include="custom_message.h" />
-    <ClInclude Include="custom_window.h" />
-    <ClInclude Include="database.h" />
-    <ClInclude Include="diagnostic_codes.h" />
-    <ClInclude Include="peanalyzer.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="shellextension.h" />
-    <ClInclude Include="siganalyzer.h" />
-    <ClInclude Include="translator.h" />
+    <ClInclude Include="core\core_include\api.h" />
+    <ClInclude Include="core\core_include\database.h" />
+    <ClInclude Include="core\core_include\diagnostic_codes.h" />
+    <ClInclude Include="core\core_include\peanalyzer.h" />
+    <ClInclude Include="core\core_include\shellextension.h" />
+    <ClInclude Include="gui\gui_include\custom_message.h" />
+    <ClInclude Include="gui\gui_include\resource.h" />
+    <ClInclude Include="gui\gui_include\translator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">

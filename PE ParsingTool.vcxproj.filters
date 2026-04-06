@@ -8,10 +8,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="core\src">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="gui">
       <UniqueIdentifier>{d44b1de6-8ebc-4157-a280-637cdd3cb904}</UniqueIdentifier>
     </Filter>
@@ -21,68 +17,59 @@
     <Filter Include="gui\include">
       <UniqueIdentifier>{1c357935-8ec2-49fa-9adf-e1d2cd43c442}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\src">
+      <UniqueIdentifier>{8cf592cf-d4cd-4dee-8d37-e3862062afc3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="database.cpp">
+    <ClCompile Include="core\core_src\api.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="peanalyzer.cpp">
+    <ClCompile Include="core\core_src\database.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="api.cpp">
+    <ClCompile Include="core\core_src\diagnostic_helpers.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="functool.cpp">
+    <ClCompile Include="core\core_src\peanalyzer.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="shellextension.cpp">
+    <ClCompile Include="core\core_src\shellextension.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="siganalyzer.cpp">
+    <ClCompile Include="core\core_src\siganalyzer.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="winmain.cpp">
+    <ClCompile Include="gui\gui_src\translator.cpp">
       <Filter>gui\src</Filter>
     </ClCompile>
-    <ClCompile Include="window.cpp">
+    <ClCompile Include="gui\gui_src\winmain.cpp">
       <Filter>gui\src</Filter>
-    </ClCompile>
-    <ClCompile Include="translator.cpp">
-      <Filter>gui\src</Filter>
-    </ClCompile>
-    <ClCompile Include="diagnostic_helpers.cpp">
-      <Filter>core\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="peanalyzer.h">
+    <ClInclude Include="core\core_include\api.h">
       <Filter>core\include</Filter>
     </ClInclude>
-    <ClInclude Include="shellextension.h">
+    <ClInclude Include="core\core_include\database.h">
       <Filter>core\include</Filter>
     </ClInclude>
-    <ClInclude Include="siganalyzer.h">
+    <ClInclude Include="core\core_include\diagnostic_codes.h">
       <Filter>core\include</Filter>
     </ClInclude>
-    <ClInclude Include="database.h">
+    <ClInclude Include="core\core_include\peanalyzer.h">
       <Filter>core\include</Filter>
     </ClInclude>
-    <ClInclude Include="diagnostic_codes.h">
+    <ClInclude Include="core\core_include\shellextension.h">
       <Filter>core\include</Filter>
     </ClInclude>
-    <ClInclude Include="api.h">
-      <Filter>core\include</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>core\include</Filter>
-    </ClInclude>
-    <ClInclude Include="translator.h">
+    <ClInclude Include="gui\gui_include\custom_message.h">
       <Filter>gui\include</Filter>
     </ClInclude>
-    <ClInclude Include="custom_message.h">
+    <ClInclude Include="gui\gui_include\resource.h">
       <Filter>gui\include</Filter>
     </ClInclude>
-    <ClInclude Include="custom_window.h">
+    <ClInclude Include="gui\gui_include\translator.h">
       <Filter>gui\include</Filter>
     </ClInclude>
   </ItemGroup>

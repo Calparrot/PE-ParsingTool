@@ -11,7 +11,7 @@ struct Diaresults;
 
 /*
 结构体说明
-    SharedStructure                ：关键字段提取结构体
+    SharedStructure                ：关键字段提取结构体，已废弃，由外部类structuresults代替
 类说明
 	PEanalyzer                     ：PE文件分析类
 类成员说明

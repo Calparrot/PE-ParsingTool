@@ -431,7 +431,7 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 	actual_val[5] = data_container.section_attributes[num].cnt_initialized_data_;
 	actual_val[6] = data_container.section_attributes[num].cnt_uninitialized_data_;
 
-	if (!memcmp(judgement_set, actual_val, 7)) {
+	if (memcmp(judgement_set, actual_val, 7)) {
 		// 可疑：节区名称与其期望的权限不匹配，可能存在伪装的节区，注意分析结果的可靠性。
 		inputresult.information_list_.push_back(
 			detailed_information(
@@ -721,15 +721,34 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 		data_container.diarelist.push_back(result);
 		return false;
 	}
-	pedata_.read(reinterpret_cast<char*>(mulbuffer), 5600);
-	if (pedata_.gcount() != 5600) {
-		data_container.crash_imformation_set(
-			// 文件流读取数据到内存缓冲区失败。
-			error_category::FILE_READ_FAILED,
-			"File Header: Failed to read data from the file stream into the memory buffer."
-		);
-		data_container.diarelist.push_back(result);
-		return false;
+	if (!data_container.overlapping_area.empty() &&
+		data_container.overlapping_area.back().actual_offset < 0x40) {
+		memcpy(mulbuffer, 
+			data_container.overlapping_area.back().overlapping_data.data(), 
+			data_container.overlapping_area.back().overlapping_data.size());
+		pedata_.read(reinterpret_cast<char*>(mulbuffer + data_container.overlapping_area.back().overlapping_data.size()),
+			5600 - data_container.overlapping_area.back().overlapping_data.size());
+		if (pedata_.gcount() != 5600 - data_container.overlapping_area.back().overlapping_data.size()) {
+			data_container.crash_imformation_set(
+				// 文件流读取数据到内存缓冲区失败。
+				error_category::FILE_READ_FAILED,
+				"File Header: Failed to read data from the file stream into the memory buffer."
+			);
+			data_container.diarelist.push_back(result);
+			return false;
+		}
+	}
+	else {
+		pedata_.read(reinterpret_cast<char*>(mulbuffer), 5600);
+		if (pedata_.gcount() != 5600) {
+			data_container.crash_imformation_set(
+				// 文件流读取数据到内存缓冲区失败。
+				error_category::FILE_READ_FAILED,
+				"File Header: Failed to read data from the file stream into the memory buffer."
+			);
+			data_container.diarelist.push_back(result);
+			return false;
+		}
 	}
 
 	result.component_name_ = "File Header";
@@ -737,13 +756,7 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	result.file_offset_ = shared_structure.peheader_offset_;
 	result.data_size_ = 24; // 这里长度加上了PE签名的4字节
 
-	if (!data_container.overlapping_area.empty() && 
-		data_container.overlapping_area.back().actual_offset < 0x40) {
-		;
-	}
-	else {
-		read_offset += 24;
-	}
+	read_offset += 24;
 
 	std::memcpy(&data_container.fileheader, mulbuffer, sizeof(FileHeader));
 	shared_structure.machine_ = data_container.fileheader.machine;
@@ -751,7 +764,7 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	shared_structure.size_of_optionalheader_ = data_container.fileheader.sizeofoptionalheader;
 
 	// 异常：不合法的PE签名
-	if (mulbuffer[0] != 'P' && mulbuffer[1] != 'E' && mulbuffer[2] != '\0' && mulbuffer[3] != '\0') {
+	if (mulbuffer[0] != 'P' || mulbuffer[1] != 'E' || mulbuffer[2] != '\0' || mulbuffer[3] != '\0') {
 		data_container.fileheader.signature = (mulbuffer[0] << 24) | (mulbuffer[1] << 16) | (mulbuffer[2] << 8) | mulbuffer[3];
 		result.isvalid = false;
 		result.issuspicious = true;
@@ -881,15 +894,15 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 
 bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 	Diaresults result;
-	int headerlength = 222;
+	int headerlength = shared_structure.size_of_optionalheader_;
 
 	shared_structure.magic_ = (mulbuffer[read_offset] << 8) | mulbuffer[read_offset + 1];
 	/* 架构确定、magic字段验证 */
-	PEanalyzer::magic_check(shared_structure.magic_, result, headerlength);
+	// PEanalyzer::magic_check(shared_structure.magic_, result, headerlength);
 	result.component_name_ = "Optional Header";
 	result.component_type_ = "header";
-	result.file_offset_ = shared_structure.peheader_offset_ + 20;
-	result.data_size_ = headerlength + 2;
+	result.file_offset_ = shared_structure.peheader_offset_ + 24;
+	result.data_size_ = headerlength;
 
 	/* 分类填充、imagebase值判断 */
 	// 32位
@@ -898,7 +911,8 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 			std::memcpy(&data_container.optionalheader32,
 				mulbuffer + read_offset,
 				sizeof(OptionalHeader32));
-			read_offset = read_offset + sizeof(OptionalHeader32) - 2;
+			// read_offset = read_offset + sizeof(OptionalHeader32) - 2;
+			read_offset = read_offset + shared_structure.size_of_optionalheader_;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheader32.AddressOfEntryPoint;
@@ -952,7 +966,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 			std::memcpy(&data_container.optionalheader64,
 				mulbuffer + read_offset,
 				sizeof(OptionalHeader64));
-			read_offset = read_offset + sizeof(OptionalHeader64) - 2;
+			read_offset = read_offset + shared_structure.size_of_optionalheader_;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheader64.AddressOfEntryPoint;
@@ -998,7 +1012,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 			std::memcpy(&data_container.optionalheaderrom,
 				mulbuffer + read_offset,
 				sizeof(ROM_OptionalHeader));
-			read_offset += sizeof(ROM_OptionalHeader);
+			read_offset += shared_structure.size_of_optionalheader_;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheaderrom.AddressOfEntryPoint;
@@ -1366,7 +1380,6 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 		}
 	}
 	data_container.diarelist.push_back(result);
-	read_offset += 2; // 预留magic字段长度，已在前面处理
 	return true;
 }
 
