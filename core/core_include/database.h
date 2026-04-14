@@ -47,7 +47,7 @@ struct StructuralImformation {
 
 struct Diaresults {
     std::string component_name_;        // 结构名称
-    std::string component_type_;        // 结构类型"header", "section", "table"
+    // std::string component_type_;        // 结构类型"header", "section", "table"
     uint32_t file_offset_ = 0;          // 在文件中的偏移
     uint32_t data_size_ = 0;            // 数据大小
 

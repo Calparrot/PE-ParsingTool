@@ -7,11 +7,15 @@
 #include <iostream>
 #include <codecvt>
 #include <string>
+// 测试内存泄漏
+#include <crtdbg.h>
+// 测试完
 
 #include "resource.h"
 #include "api.h"
 #include "translator.h"
 #include "custom_message.h"
+#include "utils.h"
 
 /* 全局变量 */
 RECT main_client_rect;                    // 客户区主窗口大小
@@ -55,6 +59,10 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance); // 注册窗口类
 
 /* 入口 */
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow){
+	// 测试内存泄漏
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // int* p = new int[100];
+	// 测试完
     RegisterAllWindowClasses(hInstance);
 
     HWND main_window = CreateWindowEx(
@@ -131,9 +139,9 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     }  
     case WM_COMMAND: {
         FundamentalAnalysis object;
-        
+
         switch (wmId) {
-        case ID_40001:{ // 菜单栏：文件 -> 打开
+        case ID_40001: { // 菜单栏：文件 -> 打开
             OnFileOpen(hWnd);
             if (szFile[0] != L'\0') {
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
@@ -141,11 +149,11 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
                 if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
                     file_loaded = true;
-					g_analysis_object = object;
-                    std::wstring* p_data_a = new std::wstring(generate_file_display(object.data_container));
-                    std::wstring* p_data_b = new std::wstring(scan_summary(object.data_container));
+                    g_analysis_object = object;
+                    std::wstring* p_data_a = new std::wstring(generate_file_display(object.data_manager.data_container));
+                    std::wstring* p_data_b = new std::wstring(scan_summary(object.data_manager.data_container));
                     SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
-					SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
+                    SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
                 }
                 else {
                     MessageBox(hWnd, L"文件打开失败。", L"提示", MB_OK);
@@ -153,12 +161,49 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
             break;
         }
-        case ID_40002:{ // 菜单栏：文件 -> 关闭
+        case ID_40003: { // 菜单栏：文件 -> 关闭
             DestroyWindow(hWnd);
             break;
         }
-        case ID_40003:{ // 菜单栏：帮助 -> 关于
-            MessageBox(hWnd, L"还没开始写这个功能。", L"关于", MB_OK);
+        case ID_40004: { // 菜单栏：帮助 -> 关于
+            MessageBox(hWnd, L"      PE  ParsingTool                \n\n      版本：v0.0.0\n      作者：CalParrot", L"关于", MB_OK);
+            break;
+        }
+		case ID_40005: { // 菜单栏：文件导出 -> 导出十六进制文本
+            std::wstring full_path(szFile); 
+
+            size_t last_slash = full_path.find_last_of(L"\\/");
+            std::wstring full_filename = (last_slash == std::wstring::npos) ?
+                full_path :
+                full_path.substr(last_slash + 1);
+
+            size_t last_dot = full_filename.find_last_of(L'.');
+            std::wstring basename = (last_dot == std::wstring::npos) ?
+                full_filename :
+                full_filename.substr(0, last_dot);
+
+            std::wstring output_filename = basename + L"_output_hex.txt";
+            std::wstring output_filepath = get_exe_directory() + L"\\" + output_filename;
+            if (file_loaded) {
+                if (g_analysis_object.data_manager.hexadecimal_document_export(output_filepath)) {
+                    MessageBox(hWnd, L"文件导出成功。", L"导出", MB_OK);
+                }
+                else {
+                    MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
+                }
+            }
+            else {
+                MessageBox(hWnd, L"还没有打开需要分析的文件，请打开文件后重试。", L"导出", MB_OK);
+            }
+            break;
+        }
+		case ID_40006: { // 菜单栏：文件导出 -> 导出结构化文本
+            MessageBox(hWnd, L"daochubaogaotxt", L"test", MB_OK);
+            break;
+        }
+		case ID_40007: { // 菜单栏：文件导出 -> 导出结构化JSON
+            MessageBox(hWnd, L"daochubaogaojson", L"test", MB_OK);
+            break;
         }
         }
         break;
@@ -182,6 +227,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
     HWND hText_c = NULL; // "DOS Stub Program"，ID-1003
     HWND hText_d = NULL; // "IMAGE_FILE_HEADER"，ID-1004
     HWND hText_e = NULL; // "IMAGE_OPTIONAL_HEADER"，ID-1005
+	HWND hText_f = NULL; // "IMAGE_SECTION_HEADERS"，ID-1006
 
     switch (msg) {
     case WM_CREATE: {
@@ -225,6 +271,14 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         );
         SendMessage(hText_e, WM_SETFONT, (WPARAM)consolas, TRUE);
 
+        hText_f = CreateWindowEx(
+            WS_EX_TOPMOST, L"STATIC", L" IMAGE_SECTION_HEADERS",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
+            0, 130, (main_client_rect.right - 16) / 4, 25,
+            hWnd, (HMENU)1006, NULL, NULL
+        );
+        SendMessage(hText_f, WM_SETFONT, (WPARAM)consolas, TRUE);
+
         break;
     }
     case WM_LBUTTONDBLCLK: {
@@ -240,14 +294,12 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-                /*p_data = new std::wstring(g_display_text);
-                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);*/
-				p_data = new std::wstring(generate_file_display(g_analysis_object.data_container));
+				p_data = new std::wstring(generate_file_display(g_analysis_object.data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
 
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                p_data = new std::wstring(structure_display(g_analysis_object.data_container, 1));
+                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
 
                 break;
@@ -257,15 +309,19 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
-                p_data = new std::wstring(structure_display(g_analysis_object.data_container, 3));
+                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 3));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
 
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
-                p_data = new std::wstring(structure_display(g_analysis_object.data_container, 4));
+                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 4));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
 
                 break;
+			case 1006: // 右侧窗口刷新，显示Section Headers扫描信息
+                p_data = new std::wstring(sctheader_summary(g_analysis_object.data_manager.data_container));
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
+				break;
             }
         }
     }
@@ -282,7 +338,6 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
         return DefWindowProc(hWnd, msg, wp, lp);
     }
-    
     case WM_CREATE: {
         WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         if (p_data) {
@@ -524,7 +579,9 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         GetClientRect(hWnd, &rc);
         hedit_data = CreateWindowEx(
             0, L"EDIT",
-            L"点击菜单栏 -> 文件 -> 打开，\r\n选择文件后单击左侧导航栏项目以显示详细信息。\r\n\r\n注意：所有扫描结果仅作参考，可根据前标注的严重程度辅助判断。",
+            L"点击菜单栏 -> 文件 -> 打开，\r\n选择文件后单击左侧导航栏项目以显示详细信息。\r\n\r\n\
+注意\r\n工具现在还没有做文件验证，请不要拿除exe、dll格式以外的文件尝试 (ˉ▽ˉ；)\r\n\
+现阶段不支持ROM格式 不支持大端序 所有扫描结果仅供参考",
             WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY,
             0, 0, rc.right, rc.bottom,
             hWnd, NULL, GetModuleHandle(NULL), NULL

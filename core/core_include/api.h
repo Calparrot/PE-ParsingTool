@@ -1,4 +1,3 @@
-#pragma once
 #ifndef API_H
 #define API_H
 #endif // !API_H
@@ -9,8 +8,32 @@
 #include "peanalyzer.h"
 #include "database.h"
 
+
+/* 由界面翻译转API翻译的 过渡期代码 */
+/* Translator类成员说明
+	vector_to_hexstring()        ：vector<uint8_t>转十六进制表示形式的string类
+	hexstring_to_ascii()         ：十六进制表示形式的string类转ascii码表示形式的string类
+	generate_file_display()      ：将原始文件数据转换为十六进制视图
+	hexadecimal_document_export()：将十六进制视图导出为txt文本文件
+*/
+class Translator {
+public:
+    structuresults data_container;
+
+private:
+    std::string vector_to_hexstring(const std::vector<uint8_t>& input_data);
+    std::string hexstring_to_ascii(const std::string& hexstring);
+    std::string generate_file_display(const std::vector<uint8_t>& input_data);
+
+    bool string_to_file_append(const std::wstring& export_filepath, const std::string& input_data);
+
+public:
+    bool hexadecimal_document_export(const std::wstring& export_filepath);
+};
+/* 过渡代码结束 */
+
 /*
-类成员说明
+FundamentalAnalysis类成员说明
     myfile               ：文件路径
     file_size            ：传入的文件大小
     readfile()           ：将文件从外存读到内存中的文件流缓冲区并存储源文件数据
@@ -19,7 +42,6 @@
     organised_data[]     ：综合性源文件信息
     analysis_file()      ：基础分析API
 */
-
 // 对外的统一API
 class FundamentalAnalysis {
 private:
@@ -30,7 +52,8 @@ private:
     bool check_little_endian();
 
 public:
-    structuresults data_container;
+    Translator data_manager;
+    // structuresults data_container; /* 过渡结束后交由Translator类管理 */
     enum class error_code {
         SUCCESS = 0,
         FILE_NOT_FOUND,
@@ -43,7 +66,8 @@ public:
 
     FundamentalAnalysis& operator=(const FundamentalAnalysis& other) {
         if (this != &other) {
-            data_container = other.data_container;
+            // data_container = other.data_container;
+			data_manager = other.data_manager;
             file_size = other.file_size;
         }
         return *this;

@@ -77,7 +77,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,7 +132,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\core_include;$(ProjectDir)gui\gui_include;$(ProjectDir)gui\gui_src;$(ProjectDir)core\core_src;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,9 +148,8 @@
     <ClCompile Include="core\core_src\database.cpp" />
     <ClCompile Include="core\core_src\diagnostic_helpers.cpp" />
     <ClCompile Include="core\core_src\peanalyzer.cpp" />
-    <ClCompile Include="core\core_src\shellextension.cpp" />
-    <ClCompile Include="core\core_src\siganalyzer.cpp" />
     <ClCompile Include="gui\gui_src\translator.cpp" />
+    <ClCompile Include="gui\gui_src\utils.cpp" />
     <ClCompile Include="gui\gui_src\winmain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,10 +157,10 @@
     <ClInclude Include="core\core_include\database.h" />
     <ClInclude Include="core\core_include\diagnostic_codes.h" />
     <ClInclude Include="core\core_include\peanalyzer.h" />
-    <ClInclude Include="core\core_include\shellextension.h" />
     <ClInclude Include="gui\gui_include\custom_message.h" />
-    <ClInclude Include="gui\gui_include\resource.h" />
     <ClInclude Include="gui\gui_include\translator.h" />
+    <ClInclude Include="gui\gui_include\utils.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
@@ -173,10 +172,10 @@
     <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resource.rc" />
+    <Image Include="icons\myicon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons\myicon.ico" />
+    <ResourceCompile Include="PE ParsingTool.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

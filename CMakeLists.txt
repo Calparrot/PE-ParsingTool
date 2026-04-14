@@ -1,105 +1,162 @@
-cmake_minimum_required(VERSION 3.10)
-project(PE_Cartographer
-    VERSION 1.0.0 
-    DESCRIPTION "专注于PE字段扫描的安全诊断辅助工具" 
-    LANGUAGES CXX  
-)
+cmake_minimum_required(VERSION 3.20)
+project(PE_ParsingTool VERSION 1.0.0 LANGUAGES CXX RC)
 
-# 设置C++标准
+# ============================================
+# 全局设置
+# ============================================
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 设置输出路径
+# 输出目录
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# 如果是Windows平台，启用UNICODE
-if(WIN32)
-    add_definitions(-DUNICODE -D_UNICODE)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY 
-    "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif()
+# ============================================
+# 选项
+# ============================================
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(ENABLE_SDL_CHECKS "Enable SDL checks" ON)
 
-# 核心库的头文件目录
-include_directories(core/include)
-
-# 创建核心静态库
-file(GLOB CORE_SOURCES
-    "core/src/*.cpp"
+# ============================================
+# 源文件
+# ============================================
+set(SOURCES
+    core/core_src/api.cpp
+    core/core_src/database.cpp
+    core/core_src/diagnostic_helpers.cpp
+    core/core_src/peanalyzer.cpp
+    core/core_src/shellextension.cpp
+    core/core_src/siganalyzer.cpp
+    gui/gui_src/translator.cpp
+    gui/gui_src/winmain.cpp
 )
 
-# 排除可能不需要的文件（根据实际情况调整）
-list(REMOVE_ITEM CORE_SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/core/src/api.cpp"  # 如果api.cpp是导出的实现，可能需要保留
+set(HEADERS
+    core/core_include/api.h
+    core/core_include/database.h
+    core/core_include/diagnostic_codes.h
+    core/core_include/peanalyzer.h
+    core/core_include/shellextension.h
+    gui/gui_include/custom_message.h
+    gui/gui_include/resource.h
+    gui/gui_include/translator.h
 )
 
-add_library(core STATIC ${CORE_SOURCES})
+set(RESOURCES resource.rc)
+set(ICONS icons/myicon.ico)
 
-# 设置核心库的编译选项
-target_compile_definitions(core PRIVATE CORE_LIBRARY)
+# ============================================
+# 可执行文件
+# ============================================
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES} ${ICONS})
 
-# 如果是Windows，可能需要链接一些系统库
-if(WIN32)
-    target_link_libraries(core PRIVATE 
-        ws2_32      # Windows Socket
-        dbghelp     # 调试帮助库，可能用于diagnostic_helpers.cpp
-    )
-endif()
-
-# 创建GUI可执行文件
-file(GLOB GUI_SOURCES
-    "gui/src/*.cpp"
+# ============================================
+# 包含目录
+# ============================================
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_include
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src
 )
 
-# 添加资源文件（如果是Windows）
-if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Resource.rc")
-    set(GUI_SOURCES ${GUI_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/Resource.rc)
-endif()
-
-add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES})
-
-# 链接核心库和必要的系统库
-target_link_libraries(${PROJECT_NAME} PRIVATE 
-    core
+# ============================================
+# 预处理器定义
+# ============================================
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    _CRT_SECURE_NO_WARNINGS
+    _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+    $<$<CONFIG:DEBUG>:_DEBUG>
+    $<$<CONFIG:RELEASE>:NDEBUG>
+    $<$<PLATFORM_ID:Win32>:WIN32>
+    $<$<PLATFORM_ID:x64>:_WIN64>
+    _CONSOLE
+    UNICODE
+    _UNICODE
 )
 
-# 如果是Windows，链接必要的GUI库
-if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE 
-        comctl32     # 通用控件库
-        uxtheme      # 主题支持
-        dwmapi       # DWM支持
-        shell32      # Shell扩展支持
-        gdi32        # GDI绘图
-        user32       # 用户界面
-    )
-endif()
-
-# 设置安装规则
-install(TARGETS ${PROJECT_NAME} core
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
-
-# 安装头文件
-install(DIRECTORY core/include/ 
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-)
-
-# 复制README.md到安装目录
-install(FILES README.md DESTINATION .)
-
-# 可选：启用编译器警告
+# ============================================
+# 编译选项
+# ============================================
 if(MSVC)
-    # MSVC编译器警告
-    target_compile_options(core PRIVATE /W4 /WX)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
-else()
-    # GCC/Clang编译器警告
-    target_compile_options(core PRIVATE -Wall -Wextra -Wpedantic -Werror)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        /W3
+        /permissive-
+        $<$<BOOL:${ENABLE_SDL_CHECKS}>:/SDL>
+        $<$<CONFIG:RELEASE>:/Gy>
+        $<$<CONFIG:RELEASE>:/Oi>
+        $<$<CONFIG:RELEASE>:/GL>
+        $<$<CONFIG:RELEASE>:/O2>
+        $<$<CONFIG:DEBUG>:/RTC1>
+        $<$<CONFIG:DEBUG>:/Zi>
+        $<$<CONFIG:DEBUG>:/Od>
+    )
+    
+    # 多处理器编译
+    target_compile_options(${PROJECT_NAME} PRIVATE /MP)
 endif()
+
+# ============================================
+# 链接选项
+# ============================================
+if(MSVC)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        /SUBSYSTEM:WINDOWS
+        /ENTRY:wWinMainCRTStartup
+        $<$<CONFIG:DEBUG>:/DEBUG>
+        $<$<CONFIG:RELEASE>:/LTCG>  # 链接时代码生成
+    )
+endif()
+
+# ============================================
+# 链接库
+# ============================================
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    # Windows 核心库
+    user32
+    gdi32
+    shell32
+    comctl32
+    comdlg32
+    advapi32
+    ole32
+    oleaut32
+)
+
+# ============================================
+# 资源编译设置
+# ============================================
+if(MSVC)
+    # 为资源编译器设置包含路径
+    set_source_files_properties(${RESOURCES} PROPERTIES
+        COMPILE_FLAGS "/I \"${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include\""
+    )
+endif()
+
+# ============================================
+# 附加文件（用于 IDE 显示）
+# ============================================
+# 添加 README
+configure_file(README.md ${CMAKE_BINARY_DIR}/README.md COPYONLY)
+
+# 添加 CMakeLists.txt 到项目（用于 IDE）
+set(CMAKE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
+source_group("CMake" FILES ${CMAKE_FILES})
+
+# ============================================
+# 配置总结
+# ============================================
+message(STATUS "")
+message(STATUS "========================================")
+message(STATUS "  ${PROJECT_NAME} Configuration")
+message(STATUS "========================================")
+message(STATUS "  Version: ${PROJECT_VERSION}")
+message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Sources: ${SOURCES}")
+message(STATUS "  SDL Checks: ${ENABLE_SDL_CHECKS}")
+message(STATUS "========================================")
+message(STATUS "")

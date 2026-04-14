@@ -90,8 +90,8 @@ std::wstring generate_file_display(structuresults data_container) {
     int temporary_address = 0;
     size_t j = 0;
 
-    /* 测试代码
-    raw_data.append(struct_to_hexstring(data_container.dosheader));
+    // 测试代码
+    /*raw_data.append(struct_to_hexstring(data_container.dosheader));
     if (data_container.structures_attributes.dos_stub_exist_ == true) {
         raw_data += (vector_to_hexstring(data_container.dosstub));
     }
@@ -120,7 +120,7 @@ std::wstring generate_file_display(structuresults data_container) {
     else {
         raw_data.append(vector_to_hexstring(data_container.source_file_data));
     }
-	
+    
     ascii = hexstring_to_ascii(raw_data);
 
     size_t num = raw_data.length();
@@ -281,8 +281,35 @@ std::wstring scan_summary(structuresults data_container) {
 
 std::wstring sctheader_summary(structuresults data_container) {
     std::wstring sheader_results;
-    
+	sheader_results += L"【节区文件地址表】\r\n";
+    sheader_results += L"序号 |起始偏移 |结束偏移（含对齐） |数据长度 |对齐长度\r\n";
+    for (size_t i = 0; i < data_container.storage_interval_table.size(); i++) {
+        sheader_results += std::to_wstring(i + 1);
+        sheader_results += L"     |";
+        sheader_results += uint_to_hex_wstring(data_container.storage_interval_table[i].begin);
+        sheader_results += L"  |";
+        sheader_results += uint_to_hex_wstring(data_container.storage_interval_table[i].end);
+        sheader_results += L"  |";
+        sheader_results += uint_to_hex_wstring(data_container.storage_interval_table[i].size);
+        sheader_results += L"  |";
+        sheader_results += uint_to_hex_wstring(data_container.storage_interval_table[i].alignment_length);
+        sheader_results += L"\r\n";
+	}
 
+	sheader_results += L"\r\n【节区内存地址表】\r\n";
+    sheader_results += L"序号 |起始地址 |结束地址（含对齐） |数据长度 |对齐长度 \r\n";
+    for (size_t i = 0; i < data_container.memory_interval_table.size(); i++) {
+        sheader_results += std::to_wstring(i + 1);
+        sheader_results += L"     |";
+        sheader_results += uint_to_hex_wstring(data_container.memory_interval_table[i].begin);
+        sheader_results += L"  |";
+        sheader_results += uint_to_hex_wstring(data_container.memory_interval_table[i].end);
+        sheader_results += L"  |";
+        sheader_results += uint_to_hex_wstring(data_container.memory_interval_table[i].size);
+        sheader_results += L"  |";
+        sheader_results += uint_to_hex_wstring(data_container.memory_interval_table[i].alignment_length);
+        sheader_results += L"\r\n";
+	}
 
 	return sheader_results;
 }
@@ -304,10 +331,10 @@ std::wstring structure_display(structuresults data_container, int select) {
     s_sum += std::to_wstring(data_container.diarelist[select - 1].data_size_);
 	s_sum += L"字节";
 
-    s_sum += L"\r\n\r\n【字段详细信息】\r\n";
+    s_sum += L"\r\n\r\n【字段异常信息】\r\n";
 
     if (data_container.diarelist[select - 1].information_list_.size() == 0) {
-		s_sum += L"文件没有异常！";
+		s_sum += L"没有在该结构中发现异常！";
     }
     else {
         s_sum += L"字段名称    |字段值     |偏移      |存在异常|异常信息    \r\n";
@@ -317,6 +344,7 @@ std::wstring structure_display(structuresults data_container, int select) {
             if (data_container.diarelist[select - 1].information_list_[i].actual_value != NULL) {
                 s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].information_list_[i].actual_value);
             }
+            s_sum += L"\r\n";
         }
     }
     return s_sum;

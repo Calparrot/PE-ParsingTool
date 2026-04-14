@@ -18,17 +18,18 @@ SharedStructure shared_structure{};
 
 /* 普通工具函数 */
 static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t a_begin, uint64_t a_end) { // front和after的始末值
+	// 所有区间的begin和end值取值为，begin<= 区间 <end，即区间结束值其实不包含end值
 	if (f_begin > f_end || a_begin > a_end) {
 		return -1;    // 无效区间
 	}
 	if (f_begin < a_begin && f_begin < a_end) {
-		if (f_end < a_end && f_end < a_begin) {
+		if (f_end < a_end && f_end <= a_begin) {
 			return 1; // 正常
 		}
-		else if (f_end < a_end && f_end >= a_begin) {
+		else if (f_end < a_end && f_end > a_begin) {
 			return 2; // front后部与after前部重叠
 		}
-		else if (f_end >= a_end && f_end >= a_begin) {
+		else if (f_end >= a_end && f_end > a_begin) {
 			return 3; // 完全重叠
 		}
 	}
@@ -45,7 +46,7 @@ static void interval_insertion_sort(std::vector<SectionRange>& input_vector) {
 	size_t n = input_vector.size();
 	for (size_t i = 1; i < n; i++) {
 		SectionRange current = input_vector[i];
-		int64_t j = i - 1;/*无符号整数死循环问题，已修复*/
+		int64_t j = i - 1; /* 无符号整数死循环问题，已修复 */
 		while (j >= 0) {
 			if (current.begin < input_vector[j].begin) {
 				input_vector[j + 1] = input_vector[j];
@@ -491,7 +492,7 @@ bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 	}
 
 	result.component_name_ = "IMAGE_DOS_HEADER";
-	result.component_type_ = "header";
+	// result.component_type_ = "header";
 	result.file_offset_ = 0;
 	result.data_size_ = 64;
 
@@ -558,7 +559,7 @@ bool PEanalyzer::dosstub_analysis(structuresults& data_container) {
 	int count = shared_structure.peheader_offset_ > 64 ? shared_structure.peheader_offset_ - 64 : 0;
 
 	result.component_name_ = "DOS Stub";
-	result.component_type_ = "header";
+	// result.component_type_ = "header";
 	result.file_offset_ = 64;
 	result.data_size_ = count;
 
@@ -752,7 +753,7 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	}
 
 	result.component_name_ = "File Header";
-	result.component_type_ = "header";
+	// result.component_type_ = "header";
 	result.file_offset_ = shared_structure.peheader_offset_;
 	result.data_size_ = 24; // 这里长度加上了PE签名的4字节
 
@@ -900,7 +901,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 	/* 架构确定、magic字段验证 */
 	// PEanalyzer::magic_check(shared_structure.magic_, result, headerlength);
 	result.component_name_ = "Optional Header";
-	result.component_type_ = "header";
+	// result.component_type_ = "header";
 	result.file_offset_ = shared_structure.peheader_offset_ + 24;
 	result.data_size_ = headerlength;
 
@@ -1407,7 +1408,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 	int i = 0;
 
 	result.component_name_ = "Section Header";
-	result.component_type_ = "header";
+	// result.component_type_ = "header";
 	result.file_offset_ = shared_structure.peheader_offset_ + 20 + data_container.diarelist[3].data_size_;
 	
 	size_t read_offset_copy = read_offset; // 复用缓冲区偏移备份
@@ -1510,9 +1511,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 			}
 		}
 
-		/*测试代码*/
 		data_container.sectionheaders.push_back(current_section);
-		/*测试代码完*/
 
 		SectionImformation section_imformation_element;
 		data_container.section_attributes.push_back(section_imformation_element); // 创建记录节区属性的结构体
@@ -1710,6 +1709,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 			}
 		}
 		// VirtualSize 为0但 VirtualAddress 与其他节重叠
+		
 		// VirtualSize 与 SizeOfRawData 均为0且节区属性包含可执行/可写
 		// 节区重叠（VirtualAddress 计算后范围重叠）
 		//  VirtualAddress=0 且非第一个节区

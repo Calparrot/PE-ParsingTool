@@ -46,7 +46,7 @@ namespace Core {
         
         /* 其他问题 */
 		RELATIONSHIP_ISSUE,    // 【{severity}】{description} -> {field_name}与{compared_description} -> {compared_field_name}：{info1}
-		ADDITIONAL_INFORMATION // {info2}
+		ADDITIONAL_INFORMATION // {info1}
     };
 
 	// 对象诊断结果所在背景以及包含的诊断信息
@@ -57,7 +57,7 @@ namespace Core {
 
         /* 提示信息 */
 		std::string info1; // 提示信息1
-		std::string info2; // 提示信息2
+		std::string info2; // 提示信息2，默认不用，根据需要使用
         /* 基础参数 */
         std::string field_name;  // 字段名，如"PE Signature"
 		std::string description; // 结构名，如"File Header"
@@ -142,7 +142,7 @@ Core::Diagnostic relationship_issue(
     uint64_t offset
 );
 Core::Diagnostic additional_information(
-    const std::string& info2,
+    const std::string& info1,
     uint64_t offset
 );
 

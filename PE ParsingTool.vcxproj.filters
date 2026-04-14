@@ -34,16 +34,13 @@
     <ClCompile Include="core\core_src\peanalyzer.cpp">
       <Filter>core\src</Filter>
     </ClCompile>
-    <ClCompile Include="core\core_src\shellextension.cpp">
-      <Filter>core\src</Filter>
-    </ClCompile>
-    <ClCompile Include="core\core_src\siganalyzer.cpp">
-      <Filter>core\src</Filter>
-    </ClCompile>
     <ClCompile Include="gui\gui_src\translator.cpp">
       <Filter>gui\src</Filter>
     </ClCompile>
     <ClCompile Include="gui\gui_src\winmain.cpp">
+      <Filter>gui\src</Filter>
+    </ClCompile>
+    <ClCompile Include="gui\gui_src\utils.cpp">
       <Filter>gui\src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -60,16 +57,14 @@
     <ClInclude Include="core\core_include\peanalyzer.h">
       <Filter>core\include</Filter>
     </ClInclude>
-    <ClInclude Include="core\core_include\shellextension.h">
-      <Filter>core\include</Filter>
-    </ClInclude>
     <ClInclude Include="gui\gui_include\custom_message.h">
       <Filter>gui\include</Filter>
     </ClInclude>
-    <ClInclude Include="gui\gui_include\resource.h">
+    <ClInclude Include="gui\gui_include\translator.h">
       <Filter>gui\include</Filter>
     </ClInclude>
-    <ClInclude Include="gui\gui_include\translator.h">
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="gui\gui_include\utils.h">
       <Filter>gui\include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,9 +75,9 @@
     <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resource.rc" />
+    <Image Include="icons\myicon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons\myicon.ico" />
+    <ResourceCompile Include="PE ParsingTool.rc" />
   </ItemGroup>
 </Project>
