@@ -82,7 +82,7 @@ std::wstring string_to_wstring(const std::string& str, UINT code_page) {
 }
 
 /* 翻译函数 */
-std::wstring generate_file_display(structuresults data_container) {
+std::wstring generate_file_display(Structuresults data_container) {
 	std::wstring source_file_information;
     std::wstring raw_data;
     std::wstring ascii;
@@ -261,11 +261,11 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
     return individual_result;
 }
 
-std::wstring scan_summary(structuresults data_container) {
+std::wstring scan_summary(Structuresults data_container) {
     std::wstring scan_results;
 
-    if (data_container.output_range >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range); i++) {
+    if (data_container.output_range_ >= 1) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range_); i++) {
             for(size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
                 scan_results += result_translator(data_container.diarelist[i].information_list_[j]);
                 scan_results += L"\r\n";
@@ -279,7 +279,7 @@ std::wstring scan_summary(structuresults data_container) {
     return scan_results;
 }
 
-std::wstring sctheader_summary(structuresults data_container) {
+std::wstring sctheader_summary(Structuresults data_container) {
     std::wstring sheader_results;
 	sheader_results += L"【节区文件地址表】\r\n";
     sheader_results += L"序号 |起始偏移 |结束偏移（含对齐） |数据长度 |对齐长度\r\n";
@@ -314,8 +314,8 @@ std::wstring sctheader_summary(structuresults data_container) {
 	return sheader_results;
 }
 
-std::wstring structure_display(structuresults data_container, int select) {
-    if (select < 1 || select > data_container.output_range) {
+std::wstring structure_display(Structuresults data_container, int select) {
+    if (select < 1 || select > data_container.output_range_) {
 		return L"输出范围指定有误，无法读取信息。";
     }
 

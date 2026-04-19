@@ -7,9 +7,6 @@
 #include <iostream>
 #include <codecvt>
 #include <string>
-// 测试内存泄漏
-#include <crtdbg.h>
-// 测试完
 
 #include "resource.h"
 #include "api.h"
@@ -59,10 +56,6 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance); // 注册窗口类
 
 /* 入口 */
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow){
-	// 测试内存泄漏
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    // int* p = new int[100];
-	// 测试完
     RegisterAllWindowClasses(hInstance);
 
     HWND main_window = CreateWindowEx(
@@ -171,6 +164,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         }
 		case ID_40005: { // 菜单栏：文件导出 -> 导出十六进制文本
             std::wstring full_path(szFile); 
+            int counter = 1;
 
             size_t last_slash = full_path.find_last_of(L"\\/");
             std::wstring full_filename = (last_slash == std::wstring::npos) ?
@@ -182,11 +176,19 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 full_filename :
                 full_filename.substr(0, last_dot);
 
-            std::wstring output_filename = basename + L"_output_hex.txt";
+            std::wstring output_filename = basename + L"_hex.txt";
             std::wstring output_filepath = get_exe_directory() + L"\\" + output_filename;
+
+            std::wstring final_filepath = output_filepath;
+            while (GetFileAttributes(final_filepath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                std::wstring new_filename = basename + L"_hex(" + std::to_wstring(counter) + L").txt";
+                final_filepath = get_exe_directory() + L"\\" + new_filename;
+                counter++;
+            }
+
             if (file_loaded) {
-                if (g_analysis_object.data_manager.hexadecimal_document_export(output_filepath)) {
-                    MessageBox(hWnd, L"文件导出成功。", L"导出", MB_OK);
+                if (g_analysis_object.data_manager.hexadecimal_document_export(final_filepath)) {
+                    MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
                 else {
                     MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
@@ -198,11 +200,44 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             break;
         }
 		case ID_40006: { // 菜单栏：文件导出 -> 导出结构化文本
-            MessageBox(hWnd, L"daochubaogaotxt", L"test", MB_OK);
+            std::wstring full_path(szFile);
+            int counter = 1;
+
+            size_t last_slash = full_path.find_last_of(L"\\/");
+            std::wstring full_filename = (last_slash == std::wstring::npos) ?
+                full_path :
+                full_path.substr(last_slash + 1);
+
+            size_t last_dot = full_filename.find_last_of(L'.');
+            std::wstring basename = (last_dot == std::wstring::npos) ?
+                full_filename :
+                full_filename.substr(0, last_dot);
+
+            std::wstring output_filename = basename + L"_report.txt";
+            std::wstring output_filepath = get_exe_directory() + L"\\" + output_filename;
+
+            std::wstring final_filepath = output_filepath;
+            while (GetFileAttributes(final_filepath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                std::wstring new_filename = basename + L"_reprot(" + std::to_wstring(counter) + L").txt";
+                final_filepath = get_exe_directory() + L"\\" + new_filename;
+                counter++;
+            }
+
+            if (file_loaded) {
+                if (g_analysis_object.data_manager.scan_report_export(final_filepath)) {
+                    MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
+                }
+                else {
+                    MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
+                }
+            }
+            else {
+                MessageBox(hWnd, L"还没有打开需要分析的文件，请打开文件后重试。", L"导出", MB_OK);
+            }
             break;
         }
 		case ID_40007: { // 菜单栏：文件导出 -> 导出结构化JSON
-            MessageBox(hWnd, L"daochubaogaojson", L"test", MB_OK);
+            MessageBox(hWnd, L"还在开发中(。_。)", L"导出", MB_OK);
             break;
         }
         }
@@ -579,9 +614,16 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         GetClientRect(hWnd, &rc);
         hedit_data = CreateWindowEx(
             0, L"EDIT",
-            L"点击菜单栏 -> 文件 -> 打开，\r\n选择文件后单击左侧导航栏项目以显示详细信息。\r\n\r\n\
-注意\r\n工具现在还没有做文件验证，请不要拿除exe、dll格式以外的文件尝试 (ˉ▽ˉ；)\r\n\
-现阶段不支持ROM格式 不支持大端序 所有扫描结果仅供参考",
+            L" 点击菜单栏 -> 文件 -> 打开，"
+            L"\r\n 选择文件后单击左侧导航栏项目以显示详细信息。\r\n"
+            L"\r\n【已知问题告知】"
+            L"\r\n 工具现在还没有做文件验证，请不要拿除exe、dll格式以外的文件尝试"
+            L"\r\n 不支持ROM格式"
+            L"\r\n 不支持大端序"
+            L"\r\n 不支持调试伪节区扫描"
+            L"\r\n 节区名白名单不全，容易误报合法节区名"
+            L"\r\n 十六进制显示不全，不支持浏览器模式，有需要可选择导出后查看"
+            L"\r\n 不支持其他未知问题 (ˉ▽ˉ ;)",
             WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY,
             0, 0, rc.right, rc.bottom,
             hWnd, NULL, GetModuleHandle(NULL), NULL

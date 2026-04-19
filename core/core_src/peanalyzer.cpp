@@ -19,7 +19,40 @@ SharedStructure shared_structure{};
 /* 普通工具函数 */
 static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t a_begin, uint64_t a_end) { // front和after的始末值
 	// 所有区间的begin和end值取值为，begin<= 区间 <end，即区间结束值其实不包含end值
-	if (f_begin > f_end || a_begin > a_end) {
+	// 使用时当前区间是后一个区间，遍历比较以当前区间为准，循环检测已检察过的比它小的区间
+	if (a_begin > a_end) { 
+		return -1; // 当前区间无效
+	}
+	if (f_begin < a_begin && f_begin < a_end) {
+		if (f_end < a_begin && f_end < a_end) {
+			return 6; // 空洞
+		}
+		else if (f_end == a_begin && f_end < a_end) {
+			return 1; // 正常
+		}
+		else if (f_end > a_begin && f_end < a_end) {
+			return 2; // 重叠
+		}
+	}
+	/*else if (f_begin >= a_begin && f_begin < a_end && f_end > a_begin && f_end <= a_end) {
+		return 3;     // 重叠
+	}*/
+	else if (f_begin >= a_begin && f_begin < a_end) {
+		return 3;     // 重叠
+	}
+	else if (f_begin > a_begin && f_begin < a_end && f_end > a_begin && f_end > a_end) {
+		return 4;     // 重叠乱序
+	}
+	else if (f_begin > a_begin && f_begin == a_end && f_end > a_begin && f_end > a_end) {
+		return 5;     // 乱序
+	}
+	else if (f_begin > a_begin && f_begin > a_end && f_end > a_begin && f_end > a_end) {
+		return 7;     // 乱序空洞
+	} 
+	else {
+		return 0;     // 未知情况
+	}
+	/*if (f_begin > f_end || a_begin > a_end) {
 		return -1;    // 无效区间
 	}
 	if (f_begin < a_begin && f_begin < a_end) {
@@ -39,7 +72,7 @@ static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t
 	else if (f_begin >= a_begin && f_begin >= a_end) {
 		return 5;     // 乱序
 	}
-	return 0;         // 奇怪的情况
+	return 0;         // 奇怪的情况*/
 }
 
 static void interval_insertion_sort(std::vector<SectionRange>& input_vector) {
@@ -89,45 +122,45 @@ void PEanalyzer::clear_buffer() {
 /* FileHeader分析用函数 */
 std::string PEanalyzer::field_interpretation(uint16_t inputmachine) {
 	switch (inputmachine) {
-	case 0x014C: return "Machine architecture: Intel 386 (32-bit x86)";
+	case 0x014C: return "Intel 386 (32-bit x86)";
 	case 0x8664:
 		shared_structure.bitness_ = 64;
-		return "Machine architecture: AMD64 (64-bit x86)";
-	case 0x01C0: return "Machine architecture: ARM LE";
-	case 0x01C4: return "Machine architecture: ARMv7 THUMB LE";
+		return "AMD64 (64-bit x86)";
+	case 0x01C0: return "ARM LE";
+	case 0x01C4: return "ARMv7 THUMB LE";
 	case 0xAA64:
 		shared_structure.bitness_ = 64;
-		return "Machine architecture: ARM64 LE";
+		return "ARM64 LE";
 	case 0x0200:
 		shared_structure.bitness_ = 64;
-		return "Machine architecture: Intel Itanium";
-	case 0x0162: return "Machine architecture: MIPS R3000";
-	case 0x0166: return "Machine architecture: MIPS R4000";
-	case 0x0168: return "Machine architecture: MIPS R10000";
-	case 0x0169: return "Machine architecture: MIPS WCE v2";
+		return "Intel Itanium";
+	case 0x0162: return "MIPS R3000";
+	case 0x0166: return "MIPS R4000";
+	case 0x0168: return "MIPS R10000";
+	case 0x0169: return "MIPS WCE v2";
 	case 0x0184:
 		shared_structure.bitness_ = 64;
-		return "Machine architecture: Alpha AXP";
-	case 0x01A2: return "Machine architecture: SH3";
-	case 0x01A3: return "Machine architecture: SH3 DSP";
-	case 0x01A6: return "Machine architecture: SH4";
+		return "Alpha AXP";
+	case 0x01A2: return "SH3";
+	case 0x01A3: return "SH3 DSP";
+	case 0x01A6: return "SH4";
 	case 0x01A8:
 		shared_structure.bitness_ = 64;
-		return "Machine architecture: SH5";
-	case 0x01C2: return "Machine architecture: ARM Thumb-2 LE";
-	case 0x01D3: return "Machine architecture: Matsushita AM33";
-	case 0x01F0: return "Machine architecture: PowerPC";
-	case 0x01F1: return "Machine architecture: PowerPC FP";
-	case 0x0266: return "Machine architecture: MIPS16";
-	case 0x0366: return "Machine architecture: MIPS with FPU";
-	case 0x0466: return "Machine architecture: MIPS16 with FPU";
-	case 0x0520: return "Machine architecture: Tricore";
+		return "SH5";
+	case 0x01C2: return "ARM Thumb-2 LE";
+	case 0x01D3: return "Matsushita AM33";
+	case 0x01F0: return "PowerPC";
+	case 0x01F1: return "PowerPC FP";
+	case 0x0266: return "MIPS16";
+	case 0x0366: return "MIPS with FPU";
+	case 0x0466: return "MIPS16 with FPU";
+	case 0x0520: return "Tricore";
 	case 0x0EBC:
 		shared_structure.bitness_ = 82;
-		return "Machine architecture: EFI Byte Code";
-	case 0x9041: return "Machine architecture: M32R";
-	case 0xC0EE: return "Machine architecture: CEE";
-	default: return "!";
+		return "EFI Byte Code";
+	case 0x9041: return "M32R";
+	case 0xC0EE: return "CEE";
+	default: return "Unknown";
 	}
 }
 
@@ -168,7 +201,7 @@ void PEanalyzer::magic_joint_judge() {
 }
 
 /* SectionHeader分析用函数 */
-void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic, structuresults& data_container) {
+void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic, Structuresults& data_container) {
 	if (data_container.section_attributes.empty()) {
 		return;
 	}
@@ -181,7 +214,7 @@ void PEanalyzer::section_characteristic_judge(uint32_t input_characteristic, str
 	data_container.section_attributes.back().cnt_uninitialized_data_ = ((input_characteristic & 0x00000080) != 0);
 }
 
-void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container) {
+void PEanalyzer::section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num, Structuresults& data_container) {
 	std::string msg = "";
 	uint64_t characteristics_offset = 
 		static_cast<uint64_t>(inputresult.file_offset_) + 0x28 + static_cast<uint64_t>(num) * 40 + 36; // Characteristics字段偏移，其中num值被限制在128内，不会导致溢出
@@ -321,7 +354,7 @@ int PEanalyzer::section_name_match(const uint8_t input_name[8]) {
 	return -1;
 }
 
-void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, structuresults& data_container) {
+void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, Structuresults& data_container) {
 	/*
 	[0] bool mem_execute_;               // 内存可执行
     [1] bool mem_read_;                  // 内存可读
@@ -462,9 +495,12 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 }
 
 /* public函数 */
-bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
-	shared_structure = SharedStructure();        // 历史遗留问题，本来都不想要这个结构体了
-	shared_structure.size_of_file_ = file_size_; // 历史遗留问题
+bool PEanalyzer::dosheader_analysis(Structuresults& data_container) {
+	/* 历史遗留问题 */
+	shared_structure = SharedStructure();
+	shared_structure.size_of_file_ = file_size_;
+	data_container.sr_file_size_ = file_size_;
+	/* 不要动 */
 
 	clear_buffer();
 	Diaresults result;
@@ -535,7 +571,7 @@ bool PEanalyzer::dosheader_analysis(structuresults& data_container) {
 	return true;
 }
 
-bool PEanalyzer::dosstub_analysis(structuresults& data_container) {
+bool PEanalyzer::dosstub_analysis(Structuresults& data_container) {
 	clear_buffer();
 	Diaresults result;
 	uint8_t reading_mode = 0; /* 读取方式 0-正常读取，1-分段读取，2-不读取 */
@@ -707,7 +743,7 @@ bool PEanalyzer::dosstub_analysis(structuresults& data_container) {
 	return true;
 }
 
-bool PEanalyzer::file_header_analysis(structuresults& data_container) {
+bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 	clear_buffer();
 	Diaresults result;
 
@@ -813,14 +849,15 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	}
 	else {
 		std::string msg = field_interpretation(shared_structure.machine_);
+		data_container.architecture_ = msg;
 		// 普通信息：machine值可与常见值匹配，具体见field_interpretation()函数
-		if (msg != "!") {
+		if (msg != "Unknown") {
 			result.information_list_.push_back(
 				detailed_information(
 					Core::Severity::INFO_LOW,
 					"machine",
 					"File Header",
-					msg,
+					("Machine architecture : " + msg),
 					data_container.dosheader.e_lfanew + 4
 				)
 			);
@@ -893,7 +930,7 @@ bool PEanalyzer::file_header_analysis(structuresults& data_container) {
 	return true;
 }
 
-bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
+bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 	Diaresults result;
 	int headerlength = shared_structure.size_of_optionalheader_;
 
@@ -930,7 +967,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader32.SizeOfHeaders;
 
-		data_container.file_identification = 32;
+		data_container.file_identification_ = "32位";
 
 		// 异常：imagebase字段为0
 		if (shared_structure.imagebase32_ == 0) {
@@ -984,7 +1021,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader64.SizeOfHeaders;
 
-		data_container.file_identification = 64;
+		data_container.file_identification_ = "64位";
 
 		// 异常：imagebase预设地址超过64位地址上限
 		if (shared_structure.imagebase64_ <= 0x100000 || 
@@ -1024,7 +1061,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 		shared_structure.size_of_initialized_data_ = data_container.optionalheaderrom.SizeOfInitializedData;
 		shared_structure.size_of_uninitialized_data_ = data_container.optionalheaderrom.SizeOfUninitializedData;
 
-		data_container.file_identification = 82;
+		data_container.file_identification_ = "ROM";
 		/* 暂定区域，ROM架构的字段处理 */
 	}
 	else {
@@ -1403,7 +1440,7 @@ bool PEanalyzer::optional_header_analysis(structuresults& data_container) {
 	【临时】m_section_range           ：内存区间记录对象
 	【临时】s_section_range           ：存储区间记录对象
 */
-bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
+bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 	Diaresults result;
 	int i = 0;
 
@@ -1452,7 +1489,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 
 	/* 第一层大循环结束后处理 */
 	// 节区因前面字段错误而导致无法扫描，此处直接中止分析节区头部分，仅输出至可选头分析结果
-	if (data_container.output_range < 5) { 
+	if (data_container.output_range_ < 5) { 
 		return true;
 	}
 
@@ -1511,6 +1548,12 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 			}
 		}
 
+		/* 伪节区过滤 */
+		if (current_section.VirtualSize == 0 && current_section.SizeOfRawData == 0 && current_section.PointerToRawData == 0) {
+			read_offset += sizeof(SectionHeader);
+			continue;
+		}
+
 		data_container.sectionheaders.push_back(current_section);
 
 		SectionImformation section_imformation_element;
@@ -1540,7 +1583,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 				}
 			}
 			catch (std::runtime_error& e) {
-				data_container.output_range = 4;
+				data_container.output_range_ = 4;
 				return true;
 			}
 			break;
@@ -1574,15 +1617,28 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 			int judgment_code = interval_relation_judgment(data_container.memory_interval_table[j1].begin, data_container.memory_interval_table[j1].end,
 				data_container.memory_interval_table[j].begin, data_container.memory_interval_table[j].end);
 			try {
-				if (judgment_code == -1 || judgment_code == 0) {
+				if (judgment_code == 0) {
 					/*msg1 = "扫描至sectionheader[" + std::to_string(j) + "]处理内存区间情况时出现不合理计算范围或出现未知区间状态。";*/
 					msg1 = "Scanning sectionheader[" + std::to_string(j) + "] for memory interval relation detected unreasonable calculation range or unknown interval status.";
 					throw std::runtime_error(msg1);
 				}
 			}
 			catch (std::runtime_error) {
-				data_container.output_range = 4;
+				/* 暂定处理 */
+				data_container.output_range_ = 4;
 				break;
+			}
+			if (judgment_code == -1) {
+				// 警告：区间[j]地址计算出现负数，存在不合理计算范围
+				result.information_list_.push_back(
+					indexed_issue(
+						Core::Severity::SUSPICIOUS,
+						"Section Header",
+						j,
+						"The address calculation of interval [" + std::to_string(j) + "]  resulted in a negative number, indicating an unreasonable calculation range in the memory.",
+						s_section_range.begin
+					)
+				);
 			}
 			if (judgment_code == 2 || judgment_code == 3 || judgment_code == 4) { // 有重叠现象
 				// 可疑：区间[j]所示的映射区间与[j1]所示节区重叠
@@ -1597,7 +1653,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 					)
 				);
 			}
-			if (judgment_code == 4 || judgment_code == 5) { // 有乱序现象，乱序定义指节区和节区头顺序不一致
+			if (judgment_code == 4 || judgment_code == 5 || judgment_code == 7) { // 有乱序现象，乱序定义指节区和节区头顺序不一致
 				// 可疑：区间[j]所示的映射区间与[j1]所示节区乱序
 				msg1 = "The section area shown in [" + std::to_string(j1) + "] is out of order in the memory.";
 				result.information_list_.push_back(
@@ -1612,7 +1668,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 				data_container.m_orderliness = false;
 			}
 		}
-		if (data_container.output_range < 5) {
+		if (data_container.output_range_ < 5) {
 			break;
 		}
 		// 内存区间排序
@@ -1636,15 +1692,28 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 			int judgment_code = interval_relation_judgment(data_container.storage_interval_table[j2].begin, data_container.storage_interval_table[j2].end,
 				data_container.storage_interval_table[j].begin, data_container.storage_interval_table[j].end);
 			try {
-				if (judgment_code == -1 || judgment_code == 0) {
+				if (judgment_code == 0) {
 					/* 扫描至sectionheader[j]处理内存区间情况时出现不合理计算范围或出现未知区间状态。 */
 					msg1 = "When scanning to sectionheader[" + std::to_string(j) + "] when processing the memory interval, an unreasonable calculation range or an unknown interval status appears.";
 					throw std::runtime_error(msg1);
 				}
 			}
 			catch (std::runtime_error) {
-				data_container.output_range = 4;
+				/* 暂定处理 */
+				data_container.output_range_ = 4;
 				break;
+			}
+			if (judgment_code == -1) {
+				// 警告：区间[j]地址计算出现负数，存在不合理计算范围
+				result.information_list_.push_back(
+					indexed_issue(
+						Core::Severity::SUSPICIOUS,
+						"Section Header",
+						j,
+						"The address calculation of interval [" + std::to_string(j) + "]  resulted in a negative number, indicating an unreasonable calculation range in the external memory.",
+						s_section_range.begin
+					)
+				);
 			}
 			if (judgment_code == 2 || judgment_code == 3 || judgment_code == 4) { // 有重叠现象
 				// 可疑：区间[j]所示的外存区间与[j2]所示节区重叠
@@ -1658,7 +1727,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 					)
 				);
 			}
-			if (judgment_code == 4 || judgment_code == 5) { // 有乱序现象
+			if (judgment_code == 4 || judgment_code == 5 || judgment_code == 7) { // 有乱序现象
 				// 可疑：区间[j]所示的外存区间与[j2]所示节区乱序
 				result.information_list_.push_back(
 					indexed_issue(
@@ -1672,7 +1741,7 @@ bool PEanalyzer::section_headers_analysis(structuresults& data_container) {
 				data_container.s_orderliness = false;
 			}
 		}
-		if (data_container.output_range < 5) {
+		if (data_container.output_range_ < 5) {
 			break;
 		}
 		if (max_num == j + 1 && !data_container.s_orderliness) {

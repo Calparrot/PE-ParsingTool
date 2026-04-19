@@ -3,9 +3,9 @@
 
 #include "database.h"
 
-structuresults data_container;
+Structuresults data_container;
 
-void structuresults::crash_imformation_set(error_category code, const std::string& msg) {
+void Structuresults::crash_imformation_set(error_category code, const std::string& msg) {
 	crashreport.error_code_ = code;
 	crashreport.message_ = msg;
 }
@@ -66,7 +66,7 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 	}
 	catch (std::runtime_error& e) {
 		// 不输出节区头和节区内容，后续也不处理
-		data_container.output_range = 4; 
+		data_container.output_range_ = 4; 
 	}
 
 	// VirtualAddress 是否位于PE头区域检测

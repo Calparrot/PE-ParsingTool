@@ -23,6 +23,8 @@
 类说明
 	structuresults                 ：输出结果&数据库
 类成员说明
+    architecture                   ：架构
+    sr_file_size_                  ：文件大小，sr前缀是为了和PEanalyzer类的file_size_成员做区分
     max_number_of_possible_sections：扫描的可能最大节区数量
 	m_orderliness                  ：内存映射区间是否有序
 	s_orderliness                  ：文件映射区间是否有序
@@ -285,8 +287,9 @@ struct SectionHeader {
 };
 #pragma pack(pop)
 
-class structuresults {
+class Structuresults {
 public:
+    // 基础信息
     /* 
     output_range 输出范围说明（不可用户管理，默认尽量输出所有结果）：
         1 - 输出至 40 byte 扫描结果
@@ -295,8 +298,10 @@ public:
         4 - 输出至节区头前的扫描结果
         5 - 输出文件头部内容所有扫描结果
     */
-    int output_range = 5;
-    uint8_t file_identification = 32; // 32位、64位或其他
+    int output_range_ = 5;
+    std::string file_identification_ = ""; // 32位、64位或其他
+    std::string architecture_ = "";
+    uint64_t sr_file_size_;
     StructuralImformation structures_attributes;
 
     // 诊断数据

@@ -61,12 +61,12 @@ std::wstring degree_judgement(Core::Severity severity);
 std::wstring string_to_wstring(const std::string& str, UINT code_page = CP_UTF8);
 
 /* ·­Òëº¯Êı */
-std::wstring generate_file_display(structuresults data_container);
+std::wstring generate_file_display(Structuresults data_container);
 
 std::wstring result_translator(Core::Diagnostic structured_results);
-std::wstring scan_summary(structuresults data_container);
-std::wstring sctheader_summary(structuresults data_container);
+std::wstring scan_summary(Structuresults data_container);
+std::wstring sctheader_summary(Structuresults data_container);
 
-std::wstring structure_display(structuresults data_container, int select);
+std::wstring structure_display(Structuresults data_container, int select);
 
 #endif // !TRANSLATOR_H
