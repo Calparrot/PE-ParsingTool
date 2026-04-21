@@ -615,14 +615,16 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         hedit_data = CreateWindowEx(
             0, L"EDIT",
             L" 点击菜单栏 -> 文件 -> 打开，"
-            L"\r\n 选择文件后单击左侧导航栏项目以显示详细信息。\r\n"
+            L"\r\n 选择文件后单击左侧导航栏项目以显示详细信息。"
+            L"\r\n 有需要也可在打开文件后点击菜单栏 -> 文件 -> 导出选择需要导出的文件\r\n"
             L"\r\n【已知问题告知】"
-            L"\r\n 工具现在还没有做文件验证，请不要拿除exe、dll格式以外的文件尝试"
+            L"\r\n 工具现在还没有做文件验证，请不要拿除exe、dll格式以外的文件尝试，会导致扫描结果很奇怪"
             L"\r\n 不支持ROM格式"
             L"\r\n 不支持大端序"
             L"\r\n 不支持调试伪节区扫描"
             L"\r\n 节区名白名单不全，容易误报合法节区名"
             L"\r\n 十六进制显示不全，不支持浏览器模式，有需要可选择导出后查看"
+            L"\r\n 可能不支持大文件，目前缺少大文件测试"
             L"\r\n 不支持其他未知问题 (ˉ▽ˉ ;)",
             WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_READONLY,
             0, 0, rc.right, rc.bottom,

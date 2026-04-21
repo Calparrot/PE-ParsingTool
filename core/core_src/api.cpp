@@ -224,32 +224,28 @@ std::string Translator::single_item_translator(Core::Diagnostic single_item) {
 std::string Translator::get_sct_address_table() {
     std::string table;
     table += "\n【节区文件地址表】\n";
-    table += "序号 | 起始偏移 | 结束偏移 | 数据长度 | 对齐长度\n";
+    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
+    table += "序号\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
+    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
     for (size_t i = 0; i < data_container.storage_interval_table.size(); i++) {
-        table += std::to_string(i + 1);
-        table += " | ";
-        table += uint_to_hex_string(data_container.storage_interval_table[i].begin);
-        table += " | ";
-        table += uint_to_hex_string(data_container.storage_interval_table[i].end);
-        table += " | ";
-        table += uint_to_hex_string(data_container.storage_interval_table[i].size);
-        table += " | ";
+        table += std::to_string(i + 1) + "\t|";
+        table += uint_to_hex_string(data_container.storage_interval_table[i].begin) + "\t|";
+        table += uint_to_hex_string(data_container.storage_interval_table[i].end) + "\t|";
+        table += uint_to_hex_string(data_container.storage_interval_table[i].size) + "\t|";
         table += uint_to_hex_string(data_container.storage_interval_table[i].alignment_length);
         table += "\n";
     }
     table += "注：结束偏移含对齐\n";
 
     table += "\n【节区内存地址表】\n";
-    table += "序号 | 起始偏移 | 结束偏移 | 数据长度 | 对齐长度\n";
+    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
+    table += "序号\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
+    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
     for (size_t i = 0; i < data_container.memory_interval_table.size(); i++) {
-        table += std::to_string(i + 1);
-        table += " | ";
-        table += uint_to_hex_string(data_container.memory_interval_table[i].begin);
-        table += " | ";
-        table += uint_to_hex_string(data_container.memory_interval_table[i].end);
-        table += " | ";
-        table += uint_to_hex_string(data_container.memory_interval_table[i].size);
-        table += " | ";
+        table += std::to_string(i + 1) + "\t|";
+        table += uint_to_hex_string(data_container.memory_interval_table[i].begin) + "\t|";
+        table += uint_to_hex_string(data_container.memory_interval_table[i].end) + "\t|";
+        table += uint_to_hex_string(data_container.memory_interval_table[i].size) + "\t|";
         table += uint_to_hex_string(data_container.memory_interval_table[i].alignment_length);
         table += "\n";
     }
@@ -268,14 +264,17 @@ std::string Translator::basic_file_info_translator() {
 
     return basic_info;
 }
+std::string Translator::aggregate_info_translator(){
+    std::string agrt_info;
+
+    agrt_info += get_sct_address_table();
+
+    return agrt_info;
+}
 std::string Translator::detailed_file_info_translator() {
     std::string detailed_info;
 
     detailed_info += "\n【详细信息】\n";
-    detailed_info += get_sct_address_table();
-
-    detailed_info += "\n扫描发现以下信息：\n";
-
     if (data_container.output_range_ >= 1) {
         for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range_); i++) {
             for (size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
@@ -287,6 +286,7 @@ std::string Translator::detailed_file_info_translator() {
     else {
         detailed_info += " ！ 扫描出错了，无法获取输出范围。";
     }
+    
 
     return detailed_info;
 }
@@ -328,9 +328,11 @@ bool Translator::hexadecimal_document_export(const std::wstring& export_filepath
 
 bool Translator::scan_report_export(const std::wstring& export_filepath) {
     if (!string_to_file_append(export_filepath, basic_file_info_translator()) ||
+    !string_to_file_append(export_filepath, aggregate_info_translator()) ||
     !string_to_file_append(export_filepath, detailed_file_info_translator())) {
         return false;
     }
+
     return true;
 }
 
@@ -369,7 +371,7 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
 	}
 
     bool previous_execution_result = readfile(input_filepath);
-    uint8_t execution_steps = 0;
+    uint8_t execution_steps = 0; // 记录执行到多少个步骤，不管成功还是失败
     PEanalyzer target(myfile);
 
     if (previous_execution_result) {
@@ -394,6 +396,7 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
     }
 
     if (previous_execution_result) {
+        /* 在这调文件置信度检测函数 */
         return error_code::SUCCESS;
     }
     else {
@@ -407,6 +410,7 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
             return error_code::FILE_ACCESS_DENIED;
         default:
             data_manager.data_container.output_range_ = execution_steps;
+            /* 在这调文件置信度检测函数 */
             return error_code::SUCCESS;
         }
     }

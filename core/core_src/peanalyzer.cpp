@@ -1583,6 +1583,7 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 				}
 			}
 			catch (std::runtime_error& e) {
+				/* 暂定处理，需要修改，不应该是outputrange，建议新增变量记录合理节区输出数量 */
 				data_container.output_range_ = 4;
 				return true;
 			}

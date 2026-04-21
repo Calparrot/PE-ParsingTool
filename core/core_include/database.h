@@ -21,7 +21,7 @@
 	CrashReport                    ：崩溃报告
     OverlapProcessing              ：重叠数据信息
 类说明
-	structuresults                 ：输出结果&数据库
+	Structuresults                 ：输出结果&数据库，建议把所有该类命名为data_container，避免出现未知错误，除非有明确需求
 类成员说明
     architecture                   ：架构
     sr_file_size_                  ：文件大小，sr前缀是为了和PEanalyzer类的file_size_成员做区分
@@ -30,8 +30,10 @@
 	s_orderliness                  ：文件映射区间是否有序
     memory_interval_table          ：节区内存分布区间表
     storage_interval_table         ：节区文件分布区间表
-    is_this_section_valid()        ：某40字节数据是否可能为节区头的检查函数
     source_file_data               ：源文件数据
+其他函数说明
+    is_this_section_valid()        ：某40字节数据是否可能为节区头的检查函数
+    file_confidence_detection()    ：文件置信度检测（有多大可能是PE文件？）
 */
 
 struct StructuralImformation {
@@ -62,10 +64,11 @@ struct Diaresults {
     std::vector<Core::Diagnostic> additional_information; // 额外信息，暂时闲置
 };
 
-struct BreakDown {
+/*struct BreakDown {
     int abnormal_num_of_keywords_ = 0; // 异常关键字段数量
     int total_num_of_keywords_ = 23;    // 关键字段总数量
 };
+*/
 
 struct SectionImformation {
     bool marked_section = false;             // 是否存在不可执行可能
@@ -146,6 +149,28 @@ struct OverlapProcessing {
     unsigned int length;
     size_t expectation_offset;
     size_t actual_offset;
+};
+
+struct ComprehensiveInfo { // SharedStructure迁移版，暂时无用
+    std::string file_identification_ = ""; // 32位、64位或其他
+    std::string architecture_ = "";
+    uint64_t sr_file_size_;
+    StructuralImformation structures_attributes;
+
+    /* BreakDown迁移数据 */
+    int abnormal_num_of_keywords_ = 0; // 异常关键字段数量
+    int total_num_of_keywords_ = 23;    // 关键字段总数量
+
+    /* 以下数据为shared_structure迁移数据，暂时无用，作为过渡 */
+    int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
+    bool PE_isValid_ = true;
+    std::string file_extention_ = ".exe";
+    uint32_t size_of_headers_;         // 所有头的大小
+    int64_t size_of_file_;             // 文件大小
+    uint32_t section_table_offset_;    // 节区在文件中的偏移
+    uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
+    int detected_section_count_ = 0;   // 实际检测出的节区数量
+    /* 迁移数据结束 */
 };
 
 #pragma pack(push, 1)
@@ -299,6 +324,7 @@ public:
         5 - 输出文件头部内容所有扫描结果
     */
     int output_range_ = 5;
+
     std::string file_identification_ = ""; // 32位、64位或其他
     std::string architecture_ = "";
     uint64_t sr_file_size_;
@@ -333,5 +359,6 @@ public:
 };
 
 int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure);
+int file_confidence_detection(SharedStructure shared_structure);
 
 #endif

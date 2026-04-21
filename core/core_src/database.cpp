@@ -96,3 +96,12 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 
 	return 0;
 }
+
+/* 置信度检测列表及其权重（%）
+	*/
+int file_confidence_detection(SharedStructure shared_structure) {
+	int sum = 0;
+
+
+	return sum;
+}

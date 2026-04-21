@@ -63,6 +63,7 @@ private:
 
     // ÕûºÏ·­Òë
     std::string basic_file_info_translator();
+    std::string aggregate_info_translator();
     std::string detailed_file_info_translator();
 
 public:
