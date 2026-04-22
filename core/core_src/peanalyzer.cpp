@@ -498,8 +498,6 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 bool PEanalyzer::dosheader_analysis(Structuresults& data_container) {
 	/* 历史遗留问题 */
 	shared_structure = SharedStructure();
-	shared_structure.size_of_file_ = file_size_;
-	data_container.sr_file_size_ = file_size_;
 	/* 不要动 */
 
 	clear_buffer();
@@ -590,12 +588,10 @@ bool PEanalyzer::dosstub_analysis(Structuresults& data_container) {
 		return false;
 	}
 
-	/* 这里有无符号整数的坑，已修复
-	int count = shared_structure.peheader_offset_ - 64 > 0 ? shared_structure.peheader_offset_ - 64 : 0;*/
+	// 这里有无符号整数的坑，已修复
 	int count = shared_structure.peheader_offset_ > 64 ? shared_structure.peheader_offset_ - 64 : 0;
 
 	result.component_name_ = "DOS Stub";
-	// result.component_type_ = "header";
 	result.file_offset_ = 64;
 	result.data_size_ = count;
 
@@ -796,9 +792,9 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 	read_offset += 24;
 
 	std::memcpy(&data_container.fileheader, mulbuffer, sizeof(FileHeader));
-	shared_structure.machine_ = data_container.fileheader.machine;
-	shared_structure.number_of_sections_ = data_container.fileheader.numberofsections;
-	shared_structure.size_of_optionalheader_ = data_container.fileheader.sizeofoptionalheader;
+	// shared_structure.machine_ = data_container.fileheader.machine;
+	// shared_structure.number_of_sections_ = data_container.fileheader.numberofsections;
+	// shared_structure.size_of_optionalheader_ = data_container.fileheader.sizeofoptionalheader;
 
 	// 异常：不合法的PE签名
 	if (mulbuffer[0] != 'P' || mulbuffer[1] != 'E' || mulbuffer[2] != '\0' || mulbuffer[3] != '\0') {
@@ -834,7 +830,7 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 	
 	/* 架构字段检查 */
 	// 异常：machine字段为0
-	if (shared_structure.machine_ == 0x0000) {
+	if (data_container.fileheader.machine == 0x0000) {
 		data_container.structures_attributes.file_header_normal_ = false;
 		result.information_list_.push_back(
 			invalid_value(
@@ -848,8 +844,8 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 		);
 	}
 	else {
-		std::string msg = field_interpretation(shared_structure.machine_);
-		data_container.architecture_ = msg;
+		std::string msg = field_interpretation(data_container.fileheader.machine);
+		data_container.comprehensive_info_.architecture_ = msg;
 		// 普通信息：machine值可与常见值匹配，具体见field_interpretation()函数
 		if (msg != "Unknown") {
 			result.information_list_.push_back(
@@ -869,7 +865,7 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 					Core::Severity::SUSPICIOUS,
 					"machine",
 					"File Header",
-					shared_structure.machine_,
+					data_container.fileheader.machine,
 					data_container.dosheader.e_lfanew + 4,
 					false
 				)
@@ -880,8 +876,8 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 	
 	/* 节区数量字段检查，实际数量检查的对照手段在函数 section_headers_analisis() 中 */
 	// 异常：numberofsections值为0，即逻辑节区数量为0
-	if (shared_structure.number_of_sections_ == 0) {
-		shared_structure.number_of_sections_isvalid_ = EleCorrectness::not_valid;
+	if (data_container.fileheader.numberofsections == 0) {
+		// shared_structure.number_of_sections_isvalid_ = EleCorrectness::not_valid;
 		data_container.structures_attributes.file_header_normal_ = false;
 		result.information_list_.push_back(
 			value_mismatch(
@@ -889,14 +885,14 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 				"NumberOfSections",
 				"File Header",
 				5,
-				shared_structure.number_of_sections_,
+				data_container.fileheader.numberofsections,
 				shared_structure.peheader_offset_ + 6
 			)
 		);
 	}
 	// 可疑：numberofsections值过大
-	else if (shared_structure.number_of_sections_ > 96) {
-		shared_structure.number_of_sections_isvalid_ = EleCorrectness::uncertain;
+	else if (data_container.fileheader.numberofsections > 96) {
+		// shared_structure.number_of_sections_isvalid_ = EleCorrectness::uncertain;
 		data_container.structures_attributes.file_header_normal_ = false;
 		result.information_list_.push_back(
 			value_mismatch(
@@ -904,7 +900,7 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 				"NumberOfSections",
 				"File Header",
 				5,
-				shared_structure.number_of_sections_,
+				data_container.fileheader.numberofsections,
 				shared_structure.peheader_offset_ + 6
 			)
 		);
@@ -912,7 +908,7 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 
 	/* sizeofoptionalheader字段检查 */
 	// 异常：sizeofoptionalheader非常见标准值
-	if (shared_structure.size_of_optionalheader_ != 0xF0 && shared_structure.size_of_optionalheader_ != 0xE0) {
+	if (data_container.fileheader.sizeofoptionalheader != 0xF0 && data_container.fileheader.sizeofoptionalheader != 0xE0) {
 		data_container.structures_attributes.file_header_normal_ = false;
 		result.information_list_.push_back(
 			invalid_value(
@@ -932,7 +928,7 @@ bool PEanalyzer::file_header_analysis(Structuresults& data_container) {
 
 bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 	Diaresults result;
-	int headerlength = shared_structure.size_of_optionalheader_;
+	int headerlength = data_container.fileheader.sizeofoptionalheader;
 
 	shared_structure.magic_ = (mulbuffer[read_offset] << 8) | mulbuffer[read_offset + 1];
 	/* 架构确定、magic字段验证 */
@@ -950,7 +946,7 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 				mulbuffer + read_offset,
 				sizeof(OptionalHeader32));
 			// read_offset = read_offset + sizeof(OptionalHeader32) - 2;
-			read_offset = read_offset + shared_structure.size_of_optionalheader_;
+			read_offset = read_offset + data_container.fileheader.sizeofoptionalheader;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheader32.AddressOfEntryPoint;
@@ -967,7 +963,8 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader32.SizeOfHeaders;
 
-		data_container.file_identification_ = "32位";
+		// data_container.file_identification_ = "32位";
+		data_container.comprehensive_info_.file_identification_ = "32位";
 
 		// 异常：imagebase字段为0
 		if (shared_structure.imagebase32_ == 0) {
@@ -1004,7 +1001,7 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 			std::memcpy(&data_container.optionalheader64,
 				mulbuffer + read_offset,
 				sizeof(OptionalHeader64));
-			read_offset = read_offset + shared_structure.size_of_optionalheader_;
+			read_offset = read_offset + data_container.fileheader.sizeofoptionalheader;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheader64.AddressOfEntryPoint;
@@ -1021,7 +1018,7 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader64.SizeOfHeaders;
 
-		data_container.file_identification_ = "64位";
+		data_container.comprehensive_info_.file_identification_ = "64位";
 
 		// 异常：imagebase预设地址超过64位地址上限
 		if (shared_structure.imagebase64_ <= 0x100000 || 
@@ -1050,7 +1047,7 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 			std::memcpy(&data_container.optionalheaderrom,
 				mulbuffer + read_offset,
 				sizeof(ROM_OptionalHeader));
-			read_offset += shared_structure.size_of_optionalheader_;
+			read_offset += data_container.fileheader.sizeofoptionalheader;
 		}
 		
 		shared_structure.address_of_entrypoint_ = data_container.optionalheaderrom.AddressOfEntryPoint;
@@ -1061,7 +1058,7 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 		shared_structure.size_of_initialized_data_ = data_container.optionalheaderrom.SizeOfInitializedData;
 		shared_structure.size_of_uninitialized_data_ = data_container.optionalheaderrom.SizeOfUninitializedData;
 
-		data_container.file_identification_ = "ROM";
+		data_container.comprehensive_info_.file_identification_ = "ROM";
 		/* 暂定区域，ROM架构的字段处理 */
 	}
 	else {
@@ -1497,18 +1494,18 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 	bool has_contradiction = true;
 	int max_num = shared_structure.detected_section_count_;
 	int theoretical_max_sections = (shared_structure.size_of_headers_ - (result.file_offset_)) / 40;
-	if (shared_structure.number_of_sections_ == shared_structure.detected_section_count_ &&
+	if (data_container.fileheader.numberofsections == shared_structure.detected_section_count_ &&
 	shared_structure.detected_section_count_ <= theoretical_max_sections) {
 		has_contradiction = false;
 	}
 	// 如果是因为扫描到全零节区头而停止扫描的，可认为是扫描正常结束，不进行数量重置
 	if (section_error_status_code != 6 && has_contradiction) {
 		if (theoretical_max_sections > max_num) { max_num = theoretical_max_sections; }
-		if (shared_structure.number_of_sections_ > max_num) { max_num = shared_structure.number_of_sections_; }
+		if (data_container.fileheader.numberofsections > max_num) { max_num = data_container.fileheader.numberofsections; }
 	}
 	// 排除恶意构造的第一个节区全0导致扫描器崩溃情况
 	if (section_error_status_code == 6 && max_num == 0) {
-		max_num = shared_structure.number_of_sections_ != 0 ? shared_structure.number_of_sections_ : theoretical_max_sections;
+		max_num = data_container.fileheader.numberofsections != 0 ? data_container.fileheader.numberofsections : theoretical_max_sections;
 	}
 
 	/* 第二层大循环 基于严格条件重复扫描进行异常分析 */

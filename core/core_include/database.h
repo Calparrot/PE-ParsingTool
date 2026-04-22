@@ -14,7 +14,6 @@
 结构体说明
     StructuralImformation          ：结构是否存在可疑或异常的收录表
     Diaresults                     ：单个结构具体诊断结果
-    BreakDown                      ：文件整体信息，用于判断是否为完全无效的文件或非PE文件
     SectionImformation             ：单个节区信息（标准、偏移、属性）
     SectionRange                   ：节区范围
 	error_category                 ：错误码枚举
@@ -151,26 +150,24 @@ struct OverlapProcessing {
     size_t actual_offset;
 };
 
-struct ComprehensiveInfo { // SharedStructure迁移版，暂时无用
+struct ComprehensiveInfo {
+    // 已启用
+    uint64_t file_size_copy_;              // 文件大小
     std::string file_identification_ = ""; // 32位、64位或其他
-    std::string architecture_ = "";
-    uint64_t sr_file_size_;
-    StructuralImformation structures_attributes;
+    std::string architecture_ = "";        // 运行架构
 
-    /* BreakDown迁移数据 */
-    int abnormal_num_of_keywords_ = 0; // 异常关键字段数量
-    int total_num_of_keywords_ = 23;    // 关键字段总数量
+    int abnormal_num_of_keywords_ = 0;     // 异常关键字段数量
+    int total_num_of_keywords_ = 23;       // 关键字段总数量
 
-    /* 以下数据为shared_structure迁移数据，暂时无用，作为过渡 */
-    int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
-    bool PE_isValid_ = true;
-    std::string file_extention_ = ".exe";
-    uint32_t size_of_headers_;         // 所有头的大小
-    int64_t size_of_file_;             // 文件大小
+    /* shared_structure迁移数据 */
+    bool PE_isvalid_ = true;               // 可能是一个PE文件吗
+    std::string file_extention_ = ".exe";  // 文件后缀
+
+    // 迁移中
+    /* shared_structure迁移数据*/
     uint32_t section_table_offset_;    // 节区在文件中的偏移
     uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
     int detected_section_count_ = 0;   // 实际检测出的节区数量
-    /* 迁移数据结束 */
 };
 
 #pragma pack(push, 1)
@@ -324,10 +321,8 @@ public:
         5 - 输出文件头部内容所有扫描结果
     */
     int output_range_ = 5;
-
-    std::string file_identification_ = ""; // 32位、64位或其他
-    std::string architecture_ = "";
-    uint64_t sr_file_size_;
+    ComprehensiveInfo comprehensive_info_;
+ 
     StructuralImformation structures_attributes;
 
     // 诊断数据

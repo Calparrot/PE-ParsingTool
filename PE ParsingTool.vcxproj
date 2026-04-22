@@ -173,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="icons\myicon.ico" />
+    <Image Include="images\cxyxsl.png" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PE ParsingTool.rc" />

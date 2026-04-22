@@ -258,9 +258,9 @@ std::string Translator::get_sct_address_table() {
 std::string Translator::basic_file_info_translator() {
     std::string basic_info;
     basic_info += "【基础扫描信息】\n\n";
-    basic_info += ("模式：" + data_container.file_identification_ + "\n"); // 32位或64位
-    basic_info += ("架构：" + data_container.architecture_ + "\n");
-    basic_info += ("文件大小：" + uint_to_dec_string(data_container.sr_file_size_) + "字节\n");
+    basic_info += ("模式：" + data_container.comprehensive_info_.file_identification_ + "\n"); // 32位或64位
+    basic_info += ("架构：" + data_container.comprehensive_info_.architecture_ + "\n");
+    basic_info += ("文件大小：" + uint_to_dec_string(data_container.comprehensive_info_.file_size_copy_) + "字节\n");
 
     return basic_info;
 }
@@ -374,6 +374,11 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
     uint8_t execution_steps = 0; // 记录执行到多少个步骤，不管成功还是失败
     PEanalyzer target(myfile);
 
+    if (previous_execution_result) {
+        // 初始化工作
+        // data_manager.data_container.sr_file_size_ = target.file_size_;
+        data_manager.data_container.comprehensive_info_.file_size_copy_ = target.file_size_;
+    }
     if (previous_execution_result) {
         previous_execution_result = target.dosheader_analysis(data_manager.data_container);
         execution_steps++;

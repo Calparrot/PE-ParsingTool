@@ -36,7 +36,7 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 
 	// 文件映射越界检测 PointerToRawData + SizeOfRawData > 文件大小
 	if (header.SizeOfRawData > 0) {
-		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) > static_cast<uint64_t>(shared_structure.size_of_file_)) {
+		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) > static_cast<uint64_t>(data_container.comprehensive_info_.file_size_copy_)) {
 			return 1;
 		}
 	}

@@ -45,13 +45,6 @@ enum class EleCorrectness : uint8_t {
 
 struct SharedStructure {
     uint32_t peheader_offset_;        // NT头偏移
-    EleCorrectness peheader_offset_isvalid_ = EleCorrectness::valid;
-    uint16_t machine_;                // 目标CPU架构
-    uint16_t number_of_sections_;     // 节区数量
-    uint16_t size_of_optionalheader_; // 可选头大小
-    EleCorrectness machine_isvalid_ = EleCorrectness::valid;
-    EleCorrectness number_of_sections_isvalid_ = EleCorrectness::valid;
-    EleCorrectness size_of_optionalheader_isvalid = EleCorrectness::valid;
 
     /* x32、x64架构 */
     uint16_t magic_;
@@ -89,7 +82,6 @@ struct SharedStructure {
     uint32_t tls_table_size_;          // TLS表大小
 
     uint32_t size_of_headers_;         // 所有头的大小
-    int64_t size_of_file_;             // 文件大小
 
     uint32_t section_table_offset_;    // 节区在文件中的偏移
     uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
@@ -97,8 +89,6 @@ struct SharedStructure {
 
     int bitness_ = 32;                 // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
     int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
-    bool PE_isValid_ = true;
-    std::string file_extention_ = ".exe";
 };
 
 class PEanalyzer {

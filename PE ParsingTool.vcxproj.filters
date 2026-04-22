@@ -20,6 +20,9 @@
     <Filter Include="core\src">
       <UniqueIdentifier>{8cf592cf-d4cd-4dee-8d37-e3862062afc3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="images">
+      <UniqueIdentifier>{5c7b199a-1024-450e-ad9d-c2aaeca51ca1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\core_src\api.cpp">
@@ -76,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="icons\myicon.ico" />
+    <Image Include="images\cxyxsl.png">
+      <Filter>images</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PE ParsingTool.rc" />
