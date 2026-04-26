@@ -7,6 +7,7 @@
 #include "database.h"
 
 constexpr int REASONABLE_MAX_SECTIONS = 128;
+constexpr int REASONABLE_MAX_IMPORT_DESCRIPTORS = 200;
 
 SharedStructure shared_structure{};
 
@@ -20,59 +21,90 @@ SharedStructure shared_structure{};
 static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t a_begin, uint64_t a_end) { // front和after的始末值
 	// 所有区间的begin和end值取值为，begin<= 区间 <end，即区间结束值其实不包含end值
 	// 使用时当前区间是后一个区间，遍历比较以当前区间为准，循环检测已检察过的比它小的区间
-	if (a_begin > a_end) { 
+	if (a_begin > a_end) {
 		return -1; // 当前区间无效
 	}
-	if (f_begin < a_begin && f_begin < a_end) {
-		if (f_end < a_begin && f_end < a_end) {
-			return 6; // 空洞
-		}
-		else if (f_end == a_begin && f_end < a_end) {
-			return 1; // 正常
-		}
-		else if (f_end > a_begin && f_end < a_end) {
-			return 2; // 重叠
-		}
+	if (f_begin < a_begin && f_end == a_begin && 
+		f_begin < a_end && f_end < a_end) {
+		return 1; // 正常区间
 	}
-	/*else if (f_begin >= a_begin && f_begin < a_end && f_end > a_begin && f_end <= a_end) {
-		return 3;     // 重叠
-	}*/
-	else if (f_begin >= a_begin && f_begin < a_end) {
-		return 3;     // 重叠
+	else if (f_begin < a_begin && f_end > a_begin && 
+		f_begin < a_end && f_end < a_end) {
+		return 2; // 重叠
 	}
-	else if (f_begin > a_begin && f_begin < a_end && f_end > a_begin && f_end > a_end) {
-		return 4;     // 重叠乱序
+	else if (f_begin == a_begin && f_end > a_begin && 
+		f_begin < a_end && f_end == a_end){
+		return 2; // 重叠
 	}
-	else if (f_begin > a_begin && f_begin == a_end && f_end > a_begin && f_end > a_end) {
-		return 5;     // 乱序
+	else if (f_begin < a_begin && f_end > a_begin && 
+		f_begin < a_end && f_end == a_end) {
+		return 2; // 重叠
 	}
-	else if (f_begin > a_begin && f_begin > a_end && f_end > a_begin && f_end > a_end) {
-		return 7;     // 乱序空洞
-	} 
+	else if (f_begin == a_begin && f_end > a_begin && 
+		f_begin < a_end && f_end >a_end) {
+		return 2; // 重叠
+	}
+	else if (f_begin < a_begin && f_end < a_begin && 
+		f_begin < a_end && f_end < a_end) {
+		return 3; // 空洞
+	}
+	else if (f_begin > a_begin && f_end > a_begin && 
+		f_begin == a_end && f_end > a_end){
+		return 4; // 乱序
+	}
+	else if (f_begin > a_begin && f_end > a_begin && f_begin < a_end) {
+		return 5; // 重叠 + 乱序
+	}
+	else if (f_begin > a_begin && f_end > a_begin && 
+		f_begin > a_end && f_end > a_end) {
+		return 6; // 乱序空洞
+	}
 	else {
-		return 0;     // 未知情况
-	}
-	/*if (f_begin > f_end || a_begin > a_end) {
-		return -1;    // 无效区间
-	}
-	if (f_begin < a_begin && f_begin < a_end) {
-		if (f_end < a_end && f_end <= a_begin) {
-			return 1; // 正常
+		// 特殊情况处理
+		if (f_begin == f_end && a_begin != a_end) {
+			if (f_begin == a_begin - 1) {
+				return 1; // 正常
+			}
+			else if (f_begin >= a_begin && f_begin < a_end) {
+				return 2; // 重叠
+			}
+			else if (f_begin < a_begin - 1) {
+				return 3; // 空洞
+			}
+			else if (f_begin >= a_end) {
+				return 4; // 乱序
+			}
 		}
-		else if (f_end < a_end && f_end > a_begin) {
-			return 2; // front后部与after前部重叠
+		else if (f_begin != f_end && a_begin == a_end) {
+			if (a_begin == f_end) {
+				return 1; // 正常
+			}
+			else if (a_begin >= f_begin && a_begin < f_end) {
+				return 2; // 重叠
+			}
+			else if (a_begin > f_end) {
+				return 3; // 空洞
+			}
+			else if (a_begin < f_begin) {
+				return 4; // 乱序
+			}
 		}
-		else if (f_end >= a_end && f_end > a_begin) {
-			return 3; // 完全重叠
+		else if(f_begin == f_end && a_begin == a_end) {
+			if (f_begin + 1 == a_begin) {
+				return 1; // 正常
+			}
+			else if (f_begin == a_begin) {
+				return 2; // 重叠
+			}
+			else if (f_begin + 1 < a_begin) {
+				return 3; // 空洞
+			}
+			else if (f_begin >= a_begin + 1) {
+				return 4; // 乱序
+			}
 		}
+		return 0; // 未知状态
 	}
-	else if (f_begin >= a_begin && f_begin < a_end) {
-		return 4;     // front前部与after后部重叠 + 乱序
-	}
-	else if (f_begin >= a_begin && f_begin >= a_end) {
-		return 5;     // 乱序
-	}
-	return 0;         // 奇怪的情况*/
 }
 
 static void interval_insertion_sort(std::vector<SectionRange>& input_vector) {
@@ -1247,62 +1279,6 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 		/* AddressOfEntryPoint + ImageBase验证入口点的绝对内存地址是否有效。等，*/
 		/* 暂定区域：以上字段分析以及，长度计算，以及，延迟导入分析 */
 
-		/* dataderectory[1]值检验 */
-		// 普通信息：无导入表
-		if (shared_structure.import_table_RVA_ == 0) {
-			result.information_list_.push_back(
-				detailed_information(
-					Core::Severity::INFO_LOW,
-					"Data Directory[1]",
-					"Optional Header",
-					"No Import Table.",
-					shared_structure.peheader_offset_ + 24 + 104
-				)
-			);
-		}
-		// dataderectory[1]与RVA值不匹配
-		else {
-			if (shared_structure.import_table_size_ == 0) {
-				data_container.structures_attributes.optional_header_normal_ = false;
-				result.information_list_.push_back(
-					invalid_value(
-						Core::Severity::WARNING_MED,
-						"Data Directory[1] Size",
-						"Optional Header",
-						shared_structure.import_table_size_,
-						shared_structure.peheader_offset_ + 24 + 104,
-						false
-					)
-				);
-			}
-		}
-		// dataderectory[1]->virtualaddress所示地址超出内存大小
-		if (shared_structure.import_table_RVA_ < 0x1000 || 
-		shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
-			data_container.structures_attributes.optional_header_normal_ = false;
-			result.information_list_.push_back(
-				address_out_of_range(
-					Core::Severity::WARNING_MED,
-					"Data Directory[1] VirtualAddress",
-					"Optional Header",
-					shared_structure.import_table_RVA_
-				)
-			);
-		}
-		// 可疑：dataderectory[1]->virtualaddress未按四字节对齐
-		if ((shared_structure.import_table_RVA_ & 0x3) != 0) {
-			data_container.structures_attributes.optional_header_normal_ = false;
-			result.information_list_.push_back(
-				detailed_information(
-					Core::Severity::SUSPICIOUS,
-					"Data Directory[1] VirtualAddress",
-					"Optional Header",
-					"Not aligned to 4 bytes.",
-					shared_structure.peheader_offset_ + 24 + 104
-				)
-			);
-		}
-
 		/* dataderectory[5]值检验 */
 		// 普通信息：无显式重定位表
 		if (shared_structure.relocation_table_RVA_ == 0) {
@@ -1334,7 +1310,8 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 			}
 		}
 		// 异常：dataderectory[5]->virtualaddress所示地址超过内存大小
-		if (shared_structure.relocation_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+		if (shared_structure.relocation_table_RVA_ < 0x1000 || 
+		shared_structure.relocation_table_RVA_ > 0x7FFFFFFF) {
 			data_container.structures_attributes.optional_header_normal_ = false;
 			result.information_list_.push_back(
 				address_out_of_range(
@@ -1388,7 +1365,8 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 				);
 			}
 			// 异常：dataderectory[9]->virtualaddress所示地址超过内存大小
-			if (shared_structure.tls_table_RVA_ < 0x1000 || shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+			if (shared_structure.tls_table_RVA_ < 0x1000 || 
+			shared_structure.tls_table_RVA_ > 0x7FFFFFFF) {
 				data_container.structures_attributes.optional_header_normal_ = false;
 				result.information_list_.push_back(
 					address_out_of_range(
@@ -1442,7 +1420,6 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 	int i = 0;
 
 	result.component_name_ = "Section Header";
-	// result.component_type_ = "header";
 	result.file_offset_ = shared_structure.peheader_offset_ + 20 + data_container.diarelist[3].data_size_;
 	
 	size_t read_offset_copy = read_offset; // 复用缓冲区偏移备份
@@ -1464,6 +1441,7 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 			}
 			catch (const std::out_of_range& e) {
 				// 临时分析缓冲区读取复用缓冲区时偏移异常。
+
 				data_container.crash_imformation_set(
 					error_category::OFFSET_OUT_OF_RANGE,
 					"Section Header: Temporary analysis buffer offset out of range when reading from shared buffer."
@@ -1473,13 +1451,13 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 			}
 		}
 
-		if (is_this_section_valid(current_section, shared_structure) == 0) {
+		if (is_this_section_valid(current_section, shared_structure, data_container) == 0) {
 			read_offset += sizeof(SectionHeader);
 			shared_structure.detected_section_count_ += 1;
 			continue;
 		}
 		else {
-			section_error_status_code = is_this_section_valid(current_section, shared_structure);
+			section_error_status_code = is_this_section_valid(current_section, shared_structure, data_container);
 		}
 		break;
 	}
@@ -1638,7 +1616,7 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 					)
 				);
 			}
-			if (judgment_code == 2 || judgment_code == 3 || judgment_code == 4) { // 有重叠现象
+			if (judgment_code == 2 || judgment_code == 5) { // 有重叠现象
 				// 可疑：区间[j]所示的映射区间与[j1]所示节区重叠
 				msg1 = "There is overlap with the section area shown in [" + std::to_string(j1) + "] in the memory.";
 				result.information_list_.push_back(
@@ -1651,7 +1629,7 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 					)
 				);
 			}
-			if (judgment_code == 4 || judgment_code == 5 || judgment_code == 7) { // 有乱序现象，乱序定义指节区和节区头顺序不一致
+			if (judgment_code == 4 || judgment_code == 6) { // 有乱序现象，乱序定义指节区和节区头顺序不一致
 				// 可疑：区间[j]所示的映射区间与[j1]所示节区乱序
 				msg1 = "The section area shown in [" + std::to_string(j1) + "] is out of order in the memory.";
 				result.information_list_.push_back(
@@ -1713,7 +1691,7 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 					)
 				);
 			}
-			if (judgment_code == 2 || judgment_code == 3 || judgment_code == 4) { // 有重叠现象
+			if (judgment_code == 2 || judgment_code == 5) { // 有重叠现象
 				// 可疑：区间[j]所示的外存区间与[j2]所示节区重叠
 				result.information_list_.push_back(
 					indexed_issue(
@@ -1725,7 +1703,7 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 					)
 				);
 			}
-			if (judgment_code == 4 || judgment_code == 5 || judgment_code == 7) { // 有乱序现象
+			if (judgment_code == 4 || judgment_code == 6) { // 有乱序现象
 				// 可疑：区间[j]所示的外存区间与[j2]所示节区乱序
 				result.information_list_.push_back(
 					indexed_issue(
@@ -1788,6 +1766,146 @@ bool PEanalyzer::section_headers_analysis(Structuresults& data_container) {
 		// 指向文件末尾之后（但SizeOfRawData=0）
 
 		read_offset += sizeof(SectionHeader);
+	}
+
+	data_container.diarelist.push_back(result);
+	return true;
+}
+
+/* 导入表 */
+bool PEanalyzer::import_descriptor_seeker(Structuresults& data_container) {
+	clear_buffer();
+	Diaresults result;
+
+	/* dataderectory[1]值检验 */
+	// 可疑：导入表缺失
+	if (shared_structure.import_table_RVA_ == 0) {
+		result.information_list_.push_back(
+			detailed_information(
+				Core::Severity::SUSPICIOUS,
+				"Data Directory[1]",
+				"Optional Header",
+				"No Import Table.",
+				shared_structure.peheader_offset_ + 24 + 104
+			)
+		);
+		data_container.structures_attributes.import_descriptor_found_ = false;
+	}
+	// 警告：dataderectory[1]size值为0，但存在导入表
+	else {
+		if (shared_structure.import_table_size_ == 0) {
+			result.information_list_.push_back(
+				invalid_value(
+					Core::Severity::WARNING_MED,
+					"Data Directory[1] Size",
+					"Optional Header",
+					shared_structure.import_table_size_,
+					shared_structure.peheader_offset_ + 24 + 104,
+					false
+				)
+			);
+			data_container.structures_attributes.optional_header_normal_ = false;
+		}
+
+		// 警告：dataderectory[1]->virtualaddress所示地址超出内存大小
+		if (shared_structure.import_table_RVA_ < 0x1000 ||
+			shared_structure.import_table_RVA_ > 0x7FFFFFFF) {
+			result.information_list_.push_back(
+				address_out_of_range(
+					Core::Severity::WARNING_MED,
+					"Data Directory[1] VirtualAddress",
+					"Optional Header",
+					shared_structure.import_table_RVA_
+				)
+			);
+			data_container.structures_attributes.optional_header_normal_ = false;
+			data_container.structures_attributes.import_descriptor_found_ = false;
+		}
+
+		// 可疑：dataderectory[1]->virtualaddress未按四字节对齐
+		if ((shared_structure.import_table_RVA_ & 0x3) != 0) {
+			result.information_list_.push_back(
+				detailed_information(
+					Core::Severity::SUSPICIOUS,
+					"Data Directory[1] VirtualAddress",
+					"Optional Header",
+					"Not aligned to 4 bytes.",
+					shared_structure.peheader_offset_ + 24 + 104
+				)
+			);
+			data_container.structures_attributes.optional_header_normal_ = false;
+		}
+	}
+
+	// 计算IMAGE_IMPORT_DESCRIPTOR在哪个节表
+	if (data_container.structures_attributes.import_descriptor_found_) {
+		unsigned int index = 0;
+		bool found = false;
+		for (size_t i = 0; i < data_container.storage_interval_table.size(); i++) {
+			uint32_t section_start = data_container.sectionheaders[i].VirtualAddress;
+			uint32_t section_end = section_start + data_container.sectionheaders[i].VirtualSize;
+
+			if (shared_structure.import_table_RVA_ >= section_start &&
+				shared_structure.import_table_RVA_ < section_end) {
+				index = i;
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			data_container.structures_attributes.import_descriptor_found_ = false;
+			data_container.diarelist.push_back(result);
+			return true;
+		}
+
+		// 填充数据
+		unsigned int descriptor_address =
+			shared_structure.import_table_RVA_ -
+			data_container.sectionheaders[index].VirtualAddress +
+			data_container.sectionheaders[index].PointerToRawData;
+		unsigned int read_bytes = file_size_ - descriptor_address >= 5600 ? 5600 : file_size_ - descriptor_address;
+		if (descriptor_address < file_size_) {
+			pedata_.seekg(descriptor_address);
+			if (!pedata_) {
+				data_container.crash_imformation_set(
+					// 文件流异常，文件指针移动失败，可能文件未正确打开或已损坏。
+					error_category::FILE_SEEK_FAILED,
+					"IMAGE_IMPORT_DESCRIPTOR: File stream exception, failed to move file pointer, \nthe file may not have been opened correctly or is corrupted."
+				);
+				data_container.diarelist.push_back(result);
+				return false;
+			}
+			pedata_.read(reinterpret_cast<char*>(mulbuffer), read_bytes);
+			if (pedata_.gcount() != read_bytes) {
+				data_container.crash_imformation_set(
+					// 文件流读取数据到内存缓冲区失败。
+					error_category::FILE_READ_FAILED,
+					"IMAGE_IMPORT_DESCRIPTOR: Failed to read data from the file stream into the memory buffer."
+				);
+				data_container.diarelist.push_back(result);
+				return false;
+			}
+		}
+
+		size_t des_offset = 0;
+		while (des_offset + sizeof(ImportDescriptor) <= read_bytes && 
+		data_container.import_descriptor.size() < REASONABLE_MAX_IMPORT_DESCRIPTORS){
+			ImportDescriptor current_descriptor;
+			std::memcpy(&current_descriptor,
+				mulbuffer + des_offset,
+				sizeof(ImportDescriptor));
+
+			if (current_descriptor.FirstThunk == 0 &&
+				current_descriptor.ForwarderChain == 0 &&
+				current_descriptor.Name == 0 &&
+				current_descriptor.OriginalFirstThunk == 0 &&
+				current_descriptor.TimeDateStamp == 0) {
+				break;
+			}
+
+			data_container.import_descriptor.push_back(current_descriptor);
+			des_offset += sizeof(ImportDescriptor);
+		}
 	}
 
 	data_container.diarelist.push_back(result);

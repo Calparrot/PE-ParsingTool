@@ -53,12 +53,12 @@ std::string Translator::hexstring_to_ascii(const std::string& hexstring) {
 
     return ascii;
 }
-std::string Translator::generate_file_display(const std::vector<uint8_t>& input_data) {
+std::string Translator::generate_file_display(const std::vector<uint8_t>& input_data, unsigned int basic_address) {
     std::string hexadecimal_view;
     std::string raw_data;
     std::string ascii;
     std::stringstream ss;
-    int temporary_address = 0;
+    unsigned int temporary_address = 0;
     size_t j = 0;
 
     raw_data.append(vector_to_hexstring(input_data));
@@ -71,7 +71,7 @@ std::string Translator::generate_file_display(const std::vector<uint8_t>& input_
             ss.str("");
             ss.clear();
             ss << std::hex << std::uppercase;
-            ss << std::hex << std::setw(8) << std::setfill('0') << temporary_address;
+            ss << std::hex << std::setw(8) << std::setfill('0') << (basic_address + temporary_address);
             hexadecimal_view.append(ss.str());
             hexadecimal_view.append("    ");
             temporary_address += 16;
@@ -317,7 +317,7 @@ bool Translator::hexadecimal_document_export(const std::wstring& export_filepath
             data_container.source_file_data.begin() + offset + current_size
         );
 
-        if (!string_to_file_append(export_filepath, generate_file_display(current_data))) {
+        if (!string_to_file_append(export_filepath, generate_file_display(current_data, offset))) {
             return false;
         }
 
@@ -397,6 +397,10 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
     }
     if (previous_execution_result) {
         previous_execution_result = target.section_headers_analysis(data_manager.data_container);
+        execution_steps++;
+    }
+    if (previous_execution_result) {
+        previous_execution_result = target.import_descriptor_seeker(data_manager.data_container);
         execution_steps++;
     }
 

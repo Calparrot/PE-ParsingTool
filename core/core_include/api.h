@@ -50,7 +50,7 @@ private:
 
     std::string vector_to_hexstring(const std::vector<uint8_t>& input_data);
     std::string hexstring_to_ascii(const std::string& hexstring);
-    std::string generate_file_display(const std::vector<uint8_t>& input_data);
+    std::string generate_file_display(const std::vector<uint8_t>& input_data, unsigned int basic_address = 0);
 
     // µ¥¿é·­Òë
     std::string single_item_degree_translator(Core::Severity severity);

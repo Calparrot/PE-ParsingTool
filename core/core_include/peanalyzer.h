@@ -118,6 +118,9 @@ public:
     bool optional_header_analysis(Structuresults& data_container);
     bool section_headers_analysis(Structuresults& data_container);
 
+    /* 导入表 */
+    bool import_descriptor_seeker(Structuresults& data_container);
+
     /* 构造函数 */
     PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {
         auto& file = pedata_;

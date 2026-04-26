@@ -46,6 +46,8 @@ struct StructuralImformation {
 
     bool section_header_normal_ = true;
     bool section_header_exist_ = true;
+
+    bool import_descriptor_found_ = true; // true表示成功找到IMAGE_IMPORT_DESCRIPTOR结构
 };
 
 struct Diaresults {
@@ -307,6 +309,14 @@ struct SectionHeader {
     uint16_t NumberOfLinenumbers;         // 调试信息（通常为0）
     uint32_t Characteristics;             // 节区属性（如可读/可写）
 };
+
+struct ImportDescriptor {
+    uint32_t OriginalFirstThunk;          // 指向 INT（Import Name Table）
+    uint32_t TimeDateStamp;               // 时间戳（未绑定=0）
+    uint32_t ForwarderChain;              // 转发链索引（通常=0）
+    uint32_t Name;                        // 指向 DLL 名称字符串（RVA）
+    uint32_t FirstThunk;                  // 指向 IAT（Import Address Table）
+};
 #pragma pack(pop)
 
 class Structuresults {
@@ -348,12 +358,14 @@ public:
     ROM_OptionalHeader optionalheaderrom{};
     std::vector<SectionHeader> sectionheaders;
 
+    std::vector<ImportDescriptor> import_descriptor;
+
     // 崩溃报告（文件加载失败等原因未能成功分析）
 	CrashReport crashreport{};
     void crash_imformation_set(error_category code, const std::string& msg = "");
 };
 
-int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure);
+int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure, Structuresults data_container);
 int file_confidence_detection(SharedStructure shared_structure);
 
 #endif

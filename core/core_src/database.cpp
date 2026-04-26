@@ -3,7 +3,7 @@
 
 #include "database.h"
 
-Structuresults data_container;
+// Structuresults data_container;
 
 void Structuresults::crash_imformation_set(error_category code, const std::string& msg) {
 	crashreport.error_code_ = code;
@@ -24,7 +24,7 @@ void Structuresults::crash_imformation_set(error_category code, const std::strin
    6：关键字段全部为0
    7：（仅x32环境）VirtualAddress+VirtualSize超过32位系统内存页
 */
-int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure) {
+int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure, Structuresults data_container) {
 	// Name字段全零验证
 	bool all_zero_name = true;
 	for (size_t i = 0; i < 8; i++) {
@@ -97,8 +97,7 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 	return 0;
 }
 
-/* 置信度检测列表及其权重（%）
-	*/
+/* 置信度检测列表及其权重（%）*/
 int file_confidence_detection(SharedStructure shared_structure) {
 	int sum = 0;
 
