@@ -47,13 +47,13 @@ struct SharedStructure {
     uint32_t peheader_offset_;        // NT头偏移
 
     /* x32、x64架构 */
-    uint16_t magic_;
-    uint32_t address_of_entrypoint_;  // 入口点RVA（相对于ImageBase）
-    uint32_t imagebase32_;
-    uint64_t imagebase64_;            // 进程内存中的优先加载地址
-    uint32_t section_alignment_;      // 内存中的节区对齐粒度
-    uint32_t file_alignment_;         // 文件中的节区对齐粒度
-    uint32_t size_of_image_;          // 映像在内存中的总大小
+    uint16_t magic_ = 0;
+    uint32_t address_of_entrypoint_ = 0;  // 入口点RVA（相对于ImageBase）
+    uint32_t imagebase32_ = 0;
+    uint64_t imagebase64_ = 0;            // 进程内存中的优先加载地址
+    uint32_t section_alignment_ = 0;      // 内存中的节区对齐粒度
+    uint32_t file_alignment_ = 0;         // 文件中的节区对齐粒度
+    uint32_t size_of_image_ = 0;          // 映像在内存中的总大小
     EleCorrectness magic_isvalid_ = EleCorrectness::valid;
     EleCorrectness address_of_entrypoint_isvalid_ = EleCorrectness::valid;
     EleCorrectness image_base_isvalid_ = EleCorrectness::valid;
@@ -61,12 +61,12 @@ struct SharedStructure {
     EleCorrectness file_alignment_isvalid_ = EleCorrectness::valid;
     EleCorrectness size_of_image_isvalid_ = EleCorrectness::valid;
     /* ROM架构 */
-    uint32_t base_of_code_;
-    uint32_t base_of_data_;
-    uint32_t base_of_bss_;
-    uint32_t size_of_code_;
-    uint32_t size_of_initialized_data_;
-    uint32_t size_of_uninitialized_data_;
+    uint32_t base_of_code_ = 0;
+    uint32_t base_of_data_ = 0;
+    uint32_t base_of_bss_ = 0;
+    uint32_t size_of_code_ = 0;
+    uint32_t size_of_initialized_data_ = 0;
+    uint32_t size_of_uninitialized_data_ = 0;
     EleCorrectness base_of_code_isvalid_ = EleCorrectness::valid;
     EleCorrectness base_of_data_isvalid_ = EleCorrectness::valid;
     EleCorrectness base_of_bss_isvalid_ = EleCorrectness::valid;
@@ -74,17 +74,17 @@ struct SharedStructure {
     EleCorrectness size_of_initialized_data_isvalid_ = EleCorrectness::valid;
     EleCorrectness size_of_uninitialized_data_isvalid_ = EleCorrectness::valid;
 
-    uint32_t import_table_RVA_;        // DataDirectory[1]
-    uint32_t import_table_size_;       // 导入表大小
-    uint32_t relocation_table_RVA_;    // DataDirectory[5]
-    uint32_t relocation_table_size_;   // 重定位表大小
-    uint32_t tls_table_RVA_;           // DataDirectory[9]
-    uint32_t tls_table_size_;          // TLS表大小
+    uint32_t import_table_RVA_ = 0;        // DataDirectory[1]
+    uint32_t import_table_size_ = 0;       // 导入表大小
+    uint32_t relocation_table_RVA_ = 0;    // DataDirectory[5]
+    uint32_t relocation_table_size_ = 0;   // 重定位表大小
+    uint32_t tls_table_RVA_ = 0;           // DataDirectory[9]
+    uint32_t tls_table_size_ = 0;          // TLS表大小
 
-    uint32_t size_of_headers_;         // 所有头的大小
+    uint32_t size_of_headers_ = 0;         // 所有头的大小
 
-    uint32_t section_table_offset_;    // 节区在文件中的偏移
-    uint32_t clothest_section_offset_; // 可选头后的最近的节区偏移
+    uint32_t section_table_offset_ = 0;    // 节区在文件中的偏移
+    uint32_t clothest_section_offset_ = 0; // 可选头后的最近的节区偏移
     int detected_section_count_ = 0;   // 实际检测出的节区数量
 
     int bitness_ = 32;                 // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义

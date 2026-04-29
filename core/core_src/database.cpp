@@ -66,7 +66,7 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 	}
 	catch (std::runtime_error& e) {
 		// 不输出节区头和节区内容，后续也不处理
-		data_container.output_range_ = 4; 
+		data_container.num_of_scanned_blocks_ = 4;
 	}
 
 	// VirtualAddress 是否位于PE头区域检测

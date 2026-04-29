@@ -275,8 +275,8 @@ std::string Translator::detailed_file_info_translator() {
     std::string detailed_info;
 
     detailed_info += "\n【详细信息】\n";
-    if (data_container.output_range_ >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range_); i++) {
+    if (data_container.num_of_scanned_blocks_ >= 1) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks_); i++) {
             for (size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
                 detailed_info += single_item_translator(data_container.diarelist[i].information_list_[j]);
                 detailed_info += "\n";
@@ -418,7 +418,7 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
             test.close();
             return error_code::FILE_ACCESS_DENIED;
         default:
-            data_manager.data_container.output_range_ = execution_steps;
+            data_manager.data_container.num_of_scanned_blocks_ = execution_steps;
             /* 在这调文件置信度检测函数 */
             return error_code::SUCCESS;
         }

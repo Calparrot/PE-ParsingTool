@@ -263,6 +263,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
     HWND hText_d = NULL; // "IMAGE_FILE_HEADER"，ID-1004
     HWND hText_e = NULL; // "IMAGE_OPTIONAL_HEADER"，ID-1005
 	HWND hText_f = NULL; // "IMAGE_SECTION_HEADERS"，ID-1006
+    HWND hText_g = NULL; // "IMAGE_IMPORT_DESCRIPTOR"，ID-1007
 
     switch (msg) {
     case WM_CREATE: {
@@ -314,6 +315,14 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
         );
         SendMessage(hText_f, WM_SETFONT, (WPARAM)consolas, TRUE);
 
+        hText_g = CreateWindowEx(
+            WS_EX_TOPMOST, L"STATIC", L" IIMAGE_IMPORT_DESCRIPTOR",
+            WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_CENTERIMAGE,
+            0, 155, (main_client_rect.right - 16) / 4, 25,
+            hWnd, (HMENU)1007, NULL, NULL
+        );
+        SendMessage(hText_g, WM_SETFONT, (WPARAM)consolas, TRUE);
+
         break;
     }
     case WM_LBUTTONDBLCLK: {
@@ -331,32 +340,31 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             case 1001:  // 右侧窗口刷新，显示源文件信息
 				p_data = new std::wstring(generate_file_display(g_analysis_object.data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
-
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
                 p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
-
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
-                p_data = new std::wstring(L"这个也在开发中:(");
+                p_data = new std::wstring(L"还在开发中:(");
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 3, (LPARAM)p_data);
-
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
                 p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 3));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
-
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
                 p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 4));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
-
                 break;
 			case 1006: // 右侧窗口刷新，显示Section Headers扫描信息
                 p_data = new std::wstring(sctheader_summary(g_analysis_object.data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
 				break;
+            case 1007:
+                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 5));
+                SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
+                break;
             }
         }
     }

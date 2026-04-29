@@ -264,8 +264,8 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 std::wstring scan_summary(Structuresults data_container) {
     std::wstring scan_results;
 
-    if (data_container.output_range_ >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.output_range_); i++) {
+    if (data_container.num_of_scanned_blocks_ >= 1) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks_); i++) {
             for(size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
                 scan_results += result_translator(data_container.diarelist[i].information_list_[j]);
                 scan_results += L"\r\n";
@@ -315,7 +315,7 @@ std::wstring sctheader_summary(Structuresults data_container) {
 }
 
 std::wstring structure_display(Structuresults data_container, int select) {
-    if (select < 1 || select > data_container.output_range_) {
+    if (select < 1 || select > data_container.num_of_scanned_blocks_) {
 		return L"输出范围指定有误，无法读取信息。";
     }
 

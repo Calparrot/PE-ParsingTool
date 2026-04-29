@@ -36,8 +36,19 @@
 */
 
 struct StructuralImformation {
-    bool dos_header_normal_ = true;
+    // 结构地址表（外存/文件，左闭右开）
+    // IMAGE_DOS_HEADER至IMAGE_OPTIONAL_HEADER
+    unsigned int head_start_address_ = 0;
+    unsigned int head_end_address_ = 0;
+    // IMAGE_SECTION_HEADER（包括中间空洞位置）
+    unsigned int section_start_address_ = 0;
+    unsigned int section_end_address_ = 0;
+    // IMAGE_IMPORT_DESCRIPTOR
+	unsigned int import_descriptor_start_address_ = 0;
+	unsigned int import_descriptor_end_address_ = 0;
 
+    // 结构信息概况表
+    bool dos_header_normal_ = true;
     bool dos_stub_normal_ = true;
     bool dos_stub_exist_ = true;
 
@@ -52,7 +63,6 @@ struct StructuralImformation {
 
 struct Diaresults {
     std::string component_name_;        // 结构名称
-    // std::string component_type_;        // 结构类型"header", "section", "table"
     uint32_t file_offset_ = 0;          // 在文件中的偏移
     uint32_t data_size_ = 0;            // 数据大小
 
@@ -64,12 +74,6 @@ struct Diaresults {
 	std::vector<Core::Diagnostic> information_list_; // 扫描信息表
     std::vector<Core::Diagnostic> additional_information; // 额外信息，暂时闲置
 };
-
-/*struct BreakDown {
-    int abnormal_num_of_keywords_ = 0; // 异常关键字段数量
-    int total_num_of_keywords_ = 23;    // 关键字段总数量
-};
-*/
 
 struct SectionImformation {
     bool marked_section = false;             // 是否存在不可执行可能
@@ -147,9 +151,9 @@ struct CrashReport {
 
 struct OverlapProcessing {
     std::vector<uint8_t> overlapping_data;
-    unsigned int length;
-    size_t expectation_offset;
-    size_t actual_offset;
+    unsigned int length = 0;
+    size_t expectation_offset = 0;
+    size_t actual_offset = 0;
 };
 
 struct ComprehensiveInfo {
@@ -330,7 +334,8 @@ public:
         4 - 输出至节区头前的扫描结果
         5 - 输出文件头部内容所有扫描结果
     */
-    int output_range_ = 5;
+    int num_of_scanned_blocks_ = 6;
+    int out_range_[20] = { 0 };
     ComprehensiveInfo comprehensive_info_;
  
     StructuralImformation structures_attributes;
@@ -339,7 +344,7 @@ public:
     std::vector<Diaresults> diarelist{};
 
     std::vector<SectionImformation> section_attributes;
-	int max_number_of_possible_sections = 0;
+	// int max_number_of_possible_sections = 0;
 	bool m_orderliness = true; // 节区内存布局和节区头顺序是否一致，有序 = true，无序 = false
     bool s_orderliness = true; // 节区文件布局和节区头顺序是否一致，同上
     std::vector<SectionRange> memory_interval_table;
