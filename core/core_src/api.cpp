@@ -350,9 +350,11 @@ bool FundamentalAnalysis::readfile(std::string file_path) {
     myfile.seekg(0, std::ios::end);
     file_size = myfile.tellg();
     myfile.seekg(0, std::ios::beg);
+    myfile_loaded = true;
 
-    data_manager.data_container.source_file_data.resize(file_size);
-    myfile.read(reinterpret_cast<char*>(data_manager.data_container.source_file_data.data()), file_size);
+    /* ¡Ÿ ±∑Ω∞∏ */
+    data_manager.data_container.source_file_data.resize(2048);
+    myfile.read(reinterpret_cast<char*>(data_manager.data_container.source_file_data.data()), 2048);
 
     return true;
 }
@@ -423,4 +425,75 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
             return error_code::SUCCESS;
         }
     }
+}
+
+ScanResultsDistribution FundamentalAnalysis::summary_file() {
+    ScanResultsDistribution results_distrubution;
+
+    if (myfile_loaded == true) {
+        for (int i = 0; i < data_manager.data_container.diarelist.size(); i++) {
+            for (int j = 0; j < data_manager.data_container.diarelist[i].information_list_.size(); j++) {
+                switch (data_manager.data_container.diarelist[i].information_list_[j].severity) {
+                case Core::Severity::ERROR_HIGH:
+                    results_distrubution.error_distribution[i]++;
+                    results_distrubution.error_num++;
+                    break;
+                case Core::Severity::WARNING_MED:
+                    results_distrubution.error_distribution[i]++;
+                    results_distrubution.error_num++;
+                    break;
+                case Core::Severity::SUSPICIOUS:
+                    results_distrubution.suspicious_distribution[i]++;
+                    results_distrubution.suspicious_num++;
+                    break;
+                case Core::Severity::INFO_LOW:
+                    results_distrubution.info_distribution[i]++;
+                    results_distrubution.info_num++;
+                    break;
+                }
+
+                switch (data_manager.data_container.diarelist[i].information_list_[j].category) {
+                case Core::DiagCategory::VALUE_MISMATCH:
+                    results_distrubution.type_distribution[0]++;
+                    break;
+                case Core::DiagCategory::INVALID_VALUE:
+                    results_distrubution.type_distribution[1]++;
+                    break;
+                case Core::DiagCategory::EXCURSION_ANOMALY:
+                    results_distrubution.type_distribution[2]++;
+                    break;
+                case Core::DiagCategory::ADDRESS_OUT_OF_RANGE:
+                    results_distrubution.type_distribution[3]++;
+                    break;
+                case Core::DiagCategory::ABNORMAL_LENGTH:
+                    results_distrubution.type_distribution[4]++;
+                    break;
+                case Core::DiagCategory::STRUCTURE_MISSING:
+                    results_distrubution.type_distribution[5]++;
+                    break;
+                case Core::DiagCategory::DETAILED_INFORMATION:
+                    results_distrubution.type_distribution[6]++;
+                    break;
+                case Core::DiagCategory::REGULAR_ISSUE:
+                    results_distrubution.type_distribution[7]++;
+                    break;
+                case Core::DiagCategory::INDEXED_ISSUE:
+                    results_distrubution.type_distribution[8]++;
+                    break;
+                case Core::DiagCategory::RELATIONSHIP_ISSUE:
+                    results_distrubution.type_distribution[9]++;
+                    break;
+                case Core::DiagCategory::ADDITIONAL_INFORMATION:
+                    results_distrubution.type_distribution[10]++;
+                    break;
+                }
+            }
+        }
+    }
+    else {
+        results_distrubution.effective_structure = false;
+        return results_distrubution;
+    }
+
+    return results_distrubution;
 }

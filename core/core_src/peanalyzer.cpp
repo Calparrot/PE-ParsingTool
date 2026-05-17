@@ -1123,12 +1123,13 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 			((shared_structure.file_alignment_ & (shared_structure.file_alignment_ - 1)) == 0)) {
 				data_container.structures_attributes.optional_header_normal_ = false;
 				result.information_list_.push_back(
-					detailed_information(
+					value_mismatch(
 						Core::Severity::SUSPICIOUS,
 						"FileAlignment",
 						"Optional Header",
-						"Uncommon value 0x200.",
-						static_cast<uint64_t>(shared_structure.peheader_offset_) + 24 + 36
+						0x200,
+						shared_structure.file_alignment_,
+						static_cast<uint64_t>(shared_structure.peheader_offset_) + 24 + 32
 					)
 				);
 			}

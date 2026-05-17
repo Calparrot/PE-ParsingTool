@@ -10,6 +10,22 @@
 #include "peanalyzer.h"
 #include "database.h"
 
+struct ScanResultsDistribution {
+    bool effective_structure = true;         // 记录结构是否有效（用于空文件加载情况排除无效结构）
+
+    int info_distribution[20] = { 0 };       // 扫描到的普通信息分布
+    int suspicious_distribution[20] = { 0 }; // 扫描到的可疑信息分布
+    int warning_distribution[20] = { 0 };    // 扫描到的警告信息分布
+    int error_distribution[20] = { 0 };      // 扫描到的错误信息分布（针对签名）
+
+    int info_num;                            // 扫描到的普通信息数量
+    int suspicious_num;                      // 扫描到的可疑信息数量
+    int warning_num;                         // 扫描到的警告信息数量
+    int error_num;                           // 扫描到的错误信息数量（针对签名）
+
+    int type_distribution[11] = {};           // 扫描到的类型分布（参照 diagnostic_codes.h 文件 Object 中的6种类型）
+};
+
 /* Translator类成员说明
 	vector_to_hexstring()        ：vector<uint8_t>转十六进制表示形式的string类
 	hexstring_to_ascii()         ：十六进制表示形式的string类转ascii码表示形式的string类
@@ -79,13 +95,15 @@ FundamentalAnalysis类成员说明
     check_little_endian()：小端序检查
     data_container       ：扫描信息和错误信息
     organised_data[]     ：综合性源文件信息
-    analysis_file()      ：基础分析API
+    analysis_file()      ：基础分析API（分析完后仅在内存中存储结果，不做任何保存，有需要可在调用此函数后调用汇总或者文件输出函数）
+    summary_file()       ：基础汇总API（在已完成基础分析的基础上进行单次结果汇总）
 */
 // 对外的统一API
 class FundamentalAnalysis {
 private:
     std::ifstream myfile;
     uint64_t file_size;
+    bool myfile_loaded = false;
 
     bool readfile(std::string filepath);
     bool check_little_endian();
@@ -101,6 +119,7 @@ public:
     };
 
     error_code analysis_file(const std::string input_filepath);
+    ScanResultsDistribution summary_file();
 
     FundamentalAnalysis& operator=(const FundamentalAnalysis& other) {
         if (this != &other) {
