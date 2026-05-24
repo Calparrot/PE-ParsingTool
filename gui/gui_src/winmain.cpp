@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <iostream>
-#include <codecvt>
+// #include <codecvt>
 #include <string>
 
 #include "resource.h"
@@ -53,6 +53,7 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
 /* 工具函数 */
 void OnFileOpen(HWND hWnd);                         // 处理文件打开
 BOOL RegisterAllWindowClasses(HINSTANCE hInstance); // 注册窗口类
+static std::string WideToUtf8(const std::wstring& wstr); // 将宽字符串转换为UTF-8字符串
 
 /* 入口 */
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow){
@@ -137,8 +138,9 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         case ID_40001: { // 菜单栏：文件 -> 打开
             OnFileOpen(hWnd);
             if (szFile[0] != L'\0') {
-                std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-                std::string file_path = converter.to_bytes(szFile);
+                // std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+                // sstd::string file_path = converter.to_bytes(szFile);
+                std::string file_path = WideToUtf8(szFile);
 
                 if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
                     file_loaded = true;
@@ -774,4 +776,13 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     }
 
     return TRUE;
+}
+
+static std::string WideToUtf8(const std::wstring& wstr) {
+    if (wstr.empty()) return std::string();
+
+    int len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string result(len, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &result[0], len, NULL, NULL);
+    return result;
 }

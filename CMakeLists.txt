@@ -1,162 +1,121 @@
-cmake_minimum_required(VERSION 3.20)
-project(PE_ParsingTool VERSION 1.0.0 LANGUAGES CXX RC)
+cmake_minimum_required(VERSION 3.15)
+project("PE_ParsingTool" VERSION 1.0.0 LANGUAGES CXX)
 
-# ============================================
-# 全局设置
-# ============================================
+# 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 输出目录
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# 设置默认构建类型
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+endif()
 
-# ============================================
-# 选项
-# ============================================
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(ENABLE_SDL_CHECKS "Enable SDL checks" ON)
+# 设置Windows子系统（GUI应用）
+if(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /ENTRY:wWinMainCRTStartup")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /ENTRY:wWinMainCRTStartup")
+endif()
 
-# ============================================
-# 源文件
-# ============================================
-set(SOURCES
-    core/core_src/api.cpp
-    core/core_src/database.cpp
-    core/core_src/diagnostic_helpers.cpp
-    core/core_src/peanalyzer.cpp
-    core/core_src/shellextension.cpp
-    core/core_src/siganalyzer.cpp
-    gui/gui_src/translator.cpp
-    gui/gui_src/winmain.cpp
-)
+# 定义源文件目录
+set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/core_include)
+set(CORE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src)
+set(GUI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include)
+set(GUI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src)
 
-set(HEADERS
-    core/core_include/api.h
-    core/core_include/database.h
-    core/core_include/diagnostic_codes.h
-    core/core_include/peanalyzer.h
-    core/core_include/shellextension.h
-    gui/gui_include/custom_message.h
-    gui/gui_include/resource.h
-    gui/gui_include/translator.h
-)
-
-set(RESOURCES resource.rc)
-set(ICONS icons/myicon.ico)
-
-# ============================================
-# 可执行文件
-# ============================================
-add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES} ${ICONS})
-
-# ============================================
-# 包含目录
-# ============================================
-target_include_directories(${PROJECT_NAME} PRIVATE
+# 包含头文件目录
+include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_include
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src
+    ${CORE_INCLUDE_DIR}
+    ${CORE_SRC_DIR}
+    ${GUI_INCLUDE_DIR}
+    ${GUI_SRC_DIR}
 )
 
-# ============================================
-# 预处理器定义
-# ============================================
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    _CRT_SECURE_NO_WARNINGS
-    _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-    $<$<CONFIG:DEBUG>:_DEBUG>
-    $<$<CONFIG:RELEASE>:NDEBUG>
-    $<$<PLATFORM_ID:Win32>:WIN32>
-    $<$<PLATFORM_ID:x64>:_WIN64>
-    _CONSOLE
-    UNICODE
-    _UNICODE
+# 定义源文件列表
+set(SOURCES
+    ${CORE_SRC_DIR}/api.cpp
+    ${CORE_SRC_DIR}/database.cpp
+    ${CORE_SRC_DIR}/diagnostic_helpers.cpp
+    ${CORE_SRC_DIR}/peanalyzer.cpp
+    ${GUI_SRC_DIR}/translator.cpp
+    ${GUI_SRC_DIR}/utils.cpp
+    ${GUI_SRC_DIR}/winmain.cpp
 )
 
-# ============================================
-# 编译选项
-# ============================================
+# 定义头文件列表（用于IDE显示）
+set(HEADERS
+    ${CORE_INCLUDE_DIR}/api.h
+    ${CORE_INCLUDE_DIR}/database.h
+    ${CORE_INCLUDE_DIR}/diagnostic_codes.h
+    ${CORE_INCLUDE_DIR}/peanalyzer.h
+    ${GUI_INCLUDE_DIR}/custom_message.h
+    ${GUI_INCLUDE_DIR}/translator.h
+    ${GUI_INCLUDE_DIR}/utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource.h
+)
+
+# 资源文件
+set(RESOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/PE ParsingTool.rc"
+)
+
+# 图标和图片文件（用于资源）
+set(ICON_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/icons/myicon.ico
+    ${CMAKE_CURRENT_SOURCE_DIR}/images/cxyxsl.png
+)
+
+# 其他文件
+set(OTHER_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
+)
+
+# 创建可执行文件
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES} ${ICON_FILES} ${OTHER_FILES})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/out/build/x64-Debug"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/out/build/x64-Release"
+)
+
+# 针对MSVC的特定设置
 if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        /W3
-        /permissive-
-        $<$<BOOL:${ENABLE_SDL_CHECKS}>:/SDL>
-        $<$<CONFIG:RELEASE>:/Gy>
-        $<$<CONFIG:RELEASE>:/Oi>
-        $<$<CONFIG:RELEASE>:/GL>
-        $<$<CONFIG:RELEASE>:/O2>
-        $<$<CONFIG:DEBUG>:/RTC1>
-        $<$<CONFIG:DEBUG>:/Zi>
-        $<$<CONFIG:DEBUG>:/Od>
-    )
+    # 设置警告级别为Level3
+    target_compile_options(${PROJECT_NAME} PRIVATE /W3)
     
-    # 多处理器编译
-    target_compile_options(${PROJECT_NAME} PRIVATE /MP)
-endif()
-
-# ============================================
-# 链接选项
-# ============================================
-if(MSVC)
-    target_link_options(${PROJECT_NAME} PRIVATE
-        /SUBSYSTEM:WINDOWS
-        /ENTRY:wWinMainCRTStartup
-        $<$<CONFIG:DEBUG>:/DEBUG>
-        $<$<CONFIG:RELEASE>:/LTCG>  # 链接时代码生成
+    # 启用SDLCheck
+    target_compile_options(${PROJECT_NAME} PRIVATE /sdl)
+    
+    # 启用符合性模式
+    target_compile_options(${PROJECT_NAME} PRIVATE /permissive-)
+    
+    # 预处理器定义
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _UNICODE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE)
+    
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(${PROJECT_NAME} PRIVATE _DEBUG)
+        target_compile_options(${PROJECT_NAME} PRIVATE /MTd)
+    else()
+        target_compile_definitions(${PROJECT_NAME} PRIVATE NDEBUG)
+        target_compile_options(${PROJECT_NAME} PRIVATE /MT)
+        # 全程序优化
+        target_compile_options(${PROJECT_NAME} PRIVATE /GL)
+        target_link_options(${PROJECT_NAME} PRIVATE /LTCG)
+    endif()
+    
+    # 禁用控制台窗口（使用Windows子系统）
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        LINK_FLAGS "/SUBSYSTEM:WINDOWS"
     )
 endif()
 
-# ============================================
-# 链接库
-# ============================================
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    # Windows 核心库
-    user32
-    gdi32
-    shell32
-    comctl32
-    comdlg32
-    advapi32
-    ole32
-    oleaut32
-)
-
-# ============================================
-# 资源编译设置
-# ============================================
+# 打印配置信息
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 if(MSVC)
-    # 为资源编译器设置包含路径
-    set_source_files_properties(${RESOURCES} PROPERTIES
-        COMPILE_FLAGS "/I \"${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include\""
-    )
+    message(STATUS "MSVC version: ${MSVC_VERSION}")
 endif()
-
-# ============================================
-# 附加文件（用于 IDE 显示）
-# ============================================
-# 添加 README
-configure_file(README.md ${CMAKE_BINARY_DIR}/README.md COPYONLY)
-
-# 添加 CMakeLists.txt 到项目（用于 IDE）
-set(CMAKE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
-source_group("CMake" FILES ${CMAKE_FILES})
-
-# ============================================
-# 配置总结
-# ============================================
-message(STATUS "")
-message(STATUS "========================================")
-message(STATUS "  ${PROJECT_NAME} Configuration")
-message(STATUS "========================================")
-message(STATUS "  Version: ${PROJECT_VERSION}")
-message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "  Sources: ${SOURCES}")
-message(STATUS "  SDL Checks: ${ENABLE_SDL_CHECKS}")
-message(STATUS "========================================")
-message(STATUS "")

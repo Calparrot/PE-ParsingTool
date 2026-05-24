@@ -36,49 +36,57 @@
 
 ### 环境要求
 - Windows 10/11 操作系统
-- Visual Studio 2022 或更新版本
-- C++ 17 支持
+- 支持 C++17 的编译器（Visual Studio 2022 / MinGW / Clang）
+- CMake 3.15 或更高版本
 
 ### 编译运行
-1. 克隆项目：
-   ```bash
-   git clone https://github.com/Calparrot/PE-ParsingTool.git
-   cd PE-ParsingTool
-2. 使用 Visual Studio 打开解决方案文件 `PE-ParsingTool.sln`。
-3. 编译项目并运行。
+
+#### 使用命令行（推荐）
+```bash
+# 克隆项目
+git clone https://github.com/Calparrot/PE-ParsingTool.git
+cd PE-ParsingTool
+
+# 配置并编译
+cmake -B build -G Ninja
+cmake --build build
+
+# 运行程序
+./build/PE_ParsingTool.exe
 
 ## 📁 项目结构
 ```text
 PE-ParsingTool/
-├── core/ # 核心解析模块（跨平台）  
-│ ├── include/ # 头文件  
-│ │ ├── api.h # 对外接口  
-│ │ ├── database.h # 数据结构定义  
-│ │ ├── diagnostic_codes.h # 诊断错误码  
-│ │ └── peanalyer.h # PE解析器核心类   
-│ └── src/ # 源文件
-│ ├── api.cpp # API 实现
-│ ├── database.cpp # 数据结构实现
-│ ├── diagnostic_helpers.cpp # 诊断辅助函数
-│ └── peanalyer.cpp # PE解析器实现
+├── CMakeLists.txt          # CMake 构建配置
+├── README.md               # 项目说明
 │
-├── gui/ # GUI 模块（Windows 专用）
-│ ├── include/
-│ │ ├── custom_message.h # 自定义消息定义
-│ │ ├── translator.h # 界面翻译/转换
-│ │ └── utils.h # 工具类
-│ └── src/
-│ ├── translator.cpp # 转换逻辑
-│ ├── utils.cpp # 工具类实现
-│ └── winmain.cpp # 程序入口
+├── core/                   # 核心解析模块（跨平台）
+│   ├── core_include/       # 头文件
+│   │   ├── api.h           # 对外接口
+│   │   ├── database.h      # 数据结构定义
+│   │   ├── diagnostic_codes.h  # 诊断错误码
+│   │   └── peanalyzer.h    # PE解析器核心类
+│   └── core_src/           # 源文件
+│       ├── api.cpp
+│       ├── database.cpp
+│       ├── diagnostic_helpers.cpp
+│       └── peanalyzer.cpp
 │
-├── CMakeLists.txt # CMake 构建配置
-├── myicon.ico # 程序图标
-├── resource.h # 资源定义 
-├── resource.rc # Windows 资源文件
-├── images/ # 程序示例图
-│ └──cxyxsl.png # 程序运行示例
-└── README.md # 项目说明
+├── gui/                    # GUI 模块（Windows 专用）
+│   ├── gui_include/        # 头文件
+│   │   ├── custom_message.h
+│   │   ├── translator.h
+│   │   └── utils.h
+│   └── gui_src/            # 源文件
+│       ├── translator.cpp
+│       ├── utils.cpp
+│       └── winmain.cpp     # 程序入口
+│
+├── icons/                  # 图标资源
+│   └── myicon.ico
+├── images/                 # 示例图片
+│   └── cxyxsl.png
+└── resource.h              # 资源定义
 ```
 
 ## ⚠️ 已知问题与限制
