@@ -44,7 +44,7 @@ enum class EleCorrectness : uint8_t {
 };
 
 struct SharedStructure {
-    uint32_t peheader_offset_;        // NT头偏移
+    uint32_t peheader_offset_ = 0;        // NT头偏移
 
     /* x32、x64架构 */
     uint16_t magic_ = 0;
@@ -85,10 +85,10 @@ struct SharedStructure {
 
     uint32_t section_table_offset_ = 0;    // 节区在文件中的偏移
     uint32_t clothest_section_offset_ = 0; // 可选头后的最近的节区偏移
-    int detected_section_count_ = 0;   // 实际检测出的节区数量
+    int detected_section_count_ = 0;       // 实际检测出的节区数量
 
-    int bitness_ = 32;                 // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
-    int advbitness_ = 32;              // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
+    int bitness_ = 32;                     // bitness = 0 时表示未确定架构，需要采用三架构预分析来联合判断magic字段意义
+    int advbitness_ = 32;                  // 预分析时使用的架构信息，为0可判断文件无效，没有分析意义。
 };
 
 class PEanalyzer {
@@ -96,6 +96,8 @@ private:
     std::ifstream& pedata_;
     uint8_t mulbuffer[5600] = { 0 };
     size_t read_offset = 0;
+
+    SharedStructure shared_structure = SharedStructure();
 public:
     int64_t file_size_ = 0;
 
@@ -112,13 +114,14 @@ private:
     void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, Structuresults& data_container);
 public:
     /* 调用时一定要按顺序调用，用户不可管理，由API统一封装 */
+    // 头部
     bool dosheader_analysis(Structuresults& data_container);
     bool dosstub_analysis(Structuresults& data_container);
     bool file_header_analysis(Structuresults& data_container);
     bool optional_header_analysis(Structuresults& data_container);
     bool section_headers_analysis(Structuresults& data_container);
 
-    /* 导入表 */
+    // 导入表
     bool import_descriptor_seeker(Structuresults& data_container);
 
     /* 构造函数 */

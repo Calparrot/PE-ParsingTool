@@ -23,7 +23,7 @@ struct ScanResultsDistribution {
     int warning_num;                         // 扫描到的警告信息数量
     int error_num;                           // 扫描到的错误信息数量（针对签名）
 
-    int type_distribution[11] = {};           // 扫描到的类型分布（参照 diagnostic_codes.h 文件 Object 中的6种类型）
+    int type_distribution[11] = {};          // 扫描到的类型分布（参照 diagnostic_codes.h 文件 Object 中的6种类型）
 };
 
 /* Translator类成员说明

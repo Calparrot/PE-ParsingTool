@@ -19,9 +19,12 @@
 	error_category                 ：错误码枚举
 	CrashReport                    ：崩溃报告
     OverlapProcessing              ：重叠数据信息
+    ComprehensiveInfo              ：文件信息
 类说明
-	Structuresults                 ：输出结果&数据库，建议把所有该类命名为data_container，避免出现未知错误，除非有明确需求
+	Structuresults                 ：基础扫描结果，建议把所有该类命名为data_container，避免出现未知错误，除非有明确需求
 类成员说明
+    out_range_                     ：扫描范围记录表，位数与结构顺序对应，数字代表索引，如无需索引扫描成功填1即可
+    num_of_scanned_blocks_         ：忘了干嘛的，之前创建时忘写注释了，后来想不起来了
     architecture                   ：架构
     sr_file_size_                  ：文件大小，sr前缀是为了和PEanalyzer类的file_size_成员做区分
     max_number_of_possible_sections：扫描的可能最大节区数量
@@ -30,6 +33,8 @@
     memory_interval_table          ：节区内存分布区间表
     storage_interval_table         ：节区文件分布区间表
     source_file_data               ：源文件数据
+
+    crash_imformation_set()        ：崩溃报告设置函数
 其他函数说明
     is_this_section_valid()        ：某40字节数据是否可能为节区头的检查函数
     file_confidence_detection()    ：文件置信度检测（有多大可能是PE文件？）
@@ -37,7 +42,6 @@
 
 struct StructuralImformation {
     // 结构地址表（外存/文件，左闭右开）
-    // IMAGE_DOS_HEADER至IMAGE_OPTIONAL_HEADER
     unsigned int head_start_address_ = 0;
     unsigned int head_end_address_ = 0;
     // IMAGE_SECTION_HEADER（包括中间空洞位置）
@@ -72,7 +76,7 @@ struct Diaresults {
     std::vector<std::string> evidence_; // 判断依据，暂时闲置
 
 	std::vector<Core::Diagnostic> information_list_; // 扫描信息表
-    std::vector<Core::Diagnostic> additional_information; // 额外信息，暂时闲置
+    std::vector<std::string> additional_information; // 额外信息
 };
 
 struct SectionImformation {

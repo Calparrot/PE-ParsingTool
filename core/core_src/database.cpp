@@ -3,16 +3,10 @@
 
 #include "database.h"
 
-// Structuresults data_container;
-
 void Structuresults::crash_imformation_set(error_category code, const std::string& msg) {
 	crashreport.error_code_ = code;
 	crashreport.message_ = msg;
 }
-
-/* 节区头的基础检查，用于初步判断任意40字节是否为合法节区头，
-   相对于 section_headers_analisis() 函数仅做较宽松的可能性检查，
-   可能错判，不能作为最终输出结果 */
 
 /* 函数返回值为错误状态码：
    0：合法节区头

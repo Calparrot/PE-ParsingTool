@@ -101,8 +101,9 @@ int main(int argc, char* argv[]) {
             }
 
             if (current.warning_num != 0) {
-                std::wstring output_dir = L"E:\\个人文档\\4\\PE_Parsing CLI\\x64\\output";
-                fs::create_directories(output_dir);
+                std::wstring output_dir;
+                /*std::wstring output_dir = L"E:\\个人文档\\4\\PE_Parsing CLI\\x64\\output";
+                fs::create_directories(output_dir);*/
 
                 std::wstring filename = entry.path().stem().wstring();  // 不带扩展名的文件名
                 std::wstring report_name = filename + L"_report.txt";

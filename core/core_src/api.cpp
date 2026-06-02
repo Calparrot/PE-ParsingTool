@@ -222,13 +222,25 @@ std::string Translator::single_item_translator(Core::Diagnostic single_item) {
 }
 
 std::string Translator::get_sct_address_table() {
+    // 用于 SectionHeader -> Name 字段转ASCII码显示用
+    auto to_ascii_string = [](const uint8_t Name[8]) -> std::string {
+        std::string result;
+        result.reserve(8);
+        for (int i = 0; i < 8; ++i) {
+            char c = static_cast<char>(Name[i]);
+            if (c >= 32 && c <= 126) {
+                result.push_back(c);
+            }
+        }
+        return result;
+        };
+
     std::string table;
     table += "\n【节区文件地址表】\n";
-    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
-    table += "序号\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
-    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
+    table += "序号\t|节区名称\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
     for (size_t i = 0; i < data_container.storage_interval_table.size(); i++) {
-        table += std::to_string(i + 1) + "\t|";
+        table += std::to_string(i) + "\t|";
+        table += to_ascii_string(data_container.sectionheaders[i].Name) + "    \t|";
         table += uint_to_hex_string(data_container.storage_interval_table[i].begin) + "\t|";
         table += uint_to_hex_string(data_container.storage_interval_table[i].end) + "\t|";
         table += uint_to_hex_string(data_container.storage_interval_table[i].size) + "\t|";
@@ -238,11 +250,10 @@ std::string Translator::get_sct_address_table() {
     table += "注：结束偏移含对齐\n";
 
     table += "\n【节区内存地址表】\n";
-    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
-    table += "序号\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
-    table += "——\t——\t——\t——\t——\t——\t——\t——\t——\n";
+    table += "序号\t|节区名称\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
     for (size_t i = 0; i < data_container.memory_interval_table.size(); i++) {
-        table += std::to_string(i + 1) + "\t|";
+        table += std::to_string(i) + "\t|";
+        table += to_ascii_string(data_container.sectionheaders[i].Name) + "    \t|";
         table += uint_to_hex_string(data_container.memory_interval_table[i].begin) + "\t|";
         table += uint_to_hex_string(data_container.memory_interval_table[i].end) + "\t|";
         table += uint_to_hex_string(data_container.memory_interval_table[i].size) + "\t|";
@@ -277,6 +288,17 @@ std::string Translator::detailed_file_info_translator() {
     detailed_info += "\n【详细信息】\n";
     if (data_container.num_of_scanned_blocks_ >= 1) {
         for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks_); i++) {
+            // 导入表打印折叠处理
+            if (data_container.diarelist[i].component_name_ == "IMAGE_IMPORT_DESCRIPTOR" &&
+            !data_container.diarelist[i].additional_information.empty()) {
+                for (size_t temp = 0; temp < data_container.diarelist[i].additional_information.size(); temp++) {
+                    detailed_info += "< ! > ";
+                    detailed_info += data_container.diarelist[i].additional_information[temp];
+                    detailed_info += "\n";
+                }
+                break;
+            }
+            // 正常处理
             for (size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
                 detailed_info += single_item_translator(data_container.diarelist[i].information_list_[j]);
                 detailed_info += "\n";

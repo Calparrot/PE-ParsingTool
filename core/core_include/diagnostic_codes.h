@@ -56,8 +56,8 @@ namespace Core {
         DiagCategory category;   // 诊断类别（用哪种模板）
 
         /* 提示信息 */
-		std::string info1; // 提示信息1
-		std::string info2; // 提示信息2，默认不用，根据需要使用
+		std::string info1;       // 提示信息1
+		std::string info2;       // 提示信息2，默认不用，根据需要使用
         /* 基础参数 */
         std::string field_name;  // 字段名，如"PE Signature"
 		std::string description; // 结构名，如"File Header"
