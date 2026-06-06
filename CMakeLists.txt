@@ -16,9 +16,11 @@ set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/core_include)
 set(CORE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src)
 set(GUI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include)
 set(GUI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src)
+set(CLI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_include)
+set(CLI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src)
 
 # 定义源文件列表
-set(SOURCES
+set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/api.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/database.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/diagnostic_helpers.cpp
@@ -28,10 +30,19 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src/winmain.cpp
 )
 
+set(CLI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/api.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/database.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/diagnostic_helpers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/peanalyzer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src/main_cli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src/functions.cpp
+)
+
 set(RESOURCES "PE_ParsingTool.rc")
 
 # 创建可执行文件
-add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${RESOURCES})
+add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES})
 
 if(WIN32)
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -45,6 +56,16 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CORE_SRC_DIR}
     ${GUI_INCLUDE_DIR}
     ${GUI_SRC_DIR}
+)
+
+add_executable(${PROJECT_NAME}_cli ${CLI_SOURCES})
+
+target_include_directories(${PROJECT_NAME}_cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CORE_INCLUDE_DIR}
+    ${CORE_SRC_DIR}
+    ${CLI_INCLUDE_DIR}
+    ${CLI_SRC_DIR}
 )
 
 #set_target_properties(${PROJECT_NAME} PROPERTIES

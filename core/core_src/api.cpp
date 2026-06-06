@@ -358,6 +358,12 @@ bool Translator::scan_report_export(const std::wstring& export_filepath) {
     return true;
 }
 
+void Translator::print_report() {
+    std::cout << basic_file_info_translator();
+    std::cout << aggregate_info_translator();
+    std::cout << detailed_file_info_translator();
+}
+
 /* FundamentalAnalysis类 */
 bool FundamentalAnalysis::readfile(std::string file_path) {
 #ifdef _WIN32 // Windows平台：使用宽字符版本
