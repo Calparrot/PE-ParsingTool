@@ -42,7 +42,7 @@ set(CLI_SOURCES
 set(RESOURCES "PE_ParsingTool.rc")
 
 # 创建可执行文件
-add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES})
+add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES} "core/core_include/utf8_filesystem.h")
 
 if(WIN32)
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -58,7 +58,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GUI_SRC_DIR}
 )
 
-add_executable(${PROJECT_NAME}_cli ${CLI_SOURCES})
+add_executable(${PROJECT_NAME}_cli ${CLI_SOURCES} "core/core_include/utf8_filesystem.h")
 
 target_include_directories(${PROJECT_NAME}_cli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}

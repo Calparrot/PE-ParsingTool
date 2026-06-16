@@ -12,5 +12,5 @@ struct Diaresults;
 */
 class SecondaryRecord {
 public:
-	std::vector<Diaresults> re_diaresults_{};
+	std::vector<Diaresults> rec_diaresults_{};
 };

@@ -189,7 +189,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
 
             if (file_loaded) {
-                if (g_analysis_object.data_manager.hexadecimal_document_export(final_filepath)) {
+                if (g_analysis_object.data_manager.hexadecimal_document_export(wstring_to_utf8(final_filepath))) {
                     MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
                 else {
@@ -226,7 +226,7 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
 
             if (file_loaded) {
-                if (g_analysis_object.data_manager.scan_report_export(final_filepath)) {
+                if (g_analysis_object.data_manager.scan_report_export(wstring_to_utf8(final_filepath))) {
                     MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
                 else {

@@ -132,7 +132,6 @@ PE-ParsingTool/
 **Display and performance**
 - The hex view in the GUI is not complete. If you need to see the full hex data, use the "Export Hex View" option.
 - Scan results shown in the GUI (bottom-left corner) might differ slightly from what's in the exported report.
-- The CLI version currently supports single-file scans (view results) and batch scans (view statistics), but doesn't support exporting yet.
 - The CLI version doesn't support Chinese paths (UTF-8 encoded paths) for now.
 
 **Miscellaneous**

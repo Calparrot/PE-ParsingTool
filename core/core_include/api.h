@@ -75,7 +75,8 @@ private:
     std::string get_sct_address_table();
 
     // 写文件
-    bool string_to_file_append(const std::wstring& export_filepath, const std::string& input_data);
+    // bool string_to_file_append(const std::wstring& export_filepath, const std::string& input_data);
+    bool string_to_file_append(const std::string& export_filepath_utf8, const std::string& input_data);
 
     // 整合翻译
     std::string basic_file_info_translator();
@@ -83,8 +84,10 @@ private:
     std::string detailed_file_info_translator();
 
 public:
-    bool hexadecimal_document_export(const std::wstring& export_filepath);
-    bool scan_report_export(const std::wstring& export_filepath);
+    // bool hexadecimal_document_export(const std::wstring& export_filepath);
+    // bool scan_report_export(const std::wstring& export_filepath);
+	bool hexadecimal_document_export(const std::string& export_filepath);
+	bool scan_report_export(const std::string& export_filepath);
     void print_report();
 };
 

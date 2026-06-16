@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "utf8_filesystem.h"
 #include "api.h"
 
 #ifdef _WIN32
@@ -314,7 +315,8 @@ std::string Translator::detailed_file_info_translator() {
 }
 
 // 写文件
-bool Translator::string_to_file_append(const std::wstring& export_filepath, const std::string& input_data) {
+/*  原wstring参数版本
+    bool Translator::string_to_file_append(const std::wstring& export_filepath, const std::string& input_data) {
     std::ofstream output_file(export_filepath, std::ios::app | std::ios::binary); // 追加写入而不是覆盖
     if (!output_file.is_open()) {
         return false;
@@ -323,9 +325,20 @@ bool Translator::string_to_file_append(const std::wstring& export_filepath, cons
     output_file << input_data;
     output_file.close();
     return true;
+}*/
+// string版本，要加头文件utf8_filesystem.h
+bool Translator::string_to_file_append(const std::string& export_filepath_utf8, const std::string& input_data) {
+    auto output_file = open_ofstream(export_filepath_utf8, std::ios::app | std::ios::binary);
+    if (!output_file.is_open()) {
+        return false;
+    }
+    output_file << input_data;
+    output_file.close();
+    return true;
 }
 
 /* public */
+/* 原wstring版本
 bool Translator::hexadecimal_document_export(const std::wstring& export_filepath) {
 	unsigned int file_size = data_container.source_file_data.size();
 	unsigned int offset = 0;
@@ -346,15 +359,46 @@ bool Translator::hexadecimal_document_export(const std::wstring& export_filepath
         offset += chunk_size;
     }
     return true;
+}*/
+// string版本
+bool Translator::hexadecimal_document_export(const std::string& export_filepath) {
+    unsigned int file_size = data_container.source_file_data.size();
+    unsigned int offset = 0;
+    unsigned int chunk_size = 1024;
+    std::vector<uint8_t> current_data;
+
+    while (offset < file_size) {
+        unsigned int current_size = (chunk_size <= file_size - offset) ? chunk_size : file_size - offset;
+        current_data.assign(
+            data_container.source_file_data.begin() + offset,
+            data_container.source_file_data.begin() + offset + current_size
+        );
+
+        if (!string_to_file_append(export_filepath, generate_file_display(current_data, offset))) {
+            return false;
+        }
+
+        offset += chunk_size;
+    }
+    return true;
 }
 
+/*  原wstring版本
 bool Translator::scan_report_export(const std::wstring& export_filepath) {
     if (!string_to_file_append(export_filepath, basic_file_info_translator()) ||
     !string_to_file_append(export_filepath, aggregate_info_translator()) ||
     !string_to_file_append(export_filepath, detailed_file_info_translator())) {
         return false;
     }
-
+    return true;
+}*/
+// string版本
+bool Translator::scan_report_export(const std::string& export_filepath) {
+    if (!string_to_file_append(export_filepath, basic_file_info_translator()) ||
+        !string_to_file_append(export_filepath, aggregate_info_translator()) ||
+        !string_to_file_append(export_filepath, detailed_file_info_translator())) {
+        return false;
+    }
     return true;
 }
 
