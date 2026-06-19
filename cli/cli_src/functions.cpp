@@ -75,3 +75,8 @@ void show_help() {
         << "  tool scan file a.exe\n"
         << "  tool scan folder ./samples\n";
 }
+
+void show_version() {
+    std::cout << "PE_Parsing CLI 版本 0.0.0\n";
+    std::cout << "其实都没有正式版本，功能还在开发中。\n" << std::endl;
+}

@@ -9,9 +9,10 @@
 一个用 C++ 编写的 PE 文件分析工具，专注于安全分析、结构验证与查看。
 
 特色：具体到字段的结构输出报告，轻量级文件分析，
-平均扫描耗时 < 2ms/文件，GUI版本最高运行内存小于15MB，CLI版本最高运行内存小于2MB（批量扫描），核心组件无第三方依赖、可跨 Windows、Linux 平台。
+平均扫描耗时 < 2ms/文件，GUI版本最高运行内存小于15MB，
+CLI版本最高运行内存小于2MB（批量扫描），核心组件无第三方依赖、可跨 Windows、Linux 平台。
 
- **⚠️ 开发状态**：这是个人在学习过程中独立开发的小项目，正在积极推进中，已完成核心解析框架，总体功能仍不完整。
+ **⚠️ 开发状态**：开发中，功能有限。API 处于早期迭代阶段，目前尚未稳定。
 
 ## 📸 程序预览
 
@@ -40,22 +41,85 @@
 - 支持 C++17 的编译器（Visual Studio 2022 / MinGW / Clang）
 - CMake 3.15 或更高版本
 
-### 编译运行（推荐使用命令行）
+### 编译与运行
 
-#### 克隆项目
+#### Windows
+
+1. 克隆项目并打开 CMake 工程：
+   ```bash
+   git clone https://github.com/Calparrot/PE-ParsingTool.git
+   cd PE-ParsingTool
+   ```
+
+2. 使用 Visual Studio 打开项目根目录（**文件 → 打开 → CMake**），选择 `CMakeLists.txt`。
+   > VS 会自动识别 CMake 工程，无需手动生成 `.sln` 文件。
+
+3. 在 Visual Studio 顶部选择构建配置（**Debug / Release**），然后：
+   - 右键 `CMakeLists.txt` → **生成**
+   - 或按 `Ctrl + Shift + B` 直接编译
+
+4. 编译完成后，可执行文件生成在：
+   ```bash
+   out/build/x64-Debug/PE_ParsingTool.exe      # GUI 版本
+   out/build/x64-Debug/PE_ParsingTool_cli.exe  # CLI 版本
+   ```
+
+> 💡 **如果使用命令行 + CMake**（不依赖 VS 界面）：
+> ```bash
+> cmake -B build
+> cmake --build build --config Release
+> ```
+> 生成在 `build/Release/` 目录下。
+
+#### Linux（命令行）
+
 ```bash
 git clone https://github.com/Calparrot/PE-ParsingTool.git
 cd PE-ParsingTool
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
 ```
-#### 配置并编译
+
+运行 CLI 版本：
 ```bash
-cmake -B build
-cmake --build build
+./build/PE_ParsingTool_cli
 ```
-#### 运行程序
-```bash
-./build/PE_ParsingTool.exe
+
+## 📖 编程接口（API）
+
+核心接口定义在 [`core/core_include/api.h`](core/core_include/api.h)
+### 快速示例
+
+```cpp
+#include "api.h"
+#include <iostream>
+
+int main() {
+    FundamentalAnalysis object; // 创建分析对象
+    FundamentalAnalysis::error_code result = object.analysis_file("C:/test.exe");
+                                // 调用分析函数，传入文件路径
+    
+    if (result == 0) {          // 导出分析报告
+        object.data_manager.scan_report_export("C:/output.txt");
+        cout << "分析完成，报告已导出。" << endl;
+    }
+    return 0;
+}
 ```
+
+### 核心类型说明
+`FundamentalAnalysis` - 核心分析类，提供文件分析功能和结果管理接口
+`FundamentalAnalysis::error_code` - 错误码类型，表示分析结果状态
+`data_manager` - `FundamentalAnalysis` 的公开成员，负责报告导出和数据管理
+
+### 主要方法
+除 `analysis_file` 外，其他方法均需在 `analysis_file` 成功（返回 `0`）后调用。
+
+`analysis_file(const std::string& file_path)` - 分析指定路径的 PE 文件，根据分析成功与否返回错误码
+`summary_file()` - 汇总单次分析结果，返回分析报告数据（不打印）
+`data_manager.scan_report_export(const std::string& export_path)` - 导出分析报告到指定路径
+`data_manager.hexadecimal_document_export(const std::string& export_filepath)` - 导出十六进制视图数据到指定路径
+`data_manager.print_report()` - 打印单次分析报告到控制台
 
 ## 📁 项目结构
 ```text

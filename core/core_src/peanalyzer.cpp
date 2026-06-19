@@ -1000,12 +1000,12 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 		shared_structure.section_alignment_ = data_container.optionalheader32.SectionAlignment;
 		shared_structure.file_alignment_ = data_container.optionalheader32.FileAlignment;
 		shared_structure.size_of_image_ = data_container.optionalheader32.SizeOfImage;
-		shared_structure.import_table_RVA_ = data_container.optionalheader32.DataDirectory[1].VirtualAddress;
-		shared_structure.import_table_size_ = data_container.optionalheader32.DataDirectory[1].Size;
-		shared_structure.relocation_table_RVA_ = data_container.optionalheader32.DataDirectory[5].VirtualAddress;
-		shared_structure.relocation_table_size_ = data_container.optionalheader32.DataDirectory[5].Size;
-		shared_structure.tls_table_RVA_ = data_container.optionalheader32.DataDirectory[9].VirtualAddress;
-		shared_structure.tls_table_size_ = data_container.optionalheader32.DataDirectory[9].Size;
+		shared_structure.import_table_RVA_ = data_container.optionalheader32.DataDirectory_[1].VirtualAddress;
+		shared_structure.import_table_size_ = data_container.optionalheader32.DataDirectory_[1].Size;
+		shared_structure.relocation_table_RVA_ = data_container.optionalheader32.DataDirectory_[5].VirtualAddress;
+		shared_structure.relocation_table_size_ = data_container.optionalheader32.DataDirectory_[5].Size;
+		shared_structure.tls_table_RVA_ = data_container.optionalheader32.DataDirectory_[9].VirtualAddress;
+		shared_structure.tls_table_size_ = data_container.optionalheader32.DataDirectory_[9].Size;
 
 		shared_structure.size_of_headers_ = data_container.optionalheader32.SizeOfHeaders;
 
@@ -1055,12 +1055,12 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 		shared_structure.section_alignment_ = data_container.optionalheader64.SectionAlignment;
 		shared_structure.file_alignment_ = data_container.optionalheader64.FileAlignment;
 		shared_structure.size_of_image_ = data_container.optionalheader64.SizeOfImage;
-		shared_structure.import_table_RVA_ = data_container.optionalheader64.DataDirectory[1].VirtualAddress;
-		shared_structure.import_table_size_ = data_container.optionalheader64.DataDirectory[1].Size;
-		shared_structure.relocation_table_RVA_ = data_container.optionalheader64.DataDirectory[5].VirtualAddress;
-		shared_structure.relocation_table_size_ = data_container.optionalheader64.DataDirectory[5].Size;
-		shared_structure.tls_table_RVA_ = data_container.optionalheader64.DataDirectory[9].VirtualAddress;
-		shared_structure.tls_table_size_ = data_container.optionalheader64.DataDirectory[9].Size;
+		shared_structure.import_table_RVA_ = data_container.optionalheader64.DataDirectory_[1].VirtualAddress;
+		shared_structure.import_table_size_ = data_container.optionalheader64.DataDirectory_[1].Size;
+		shared_structure.relocation_table_RVA_ = data_container.optionalheader64.DataDirectory_[5].VirtualAddress;
+		shared_structure.relocation_table_size_ = data_container.optionalheader64.DataDirectory_[5].Size;
+		shared_structure.tls_table_RVA_ = data_container.optionalheader64.DataDirectory_[9].VirtualAddress;
+		shared_structure.tls_table_size_ = data_container.optionalheader64.DataDirectory_[9].Size;
 
 		shared_structure.size_of_headers_ = data_container.optionalheader64.SizeOfHeaders;
 

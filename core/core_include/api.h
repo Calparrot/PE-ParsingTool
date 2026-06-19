@@ -18,10 +18,10 @@ struct ScanResultsDistribution {
     int warning_distribution[20] = { 0 };    // 扫描到的警告信息分布
     int error_distribution[20] = { 0 };      // 扫描到的错误信息分布（针对签名）
 
-    int info_num = 0;                            // 扫描到的普通信息数量
-    int suspicious_num = 0;                      // 扫描到的可疑信息数量
-    int warning_num = 0;                         // 扫描到的警告信息数量
-    int error_num = 0;                           // 扫描到的错误信息数量（针对签名）
+    int info_num = 0;                        // 扫描到的普通信息数量
+    int suspicious_num = 0;                  // 扫描到的可疑信息数量
+    int warning_num = 0;                     // 扫描到的警告信息数量
+    int error_num = 0;                       // 扫描到的错误信息数量（针对签名）
 
     int type_distribution[11] = {};          // 扫描到的类型分布（参照 diagnostic_codes.h 文件 Object 中的6种类型）
 };

@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 #ifdef _DEBUG
     static char* debug_argv[] = {
         (char*)"PE_ParsingTool_cli.exe",
-        (char*)"-e",
+        (char*)"-s",
         (char*)"folder",
         (char*)"C:\\test"
     };
@@ -113,37 +113,39 @@ int main(int argc, char* argv[]) {
 
     /* 有参数情况 */
     std::string cmd = argv[1];
-	if (cmd == "-h" || cmd == "--help" || cmd == "help") {               // 显示帮助文档
+
+	// 显示帮助文档，PE_ParsingTool_cli.exe -h
+	if (cmd == "-h" || cmd == "--help" || cmd == "help") {
         show_help();
         return 0;
     }
-    if (cmd == "-v" || cmd == "--version" || cmd == "version"){          // 显示版本信息
-        std::cout << "PE_Parsing CLI 版本 0.0.0\n";
-        std::cout << "其实都没有正式版本，功能还在开发中。\n" << std::endl;
+
+	// 显示版本信息，PE_ParsingTool_cli.exe -v
+    else if (cmd == "-v" || cmd == "--version" || cmd == "version"){
+        show_version();
         return 0;
 	}
-    if (cmd == "-s" || cmd == "--scan" || cmd == "scan") {               // 扫描指定目录
+
+	// 扫描指定目录或文件，PE_ParsingTool_cli.exe -s folder C:\test
+    else if (cmd == "-s" || cmd == "--scan" || cmd == "scan") {
         if (argc < 4) {
             std::cerr << "错误：扫描需要子命令和路径\n" << std::endl;
             return 1;
         }
 
-        std::string sub = argv[2];               // file 或 folder
-#ifdef _WIN32
-		fs::path scan_dir = AnsiToUtf8(argv[3]); // 需要扫描的文件或文件夹路径，有点问题，不要传中文路径
-#else
-        fs::path scan_dir = argv[3];             // 需要扫描的文件或文件夹路径
-#endif
+        std::string sub = argv[2];   // file 或 folder
+        fs::path scan_dir = argv[3]; // 需要扫描的文件或文件夹路径
+
         if (sub != "file" && sub != "folder") {
             std::cerr << "错误：子命令不存在" << sub << std::endl;
             return 1;
         }
-        if (!fs::exists(scan_dir) && !fs::is_directory(scan_dir)) {
-            std::cerr << "错误：路径不存在 - " << scan_dir << std::endl;
-            return 1;
-        }
         /* scan子命令 */
-        if(sub == "folder") {                                          // 扫描指定目录文件夹模式
+        if(sub == "folder") { // 扫描指定目录文件夹模式
+            if(!fs::is_directory(scan_dir)) {
+                std::cerr << "错误：需要扫描的文件夹不存在或传入参数非文件夹路径 - " << scan_dir << std::endl;
+                return 1;
+			}
             std::cout << "扫描目录：" << fs::absolute(scan_dir) << std::endl;
 
             ScanResultsDistribution sr_distribution;
@@ -158,9 +160,11 @@ int main(int argc, char* argv[]) {
                 std::string ext = entry.path().extension().string();
 
                 if (ext == ".exe" || ext == ".dll") {
-                    std::wstring wpath = entry.path().wstring();
-                    std::string file_path = wstring_to_string(wpath);
-
+#ifdef _WIN32 // Windows：从宽字符转 UTF-8
+                    std::string file_path = WideToUtf8(entry.path().wstring());
+#else         // Linux/Mac：直接使用 UTF-8 路径
+                    std::string file_path = entry.path().string();
+#endif
                     FundamentalAnalysis::error_code err = object.analysis_file(file_path);
                     ScanResultsDistribution current = object.summary_file();
 
@@ -185,11 +189,21 @@ int main(int argc, char* argv[]) {
 
             batch_statistiacl_output(sr_distribution, total_files);
 	    }
-		else if (sub == "file") {                                        // 扫描指定文件模式
+		else if (sub == "file") { // 扫描指定文件模式
+            if (!fs::exists(scan_dir)) {
+                std::cerr << "错误：需要扫描的文件不存在或传入参数非文件路径 - " << scan_dir << std::endl;
+                return 1;
+            }
             std::cout << "扫描文件：" << fs::absolute(scan_dir) << std::endl;
+
+#ifdef _WIN32 // Windows：从宽字符转 UTF-8
+            std::string file_path = WideToUtf8(scan_dir.wstring());
+#else         // Linux/Mac：直接使用 UTF-8 路径
+            std::string file_path = scan_dir.string();
+#endif
             FundamentalAnalysis object;
-			std::string file_path = wstring_to_string(scan_dir.wstring());
             FundamentalAnalysis::error_code err = object.analysis_file(file_path);
+
             if(err == FundamentalAnalysis::error_code::SUCCESS) {
 				std::cout << "扫描完成，结果如下：" << std::endl;
                 object.data_manager.print_report();
@@ -200,7 +214,9 @@ int main(int argc, char* argv[]) {
             }
         }
 	}
-    if (cmd == "-e" || cmd == "--export" || cmd == "export") {             // 导出扫描报告
+
+	// 扫描并导出扫描报告，PE_ParsingTool_cli.exe -e folder C:\test -o C:\output
+    else if (cmd == "-e" || cmd == "--export" || cmd == "export") {
         if (argc < 4) {
             std::cerr << "错误：扫描需要子命令和路径\n" << std::endl;
             return 1;
@@ -248,25 +264,15 @@ int main(int argc, char* argv[]) {
                 std::string ext = entry.path().extension().string(); // 文件后缀
 
                 if (ext == ".exe" || ext == ".dll") {
-                    // std::wstring wpath = entry.path().wstring();
-                    // std::string file_path = wstring_to_string(wpath);
 #ifdef _WIN32 // Windows：从宽字符转 UTF-8
-                    // std::string file_path = scan_dir.u8string();  // C++20
                     std::string file_path = WideToUtf8(entry.path().wstring());
-#else
-                    std::string file_path = scan_dir.string();  // Linux 默认 UTF-8
+#else         // Linux/Mac：直接使用 UTF-8 路径
+                    std::string file_path = entry.path().string();
 #endif
-                    // std::string file_path = entry.path().string();
                     FundamentalAnalysis::error_code err = object.analysis_file(file_path);
                     ScanResultsDistribution current = object.summary_file();
 
                     std::string output_dir;
-                    /*if (argc == 6) {
-                            output_dir = wstring_to_string(out_dir.wstring());
-                        }
-                        else {
-                            output_dir = wstring_to_string(tool_dir.wstring());
-						}*/
                     if (argc == 6) {
                         output_dir = out_dir.string();
                     }
@@ -275,11 +281,6 @@ int main(int argc, char* argv[]) {
                         output_dir = tool_dir.string();
                     }
                     // fs::create_directories(output_dir);
-
-                    /*std::wstring filename = entry.path().stem().wstring(); // 不带扩展名的文件名
-                    std::wstring report_name = filename + L"_report.txt";  // 带扩展名的文件名
-					fs::path report_path = fs::path(output_dir) / report_name; // 输出文件完整路径
-					std::wstring final_path = report_path.wstring(); // 输出文件完整路径的wstring版本*/
                     
                     std::string filename = entry.path().stem().string(); // 不带扩展名的文件名
                     std::string report_name = filename + "_report.txt";  // 带扩展名的文件名
@@ -288,19 +289,15 @@ int main(int argc, char* argv[]) {
 
                     int counter = 1;
                     while (fs::exists(final_path)) {
-                        /*std::wstring new_name = filename + L"_report(" + std::to_wstring(counter) + L").txt";
-                        final_path = (fs::path(output_dir) / new_name).wstring();*/
                         std::string new_name = filename + "_report(" + std::to_string(counter) + ").txt";
                         final_path = (fs::path(output_dir) / new_name).string();
                         counter++;
                     }
 
                     if (object.data_manager.scan_report_export(final_path)) {
-                        // std::wcout << L"报告已导出: " << final_path << std::endl;
                         std::cout << "报告已导出: " << final_path << std::endl;
                     }
                     else {
-                        // std::wcout << L"导出失败: " << filename << std::endl;
                         std::cout << "报告已导出: " << final_path << std::endl;
                     }
                 }
@@ -320,8 +317,11 @@ int main(int argc, char* argv[]) {
 
             std::cout << "扫描目录：" << fs::absolute(scan_dir) << std::endl;
 
-            // std::string file_path = wstring_to_string(scan_dir.wstring());
-            std::string file_path = scan_dir.string(); // 需要扫描的文件所在目录
+#ifdef _WIN32 // Windows：从宽字符转 UTF-8
+            std::string file_path = WideToUtf8(scan_dir.wstring());
+#else         // Linux/Mac：直接使用 UTF-8 路径
+            std::string file_path = scan_dir.string();
+#endif
             FundamentalAnalysis object;
             FundamentalAnalysis::error_code err = object.analysis_file(file_path);
 
@@ -331,20 +331,12 @@ int main(int argc, char* argv[]) {
                 // std::wstring output_dir;
                 std::string output_dir;
                 if (argc == 6) {
-                    // output_dir = out_dir.wstring() + L"\\" + L"output.txt";
                     output_dir = out_dir.string() + "/" + "output.txt";
                 }
                 else {
-                    // output_dir = tool_dir.wstring() + L"\\" + L"output.txt";
                     output_dir = tool_dir.string() + "/" + "output.txt";
                 }
 
-                /*if (object.data_manager.scan_report_export(wstring_to_string(output_dir))) {
-					std::cout << "报告已导出: " << wstring_to_string(output_dir) << std::endl;
-                }
-                else {
-					std::cout << "导出失败: " << wstring_to_string(output_dir) << std::endl;
-                }*/
                 if (object.data_manager.scan_report_export(output_dir)) {
                     std::cout << "报告已导出: " << output_dir << std::endl;
                 }
@@ -358,6 +350,11 @@ int main(int argc, char* argv[]) {
             }
 		}
 	}
+
+	// 不合法情况，PE_ParsingTool_cli.exe -x
+    else {
+		std::cout << "参数有误，输入 -h 获取帮助文档。" << std::endl;
+    }
 
     auto end_time = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

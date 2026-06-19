@@ -20,6 +20,7 @@ set(CLI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_include)
 set(CLI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src)
 
 # 定义源文件列表
+if(WIN32)
 set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/api.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/database.cpp
@@ -29,6 +30,7 @@ set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src/utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src/winmain.cpp
 )
+endif()
 
 set(CLI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/api.cpp
@@ -42,13 +44,12 @@ set(CLI_SOURCES
 set(RESOURCES "PE_ParsingTool.rc")
 
 # 创建可执行文件
-add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES} "core/core_include/utf8_filesystem.h")
+if (WIN32)
+add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES})
 
-if(WIN32)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "/SUBSYSTEM:WINDOWS"
-    )
-endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    LINK_FLAGS "/SUBSYSTEM:WINDOWS"
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -57,8 +58,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GUI_INCLUDE_DIR}
     ${GUI_SRC_DIR}
 )
+endif()
 
-add_executable(${PROJECT_NAME}_cli ${CLI_SOURCES} "core/core_include/utf8_filesystem.h")
+add_executable(${PROJECT_NAME}_cli ${CLI_SOURCES})
 
 target_include_directories(${PROJECT_NAME}_cli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}

@@ -251,7 +251,7 @@ struct OptionalHeader32 {
     uint32_t SizeOfHeapCommit;            // 初始提交的堆大小
     uint32_t LoaderFlags;                 // 保留（已废弃）
     uint32_t NumberOfRvaAndSizes;         // 数据目录项数（通常16）
-    DataDirectory DataDirectory[16];      // 数据目录表
+    DataDirectory DataDirectory_[16];      // 数据目录表
 };
 
 struct OptionalHeader64 {
@@ -285,7 +285,7 @@ struct OptionalHeader64 {
     uint64_t SizeOfHeapCommit;            // 64位：扩展为64位
     uint32_t LoaderFlags;                 // 保留（已废弃）
     uint32_t NumberOfRvaAndSizes;         // 数据目录项数（通常16）
-    DataDirectory DataDirectory[16];      // 数据目录表
+    DataDirectory DataDirectory_[16];      // 数据目录表
 };
 
 struct ROM_OptionalHeader {

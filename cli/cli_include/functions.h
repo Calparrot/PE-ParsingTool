@@ -9,3 +9,6 @@ void batch_statistiacl_output(ScanResultsDistribution& sr_distribution, int& tot
 
 // 输出帮助信息
 void show_help();
+
+// 输出版本信息
+void show_version();
