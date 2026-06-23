@@ -1,6 +1,4 @@
-#ifndef PEANALYZER_H
-#define PEANALYZER_H
-
+#pragma once
 #include <vector>
 #include <cstdint>
 #include <fstream>
@@ -114,14 +112,14 @@ private:
     void section_name_check(const uint8_t input_name[8], const uint32_t input_characteristic, Diaresults& inputresult, size_t num, Structuresults& data_container);
 public:
     /* 调用时一定要按顺序调用，用户不可管理，由API统一封装 */
-    // 头部
+    // 头部基础结构分析
     bool dosheader_analysis(Structuresults& data_container);
     bool dosstub_analysis(Structuresults& data_container);
     bool file_header_analysis(Structuresults& data_container);
     bool optional_header_analysis(Structuresults& data_container);
     bool section_headers_analysis(Structuresults& data_container);
 
-    // 导入表
+    // 导入表基础结构分析
     bool import_descriptor_seeker(Structuresults& data_container);
 
     /* 构造函数 */
@@ -133,5 +131,3 @@ public:
         file.seekg(current);
     }
 };
-
-#endif // ！PEANALYZER_H

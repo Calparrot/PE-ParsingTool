@@ -1,6 +1,4 @@
-#ifndef DATABASE_H
-#define DATABASE_H
-
+#pragma once
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -162,7 +160,7 @@ struct OverlapProcessing {
 
 struct ComprehensiveInfo {
     // 已启用
-    uint64_t file_size_copy_;              // 文件大小
+    uint64_t file_size_copy_ = 0;          // 文件大小
     std::string file_identification_ = ""; // 32位、64位或其他
     std::string architecture_ = "";        // 运行架构
 
@@ -376,5 +374,3 @@ public:
 
 int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure, Structuresults data_container);
 int file_confidence_detection(SharedStructure shared_structure);
-
-#endif

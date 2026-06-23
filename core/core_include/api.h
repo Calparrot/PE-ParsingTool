@@ -1,6 +1,4 @@
-#ifndef API_H
-#define API_H
-
+#pragma once
 #include <fstream>
 #include <string>
 #include <iomanip>
@@ -27,10 +25,23 @@ struct ScanResultsDistribution {
 };
 
 /* Translator类成员说明
-	vector_to_hexstring()        ：vector<uint8_t>转十六进制表示形式的string类
-	hexstring_to_ascii()         ：十六进制表示形式的string类转ascii码表示形式的string类
-	generate_file_display()      ：将原始文件数据转换为十六进制视图
-	hexadecimal_document_export()：将十六进制视图导出为txt文本文件
+private成员函数：
+	uint_to_hex_string()		   ：无符号整数（uint8_t、uint16_t等）转十六进制表示形式的string类
+	uint_to_dec_string()           ：无符号整数（uint8_t、uint16_t等）转十进制表示形式的string类
+	vector_to_hexstring()          ：vector<uint8_t>转十六进制表示形式的string类
+	hexstring_to_ascii()           ：十六进制表示形式的string类转ascii码表示形式的string类
+	generate_file_display()        ：将原始文件数据转换为十六进制视图
+	single_item_degree_translator()：将单条信息严重程度翻译为字符串（如【信息】、【可疑】等）形式
+	single_item_translator()       ：将单条信息翻译为字符串形式
+	string get_sct_address_table() ：将节区地址表整理为字符串形式
+	string_to_file_append()        ：将字符串形式的数据追加写入文件
+	basic_file_info_translator()   ：整理扫描结果 comprehensive_info_ 为【基础扫描信息】块
+    aggregate_info_translator()    ：汇总不同结构的扫描信息
+	detailed_file_info_translator()：整理扫描结果 diarelist 为【详细信息】块
+public成员函数：
+	hexadecimal_document_export()  ：将十六进制视图导出为txt文本文件
+	scan_report_export()		   ：将扫描报告导出为txt文本文件
+    print_report()                 ：在终端打印扫描报告
 */
 class Translator {
 public:
@@ -73,9 +84,9 @@ private:
     std::string single_item_translator(Core::Diagnostic single_item);
 
     std::string get_sct_address_table();
+    std::string get_import_descriptor_table();
 
     // 写文件
-    // bool string_to_file_append(const std::wstring& export_filepath, const std::string& input_data);
     bool string_to_file_append(const std::string& export_filepath_utf8, const std::string& input_data);
 
     // 整合翻译
@@ -84,8 +95,6 @@ private:
     std::string detailed_file_info_translator();
 
 public:
-    // bool hexadecimal_document_export(const std::wstring& export_filepath);
-    // bool scan_report_export(const std::wstring& export_filepath);
 	bool hexadecimal_document_export(const std::string& export_filepath);
 	bool scan_report_export(const std::string& export_filepath);
     void print_report();
@@ -113,6 +122,7 @@ private:
     bool check_little_endian();
 
 public:
+	bool detailed_analysis_started = false; // 是否开启详细分析
     Translator data_manager;
     enum class error_code {
         SUCCESS = 0,
@@ -133,5 +143,3 @@ public:
         return *this;
     }
 };
-
-#endif // !API_H

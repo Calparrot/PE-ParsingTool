@@ -240,7 +240,7 @@ std::string Translator::get_sct_address_table() {
     table += "\n【节区文件地址表】\n";
     table += "序号\t|节区名称\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
     for (size_t i = 0; i < data_container.storage_interval_table.size(); i++) {
-        table += std::to_string(i) + "\t|";
+        table += std::to_string(i+1) + "\t|";
         table += to_ascii_string(data_container.sectionheaders[i].Name) + "    \t|";
         table += uint_to_hex_string(data_container.storage_interval_table[i].begin) + "\t|";
         table += uint_to_hex_string(data_container.storage_interval_table[i].end) + "\t|";
@@ -253,7 +253,7 @@ std::string Translator::get_sct_address_table() {
     table += "\n【节区内存地址表】\n";
     table += "序号\t|节区名称\t|起始偏移\t|结束偏移\t|数据长度\t|对齐长度\n";
     for (size_t i = 0; i < data_container.memory_interval_table.size(); i++) {
-        table += std::to_string(i) + "\t|";
+        table += std::to_string(i+1) + "\t|";
         table += to_ascii_string(data_container.sectionheaders[i].Name) + "    \t|";
         table += uint_to_hex_string(data_container.memory_interval_table[i].begin) + "\t|";
         table += uint_to_hex_string(data_container.memory_interval_table[i].end) + "\t|";
@@ -264,6 +264,21 @@ std::string Translator::get_sct_address_table() {
     table += "注：结束偏移含对齐\n";
 
     return table;
+}
+std::string Translator::get_import_descriptor_table() {
+    std::string table;
+
+	table += "\n【IMAGE_IMPORT_DESCRIPTOR】\n";
+	table += "序号\t|OriginalFirstThunk\t|Name\t|FirstThunk\n";
+    for(size_t i = 0; i < data_container.import_descriptor.size(); i++) {
+        table += std::to_string(i+1) + "\t|";
+        table += uint_to_hex_string(data_container.import_descriptor[i].OriginalFirstThunk) + "\t|";
+        table += uint_to_hex_string(data_container.import_descriptor[i].Name) + "\t|";
+        table += uint_to_hex_string(data_container.import_descriptor[i].FirstThunk);
+        table += "\n";
+	}
+
+	return table;
 }
 
 // 整合翻译
@@ -280,6 +295,7 @@ std::string Translator::aggregate_info_translator(){
     std::string agrt_info;
 
     agrt_info += get_sct_address_table();
+    agrt_info += get_import_descriptor_table();
 
     return agrt_info;
 }

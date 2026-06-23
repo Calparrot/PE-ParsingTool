@@ -85,6 +85,14 @@ cmake --build build -j$(nproc)
 ./build/PE_ParsingTool_cli
 ```
 
+#### GUI版本使用说明
+1. 点击菜单栏 → 文件 → 打开
+2. 选择文件后，单击左侧导航栏项目以显示详细信息
+3. 需要导出时，点击菜单栏 → 文件 → 导出，选择需要的格式
+
+#### 命令行版本使用说明
+1. 使用 `<工具名> -h` 或 `<工具名> --help` 查看使用说明
+
 ## 📖 编程接口（API）
 
 核心接口定义在 [`core/core_include/api.h`](core/core_include/api.h)
@@ -108,18 +116,22 @@ int main() {
 ```
 
 ### 核心类型说明
-`FundamentalAnalysis` - 核心分析类，提供文件分析功能和结果管理接口
-`FundamentalAnalysis::error_code` - 错误码类型，表示分析结果状态
-`data_manager` - `FundamentalAnalysis` 的公开成员，负责报告导出和数据管理
+| 类型 | 描述 |
+|------|-------------|
+| `FundamentalAnalysis` | 核心分析类，提供文件分析功能和结果管理接口 |
+| `FundamentalAnalysis::error_code` | 错误码类型，表示分析结果状态 |
+| `data_manager` | `FundamentalAnalysis` 的公开成员，负责报告导出和数据管理 |
 
 ### 主要方法
-除 `analysis_file` 外，其他方法均需在 `analysis_file` 成功（返回 `0`）后调用。
+| 函数 | 返回值 | 描述 |
+|--------|--------------|-------------|
+| `analysis_file(const std::string& path)` | `error_code` | 分析指定路径的 PE 文件，根据分析成功与否返回错误码 |
+| `summary_file()` | Report data struct | 汇总单次分析结果，返回分析报告数据（不打印） |
+| `data_manager.scan_report_export(const std::string& path)` | `bool` | 导出分析报告到指定路径 |
+| `data_manager.hexadecimal_document_export(const std::string& path)` | `bool` | 导出十六进制视图数据到指定路径 |
+| `data_manager.print_report()` | `void` | 打印单次分析报告到控制台 |
 
-`analysis_file(const std::string& file_path)` - 分析指定路径的 PE 文件，根据分析成功与否返回错误码
-`summary_file()` - 汇总单次分析结果，返回分析报告数据（不打印）
-`data_manager.scan_report_export(const std::string& export_path)` - 导出分析报告到指定路径
-`data_manager.hexadecimal_document_export(const std::string& export_filepath)` - 导出十六进制视图数据到指定路径
-`data_manager.print_report()` - 打印单次分析报告到控制台
+> 注意：除 `analysis_file` 外，其他方法均需在 `analysis_file` 成功（返回 `0`）后调用。
 
 ## 📁 项目结构
 ```text
@@ -172,17 +184,6 @@ PE-ParsingTool/
 ```
 
 ## ⚠️ 已知问题与限制
-
-### 界面版本使用说明
-1. 点击菜单栏 → 文件 → 打开
-2. 选择文件后，单击左侧导航栏项目以显示详细信息
-3. 需要导出时，点击菜单栏 → 文件 → 导出，选择需要的格式
-
-### 命令行版本使用说明
-1. 使用 `<工具名> -h` 或 `<工具名> --help` 查看使用说明
-
-### 已知问题
-
 **文件格式和平台限制**
 - 暂不支持解析 PE 文件规范中的 ROM 镜像
 - 不支持大端序平台上运行
@@ -195,8 +196,7 @@ PE-ParsingTool/
 
 **显示与性能**
 - GUI版本的十六进制查看功能不全，有需要可以在GUI版本下选择导出“十六进制视图”查看
-- GUI版本的扫描结果（界面左下）和导出报告的扫描结果显示可能略有不同
-- CLI版本在 Windows 平台暂不完全支持传入中文路径（utf-8编码路径）
+- CLI版本暂不完全支持传入中文路径（utf-8编码路径）
 
 **其他**
 - 项目处于开发阶段，API不稳定，因此暂未给出使用说明

@@ -10,8 +10,6 @@ constexpr int BUFFER_SIZE = 5600;                      // 复用缓冲区大小
 constexpr int REASONABLE_MAX_SECTIONS = 128;           // 支持的最大节区数量
 constexpr int REASONABLE_MAX_IMPORT_DESCRIPTORS = 200; // 支持的最大导入描述符数量
 
-// SharedStructure shared_structure{};
-
 /* 普通工具函数 */
 /*
 	interval_relation_judgment ：两个区间的关系判断函数
