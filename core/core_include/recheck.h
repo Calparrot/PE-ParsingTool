@@ -1,7 +1,9 @@
 #pragma once
+#include <fstream>
 
 /* 前置声明 */
 class Structuresults;
+class SecondaryRecord;
 
 /*
 类说明
@@ -25,5 +27,5 @@ public:
 	bool section_headers_recheck(Structuresults& data_container);
 
 	// 导入表增强分析
-	bool INT_extract(std::ifstream& pedata, Structuresults& data_container);
+	bool INT_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container);
 };

@@ -7,6 +7,7 @@
 
 #include "peanalyzer.h"
 #include "database.h"
+#include "recheck_data.h"
 
 struct ScanResultsDistribution {
     bool effective_structure = true;         // 记录结构是否有效（用于空文件加载情况排除无效结构）
@@ -46,6 +47,7 @@ public成员函数：
 class Translator {
 public:
     Structuresults data_container;
+    SecondaryRecord recheck_container;
 
 private:
     // 类型转换

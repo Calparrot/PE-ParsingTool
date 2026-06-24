@@ -8,7 +8,7 @@
 
 constexpr int BUFFER_SIZE = 5600;                      // 复用缓冲区大小
 constexpr int REASONABLE_MAX_SECTIONS = 128;           // 支持的最大节区数量
-constexpr int REASONABLE_MAX_IMPORT_DESCRIPTORS = 200; // 支持的最大导入描述符数量
+constexpr int REASONABLE_MAX_IMPORT_DESCRIPTORS = 100; // 支持的最大导入描述符数量
 
 /* 普通工具函数 */
 /*
@@ -1007,7 +1007,6 @@ bool PEanalyzer::optional_header_analysis(Structuresults& data_container) {
 
 		shared_structure.size_of_headers_ = data_container.optionalheader32.SizeOfHeaders;
 
-		// data_container.file_identification_ = "32位";
 		data_container.comprehensive_info_.file_identification_ = "32位";
 
 		// 异常：imagebase字段为0
@@ -2048,6 +2047,9 @@ bool PEanalyzer::import_descriptor_seeker(Structuresults& data_container) {
 
 	if (qst_count >= 10) {
 		result.additional_information.push_back("Too much imported table information has been scanned and has been collapsed");
+	}
+	if (data_container.import_descriptor.size() >= REASONABLE_MAX_IMPORT_DESCRIPTORS) {
+		result.additional_information.push_back("The scan limit has been triggered, possibly due to an invalid import table");
 	}
 	data_container.diarelist.push_back(result);
 	return true;
