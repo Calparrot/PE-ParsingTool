@@ -125,9 +125,34 @@ public:
     /* ¹¹Ôìº¯Êý */
     PEanalyzer(std::ifstream& inputfile) : pedata_(inputfile) {
         auto& file = pedata_;
-        auto current = file.tellg();
+
+        if (!file) {
+            throw std::runtime_error("PEanalyzer: Invalid file stream");
+        }
+        std::streampos current = file.tellg();
+        if (current == static_cast<std::streampos>(-1)) {
+            throw std::runtime_error("PEanalyzer: Failed to get current file position");
+        }
+
+        file.clear();
+
         file.seekg(0, std::ios::end);
-        file_size_ = static_cast<int64_t>(file.tellg());
+        if (!file) {
+            file.clear();
+            file.seekg(current);
+            throw std::runtime_error("PEanalyzer: Failed to seek to end of file");
+        }
+        std::streampos endPos = file.tellg();
+        if (endPos == static_cast<std::streampos>(-1)) {
+            file.clear();
+            file.seekg(current);
+            throw std::runtime_error("PEanalyzer: Failed to get file size");
+        }
+        file_size_ = static_cast<int64_t>(endPos);
         file.seekg(current);
+        if (!file) {
+            file.clear();
+            file.seekg(0, std::ios::beg);
+        }
     }
 };

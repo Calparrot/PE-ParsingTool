@@ -26,6 +26,8 @@ set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/database.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/diagnostic_helpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/peanalyzer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/recheck.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/recheck_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src/translator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src/utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src/winmain.cpp
@@ -37,6 +39,8 @@ set(CLI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/database.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/diagnostic_helpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/peanalyzer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/recheck.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/core_src/recheck_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src/main_cli.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src/functions.cpp
 )

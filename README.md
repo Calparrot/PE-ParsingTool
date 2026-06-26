@@ -126,7 +126,7 @@ int main() {
 | 函数 | 返回值 | 描述 |
 |--------|--------------|-------------|
 | `analysis_file(const std::string& path)` | `error_code` | 分析指定路径的 PE 文件，根据分析成功与否返回错误码 |
-| `summary_file()` | Report data struct | 汇总单次分析结果，返回分析报告数据（不打印） |
+| `summary_file()` | `ScanResultsDistribution` | 汇总单次分析结果，返回分析报告数据（不打印） |
 | `data_manager.scan_report_export(const std::string& path)` | `bool` | 导出分析报告到指定路径 |
 | `data_manager.hexadecimal_document_export(const std::string& path)` | `bool` | 导出十六进制视图数据到指定路径 |
 | `data_manager.print_report()` | `void` | 打印单次分析报告到控制台 |

@@ -7,6 +7,7 @@
 
 #include "peanalyzer.h"
 #include "database.h"
+#include "recheck.h"
 #include "recheck_data.h"
 
 struct ScanResultsDistribution {
@@ -85,8 +86,10 @@ private:
     std::string single_item_degree_translator(Core::Severity severity);
     std::string single_item_translator(Core::Diagnostic single_item);
 
-    std::string get_sct_address_table();
-    std::string get_import_descriptor_table();
+    std::string get_sct_address_table();       // 节表
+    std::string get_import_descriptor_table(); // 导入表
+    std::string get_INT_table();               // 导入函数
+    std::string get_import_module_name();      // 导入模块名称
 
     // 写文件
     bool string_to_file_append(const std::string& export_filepath_utf8, const std::string& input_data);
@@ -120,21 +123,29 @@ private:
     uint64_t file_size;
     bool myfile_loaded = false;
 
+public:
+    Translator data_manager;
+    struct Config {
+        bool detailed_analysis_started = false; // 是否开启详细分析
+
+        bool INT_analysis = false;              // 是否展开分析导入表
+    } config;
+    enum class error_code {
+        SUCCESS = 0,            // 成功
+        FILE_NOT_FOUND,         // 未找到文件
+        FILE_ACCESS_DENIED,     // 文件打开失败
+        PLATFORM_NOT_SUPPORTED, // 非小端序
+        PROCESS_ERROR,          // 流程出错
+        UNKNOWN_ERROR           // 未知问题
+    };
+
+private:
     bool readfile(std::string filepath);
     bool check_little_endian();
 
 public:
-	bool detailed_analysis_started = false; // 是否开启详细分析
-    Translator data_manager;
-    enum class error_code {
-        SUCCESS = 0,
-        FILE_NOT_FOUND,
-        FILE_ACCESS_DENIED,
-        PLATFORM_NOT_SUPPORTED,
-        UNKNOWN_ERROR
-    };
-
     error_code analysis_file(const std::string input_filepath);
+    error_code recheck_file(const std::string input_filepath);
     ScanResultsDistribution summary_file();
 
     FundamentalAnalysis& operator=(const FundamentalAnalysis& other) {

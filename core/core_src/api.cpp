@@ -280,6 +280,12 @@ std::string Translator::get_import_descriptor_table() {
 
 	return table;
 }
+std::string Translator::get_INT_table() {
+    
+}
+std::string Translator::get_import_module_name(){
+
+}
 
 // 整合翻译
 std::string Translator::basic_file_info_translator() {
@@ -418,11 +424,10 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
 
     bool previous_execution_result = readfile(input_filepath);
     uint8_t execution_steps = 0; // 记录执行到多少个步骤，不管成功还是失败
-    PEanalyzer target(myfile);
+    PEanalyzer target(myfile);   // 创建基础版分析对象
 
     if (previous_execution_result) {
         // 初始化工作
-        // data_manager.data_container.sr_file_size_ = target.file_size_;
         data_manager.data_container.comprehensive_info_.file_size_copy_ = target.file_size_;
     }
     if (previous_execution_result) {
@@ -468,6 +473,20 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
             /* 在这调文件置信度检测函数 */
             return error_code::SUCCESS;
         }
+    }
+}
+
+FundamentalAnalysis::error_code FundamentalAnalysis::recheck_file(const std::string input_filepath) {
+    auto check_data_nonempty = [](Structuresults& data_container) -> bool {
+        return data_container.structures_attributes.dos_header_normal_ &&
+            !data_container.diarelist.empty();
+        };
+    if (check_data_nonempty(data_manager.data_container)
+    && config.detailed_analysis_started == true) {
+        ReInspector enhanced_target(myfile); // 创建增强版分析对象
+    }
+    else {
+        return FundamentalAnalysis::error_code::PROCESS_ERROR;
     }
 }
 

@@ -15,7 +15,7 @@ class SecondaryRecord;
 */
 class ReInspector {
 private:
-	bool check_data_nonempty(Structuresults& data_container);
+	std::ifstream& pedata_;
 
 public:
 	/* 要求基础分析完毕后才可调用，用户不可管理，由API统一封装 */
@@ -28,4 +28,10 @@ public:
 
 	// 导入表增强分析
 	bool INT_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container);
+	bool module_name_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container);
+
+	/* 构造函数 */
+	ReInspector(std::ifstream& inputfile) : pedata_(inputfile) {
+
+	}
 };
