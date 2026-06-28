@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <type_traits>
+#include <vector>
 
 #include "peanalyzer.h"
 #include "database.h"
@@ -128,6 +129,7 @@ public:
     struct Config {
         bool detailed_analysis_started = false; // 是否开启详细分析
 
+        bool detailed_header_analysis = false;  // 是否详细分析头部
         bool INT_analysis = false;              // 是否展开分析导入表
     } config;
     enum class error_code {
@@ -148,6 +150,7 @@ public:
     error_code recheck_file(const std::string input_filepath);
     ScanResultsDistribution summary_file();
 
+    std::vector<bool> check_settings();
     FundamentalAnalysis& operator=(const FundamentalAnalysis& other) {
         if (this != &other) {
 			data_manager = other.data_manager;

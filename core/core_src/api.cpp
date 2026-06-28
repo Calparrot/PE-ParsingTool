@@ -281,10 +281,12 @@ std::string Translator::get_import_descriptor_table() {
 	return table;
 }
 std::string Translator::get_INT_table() {
-    
+    std::string table;
+    return table;
 }
 std::string Translator::get_import_module_name(){
-
+    std::string table;
+    return table;
 }
 
 // 整合翻译
@@ -481,13 +483,19 @@ FundamentalAnalysis::error_code FundamentalAnalysis::recheck_file(const std::str
         return data_container.structures_attributes.dos_header_normal_ &&
             !data_container.diarelist.empty();
         };
-    if (check_data_nonempty(data_manager.data_container)
-    && config.detailed_analysis_started == true) {
-        ReInspector enhanced_target(myfile); // 创建增强版分析对象
-    }
-    else {
+    if (!(check_data_nonempty(data_manager.data_container)
+    && config.detailed_analysis_started)) {
         return FundamentalAnalysis::error_code::PROCESS_ERROR;
     }
+
+    ReInspector enhanced_target(myfile); // 创建增强版分析对象
+    if (config.detailed_header_analysis) {
+        ;
+    }
+    if (config.INT_analysis) {
+        enhanced_target.INT_extract(data_manager.recheck_container, myfile, data_manager.data_container);
+    }
+    return FundamentalAnalysis::error_code::SUCCESS;
 }
 
 ScanResultsDistribution FundamentalAnalysis::summary_file() {
@@ -559,4 +567,12 @@ ScanResultsDistribution FundamentalAnalysis::summary_file() {
     }
 
     return results_distrubution;
+}
+
+std::vector<bool> FundamentalAnalysis::check_settings() {
+    return {
+        config.detailed_analysis_started,
+        config.detailed_header_analysis,
+        config.INT_analysis
+    };
 }

@@ -61,6 +61,8 @@ std::vector<RangeItem<T>> cluster_int_pad(std::vector<T>& data, T cluster_granul
     std::sort(data.begin(), data.end());
     data.erase(std::unique(data.begin(), data.end()), data.end());
 
+    result.reserve(data.size());
+
     T cluster_min = data[0];  // 当前聚类的实际最小值
     T cluster_max = data[0];  // 当前聚类的实际最大值
     for (size_t i = 1; i < data.size(); ++i) {
