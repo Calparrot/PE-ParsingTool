@@ -107,9 +107,9 @@ int main() {
     FundamentalAnalysis::error_code result = object.analysis_file("C:/test.exe");
                                 // 调用分析函数，传入文件路径
     
-    if (result == 0) {          // 导出分析报告
+    if (result == FundamentalAnalysis::error_code::SUCCESS) {          // 导出分析报告
         object.data_manager.scan_report_export("C:/output.txt");
-        cout << "分析完成，报告已导出。" << endl;
+        std::cout << "分析完成，报告已导出。" << std::endl;
     }
     return 0;
 }

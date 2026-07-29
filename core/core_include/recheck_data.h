@@ -77,8 +77,8 @@ std::vector<RangeItem<T>> cluster_int_pad(std::vector<T>& data, T cluster_granul
             }
             else {
                 T range_end = cluster_max;        // 范围：begin=实际最小值，end=实际最大值+padding
-                if (range_end > std::numeric_limits<T>::max() - range_padding) {
-                    range_end = std::numeric_limits<T>::max();
+                if (range_end > (std::numeric_limits<T>::max)() - range_padding) {
+                    range_end = (std::numeric_limits<T>::max)();
                 }
                 else {
                     range_end += range_padding;
@@ -95,8 +95,8 @@ std::vector<RangeItem<T>> cluster_int_pad(std::vector<T>& data, T cluster_granul
     }
     else {
         T range_end = cluster_max;
-        if (range_end > std::numeric_limits<T>::max() - range_padding) {
-            range_end = std::numeric_limits<T>::max();
+        if (range_end > (std::numeric_limits<T>::max)() - range_padding) {
+            range_end = (std::numeric_limits<T>::max)();
         }
         else {
             range_end += range_padding;

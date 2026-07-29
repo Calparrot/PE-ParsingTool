@@ -52,6 +52,10 @@ if (WIN32)
 add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
+    RC_FLAGS "/I ${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
     LINK_FLAGS "/SUBSYSTEM:WINDOWS"
 )
 

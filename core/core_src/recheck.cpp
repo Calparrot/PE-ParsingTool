@@ -11,7 +11,7 @@
 /* 非类成员工具函数 */
 struct FirstThunkPoint {
 	size_t module_idx; // 每个模块的索引
-	uint32_t addr;     // 每个模块的INT地址
+	uint32_t addr;     // 每个模块的INT或name字符串地址
 };
 
 // [INT_extract/module_name_extract] 不同节 RVA 转 RAW，输入为 RVA 数组，输出原地覆盖为 RAW 数组
@@ -45,8 +45,8 @@ static void file_offset_calculate(std::vector<FirstThunkPoint>& point, Structure
 	} while (idx < point.size());
 };
 
-// [INT_extract] INT数组划分函数（找到结尾并返回数组个数，不包含结尾全0数组）返回值0为查找失败，返回值1说明被缓冲区截断
-static size_t INT_division(const uint8_t buffer[], size_t buffer_size, size_t offset, bool is_32bit) {
+// [INT_extract] INT数组划分函数（找到结尾并返回数组元素个数，不包含结尾全0数组）返回值0为查找失败，返回值1说明被缓冲区截断
+static size_t INT_division(const uint8_t buffer[], size_t buffer_size, size_t offset, bool& is_32bit) {
 	if (buffer == nullptr || offset >= buffer_size) {
 		return 0;
 	}
@@ -73,6 +73,23 @@ static size_t INT_division(const uint8_t buffer[], size_t buffer_size, size_t of
 		current_offset += thunk_size;
 	}
 	return 1;
+}
+
+// [name_extract] 模块名划分函数（找到结尾并返回字符串，不包含结尾'\0'）返回值""为查找失败
+static std::string name_division(const uint8_t buffer[], size_t buffer_size, size_t offset) {
+	if (buffer == nullptr || offset >= buffer_size) {
+		return "";
+	}
+
+	std::string dll_name;
+	while (buffer[offset] != '\0' && offset <= buffer_size) {
+		dll_name.push_back(static_cast<char>(buffer[offset]));
+		offset++;
+	}
+	if(offset > buffer_size) {
+		return "";
+	}
+	return dll_name;
 }
 
 /* ReInspector 类实现 */
@@ -254,6 +271,107 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 }
 
 bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container) {
-	
+	bool is_32bit = (data_container.comprehensive_info_.file_identification_ == "32位");
+	bool is_64bit = (data_container.comprehensive_info_.file_identification_ == "64位");
+	if (!is_32bit && !is_64bit) {
+		return false;
+	}
+
+	const size_t buffer_size = 8192;
+	uint8_t buffer[buffer_size] = { 0 }; // 8KB 缓冲区，避免栈上分配过多导致栈溢出
+
+	std::vector<FirstThunkPoint> name_addr;
+	name_addr.reserve(data_container.import_descriptor.size());
+	for (size_t i = 0; i < data_container.import_descriptor.size(); i++) { // 先用原始RVA数据填充first_thunk_addr
+		FirstThunkPoint temp_thunk_point = {};
+		temp_thunk_point.module_idx = i;
+		temp_thunk_point.addr = data_container.import_descriptor[i].Name;
+		name_addr.push_back(temp_thunk_point);
+	}
+	file_offset_calculate(name_addr, data_container); // 再将 RVA 转 RAW
+	std::sort(name_addr.begin(), name_addr.end(),
+		[](const FirstThunkPoint& a, const FirstThunkPoint& b) {
+			return a.addr < b.addr;  // 按 RAW 地址升序排序
+		});
+
+	std::vector<uint32_t> t_name_addr; // 不带索引标记的OriginalFirstThunk转RAW数据
+	t_name_addr.reserve(data_container.import_descriptor.size());
+	for (size_t i = 0; i < data_container.import_descriptor.size(); i++) { // 用已经转好的RAW数据填充t_first_thunk_addr
+		t_name_addr.push_back(name_addr[i].addr);
+	}
+	std::vector<RangeItem<uint32_t>> name_addr_clustering = cluster_int_pad(t_name_addr); // 聚类地址计算，减少文件IO次数
+
+	for (size_t i = 0; i < name_addr_clustering.size(); i++) {
+		std::fill(std::begin(buffer), std::end(buffer), 0);
+		if (name_addr_clustering[i].is_range == true) { // 范围值
+			uint32_t size = name_addr_clustering[i].end > name_addr_clustering[i].begin ?
+				name_addr_clustering[i].end - name_addr_clustering[i].begin : 0; // 区间范围大小
+			// 一个缓冲区可以读取完
+			if (size != 0 && size <= buffer_size
+				&& name_addr_clustering[i].end < data_container.comprehensive_info_.file_size_copy_) {
+				pedata.seekg(name_addr_clustering[i].begin, std::ios::beg);
+				if (!pedata) {
+					return false;
+				}
+				pedata.read(reinterpret_cast<char*>(buffer), size);
+				if (pedata.gcount() != size) {
+					return false;
+				}
+
+			}
+			// 一个缓冲区读不下
+			else {
+				auto ceil_div = [](uint32_t pre_read_bytes, size_t buffer_size) -> size_t {
+					return (static_cast<size_t>(pre_read_bytes) + buffer_size - 1) / buffer_size;
+					};
+				size_t buffers_num = ceil_div(size, buffer_size);
+
+				for (size_t num = 0; num < buffers_num; num++) {
+					if (name_addr_clustering[i].end < data_container.comprehensive_info_.file_size_copy_) {
+						std::fill(std::begin(buffer), std::end(buffer), 0);
+						pedata.seekg(name_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
+						if (!pedata) {
+							return false;
+						}
+						size_t read_size = name_addr_clustering[i].end - (num * buffer_size) > buffer_size ?
+							buffer_size : name_addr_clustering[i].end - (num * buffer_size);
+						pedata.read(reinterpret_cast<char*>(buffer), read_size);
+						if (pedata.gcount() != read_size) {
+							return false;
+						}
+					}
+					else {
+						return false;
+					}
+				}
+			}
+		}
+		else { // 单点值
+			pedata.seekg(name_addr_clustering[i].begin, std::ios::beg);
+			if (!pedata) {
+				return false;
+			}
+			pedata.read(reinterpret_cast<char*>(buffer), 1024);
+			if (pedata.gcount() != 1024) {
+				return false;
+			}
+			size_t thunk_length = INT_division(buffer, 1024, 0, is_32bit);
+			if (is_32bit) {
+				ImportModuleInfo32 module_info32;
+				module_info32.IMAGE_THUNK_DATA32_.clear();
+				module_info32.IMAGE_THUNK_DATA32_.resize(thunk_length);
+				std::memcpy(module_info32.IMAGE_THUNK_DATA32_.data(), buffer, thunk_length * 4);
+				recheck_container.in_module_info32_.push_back(module_info32);
+			}
+			else {
+				ImportModuleInfo64 module_info64;
+				module_info64.IMAGE_THUNK_DATA64_.clear();
+				module_info64.IMAGE_THUNK_DATA64_.resize(thunk_length);
+				std::memcpy(module_info64.IMAGE_THUNK_DATA64_.data(), buffer, thunk_length * 8);
+				recheck_container.in_module_info64_.push_back(module_info64);
+			}
+		}
+	}
+
 	return true;
 }

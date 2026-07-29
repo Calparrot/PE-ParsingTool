@@ -282,6 +282,35 @@ std::string Translator::get_import_descriptor_table() {
 }
 std::string Translator::get_INT_table() {
     std::string table;
+	bool is_32bit = (data_container.comprehensive_info_.file_identification_ == "32位");
+	bool is_64bit = (data_container.comprehensive_info_.file_identification_ == "64位");
+
+    table += "\n【INT表】\n";
+	table += "序号\t|INT值\n";
+    if (is_32bit) {
+        for (size_t i = 0; i < recheck_container.in_module_info32_.size(); i++) {
+            table += std::to_string(i+1) + "\t|";
+            for(size_t j = 0; j < recheck_container.in_module_info32_[i].IMAGE_THUNK_DATA32_.size(); j++) {
+                if(j > 0) {
+                    table += " \t|";
+				}
+                table += uint_to_hex_string(recheck_container.in_module_info32_[i].IMAGE_THUNK_DATA32_[j]);
+                table += "\n";
+            }
+		}
+    }
+    else {
+        for (size_t i = 0; i < recheck_container.in_module_info64_.size(); i++) {
+            table += std::to_string(i + 1) + "\t|";
+            for (size_t j = 0; j < recheck_container.in_module_info64_[i].IMAGE_THUNK_DATA64_.size(); j++) {
+                if (j > 0) {
+                    table += " \t|";
+                }
+                table += uint_to_hex_string(recheck_container.in_module_info64_[i].IMAGE_THUNK_DATA64_[j]);
+                table += "\n";
+            }
+        }
+    }
     return table;
 }
 std::string Translator::get_import_module_name(){

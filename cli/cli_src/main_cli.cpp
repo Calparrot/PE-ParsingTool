@@ -120,12 +120,6 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-	// 显示版本信息，PE_ParsingTool_cli.exe -v
-    else if (cmd == "-v" || cmd == "--version" || cmd == "version"){
-        show_version();
-        return 0;
-	}
-
 	// 扫描指定目录或文件，PE_ParsingTool_cli.exe -s folder C:\test
     else if (cmd == "-s" || cmd == "--scan" || cmd == "scan") {
         if (argc < 4) {
@@ -350,6 +344,12 @@ int main(int argc, char* argv[]) {
             }
 		}
 	}
+
+    // 显示版本信息，PE_ParsingTool_cli.exe -v
+    else if (cmd == "-v" || cmd == "--version" || cmd == "version") {
+        show_version();
+        return 0;
+    }
 
 	// 不合法情况，PE_ParsingTool_cli.exe -x
     else {
