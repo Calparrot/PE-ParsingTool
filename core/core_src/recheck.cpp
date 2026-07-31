@@ -115,8 +115,8 @@ bool ReInspector::section_headers_recheck(Structuresults& data_container) {
 }
 
 bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container) {
-	bool is_32bit = (data_container.comprehensive_info_.file_identification_ == "32位");
-	bool is_64bit = (data_container.comprehensive_info_.file_identification_ == "64位");
+	bool is_32bit = (data_container.comprehensive_info.file_identification == "32位");
+	bool is_64bit = (data_container.comprehensive_info.file_identification == "64位");
 	if (!is_32bit && !is_64bit) {
 		return false;
 	}
@@ -153,7 +153,7 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 				first_thunk_addr_clustering[i].end - first_thunk_addr_clustering[i].begin : 0;
 			// 一个缓冲区可以读取完
 			if (size != 0 && size <= buffer_size
-			&& first_thunk_addr_clustering[i].end < data_container.comprehensive_info_.file_size_copy_) {
+			&& first_thunk_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
 				pedata.seekg(first_thunk_addr_clustering[i].begin, std::ios::beg);
 				if (!pedata) {
 					return false;
@@ -170,13 +170,13 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 						size_t thunk_length = INT_division(buffer, buffer_size, idx, is_32bit);
 						// ！！！暂未验证与考虑截断情况
 						if (is_32bit) {
-							auto& vec = recheck_container.in_module_info32_[addr_idx].IMAGE_THUNK_DATA32_;
+							auto& vec = recheck_container.in_module_info32[addr_idx].IMAGE_THUNK_DATA32;
 							vec.clear();
 							vec.resize(thunk_length);
 							std::memcpy(vec.data(), buffer + idx, thunk_length * 4);
 						}
 						else {
-							auto& vec = recheck_container.in_module_info64_[addr_idx].IMAGE_THUNK_DATA64_;
+							auto& vec = recheck_container.in_module_info64[addr_idx].IMAGE_THUNK_DATA64;
 							vec.clear();
 							vec.resize(thunk_length);
 							std::memcpy(vec.data(), buffer + idx, thunk_length * 8);
@@ -196,7 +196,7 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 				size_t buffers_num = ceil_div(size, buffer_size);
 
 				for (size_t num = 0; num < buffers_num; num++) {
-					if (first_thunk_addr_clustering[i].end < data_container.comprehensive_info_.file_size_copy_) {
+					if (first_thunk_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
 						std::fill(std::begin(buffer), std::end(buffer), 0);
 						pedata.seekg(first_thunk_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
 						if (!pedata) {
@@ -220,13 +220,13 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 							size_t thunk_length = INT_division(buffer, buffer_size, idx, is_32bit);
 							// ！！！暂未验证与考虑截断情况
 							if (is_32bit) {
-								auto& vec = recheck_container.in_module_info32_[addr_idx].IMAGE_THUNK_DATA32_;
+								auto& vec = recheck_container.in_module_info32[addr_idx].IMAGE_THUNK_DATA32;
 								vec.clear();
 								vec.resize(thunk_length);
 								std::memcpy(vec.data(), buffer + idx, thunk_length * 4);
 							}
 							else {
-								auto& vec = recheck_container.in_module_info64_[addr_idx].IMAGE_THUNK_DATA64_;
+								auto& vec = recheck_container.in_module_info64[addr_idx].IMAGE_THUNK_DATA64;
 								vec.clear();
 								vec.resize(thunk_length);
 								std::memcpy(vec.data(), buffer + idx, thunk_length * 8);
@@ -252,17 +252,17 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 			size_t thunk_length = INT_division(buffer, 1024, 0, is_32bit);
 			if (is_32bit) {
 				ImportModuleInfo32 module_info32;
-				module_info32.IMAGE_THUNK_DATA32_.clear();
-				module_info32.IMAGE_THUNK_DATA32_.resize(thunk_length);
-				std::memcpy(module_info32.IMAGE_THUNK_DATA32_.data(), buffer, thunk_length * 4);
-				recheck_container.in_module_info32_.push_back(module_info32);
+				module_info32.IMAGE_THUNK_DATA32.clear();
+				module_info32.IMAGE_THUNK_DATA32.resize(thunk_length);
+				std::memcpy(module_info32.IMAGE_THUNK_DATA32.data(), buffer, thunk_length * 4);
+				recheck_container.in_module_info32.push_back(module_info32);
 			}
 			else {
 				ImportModuleInfo64 module_info64;
-				module_info64.IMAGE_THUNK_DATA64_.clear();
-				module_info64.IMAGE_THUNK_DATA64_.resize(thunk_length);
-				std::memcpy(module_info64.IMAGE_THUNK_DATA64_.data(), buffer, thunk_length * 8);
-				recheck_container.in_module_info64_.push_back(module_info64);
+				module_info64.IMAGE_THUNK_DATA64.clear();
+				module_info64.IMAGE_THUNK_DATA64.resize(thunk_length);
+				std::memcpy(module_info64.IMAGE_THUNK_DATA64.data(), buffer, thunk_length * 8);
+				recheck_container.in_module_info64.push_back(module_info64);
 			}
 			addr_idx++;
 		}
@@ -271,14 +271,14 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 }
 
 bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container) {
-	bool is_32bit = (data_container.comprehensive_info_.file_identification_ == "32位");
-	bool is_64bit = (data_container.comprehensive_info_.file_identification_ == "64位");
+	bool is_32bit = (data_container.comprehensive_info.file_identification == "32位");
+	bool is_64bit = (data_container.comprehensive_info.file_identification == "64位");
 	if (!is_32bit && !is_64bit) {
 		return false;
 	}
 
-	const size_t buffer_size = 8192;
-	uint8_t buffer[buffer_size] = { 0 }; // 8KB 缓冲区，避免栈上分配过多导致栈溢出
+	const size_t buffer_size = 4096;
+	uint8_t buffer[buffer_size] = { 0 }; // 4KB 缓冲区，避免栈上分配过多导致栈溢出
 
 	std::vector<FirstThunkPoint> name_addr;
 	name_addr.reserve(data_container.import_descriptor.size());
@@ -308,7 +308,7 @@ bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::if
 				name_addr_clustering[i].end - name_addr_clustering[i].begin : 0; // 区间范围大小
 			// 一个缓冲区可以读取完
 			if (size != 0 && size <= buffer_size
-				&& name_addr_clustering[i].end < data_container.comprehensive_info_.file_size_copy_) {
+				&& name_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
 				pedata.seekg(name_addr_clustering[i].begin, std::ios::beg);
 				if (!pedata) {
 					return false;
@@ -327,7 +327,7 @@ bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::if
 				size_t buffers_num = ceil_div(size, buffer_size);
 
 				for (size_t num = 0; num < buffers_num; num++) {
-					if (name_addr_clustering[i].end < data_container.comprehensive_info_.file_size_copy_) {
+					if (name_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
 						std::fill(std::begin(buffer), std::end(buffer), 0);
 						pedata.seekg(name_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
 						if (!pedata) {
@@ -358,17 +358,17 @@ bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::if
 			size_t thunk_length = INT_division(buffer, 1024, 0, is_32bit);
 			if (is_32bit) {
 				ImportModuleInfo32 module_info32;
-				module_info32.IMAGE_THUNK_DATA32_.clear();
-				module_info32.IMAGE_THUNK_DATA32_.resize(thunk_length);
-				std::memcpy(module_info32.IMAGE_THUNK_DATA32_.data(), buffer, thunk_length * 4);
-				recheck_container.in_module_info32_.push_back(module_info32);
+				module_info32.IMAGE_THUNK_DATA32.clear();
+				module_info32.IMAGE_THUNK_DATA32.resize(thunk_length);
+				std::memcpy(module_info32.IMAGE_THUNK_DATA32.data(), buffer, thunk_length * 4);
+				recheck_container.in_module_info32.push_back(module_info32);
 			}
 			else {
 				ImportModuleInfo64 module_info64;
-				module_info64.IMAGE_THUNK_DATA64_.clear();
-				module_info64.IMAGE_THUNK_DATA64_.resize(thunk_length);
-				std::memcpy(module_info64.IMAGE_THUNK_DATA64_.data(), buffer, thunk_length * 8);
-				recheck_container.in_module_info64_.push_back(module_info64);
+				module_info64.IMAGE_THUNK_DATA64.clear();
+				module_info64.IMAGE_THUNK_DATA64.resize(thunk_length);
+				std::memcpy(module_info64.IMAGE_THUNK_DATA64.data(), buffer, thunk_length * 8);
+				recheck_container.in_module_info64.push_back(module_info64);
 			}
 		}
 	}

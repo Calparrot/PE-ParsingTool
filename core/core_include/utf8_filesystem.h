@@ -3,12 +3,23 @@
 #include <fstream>
 #include <filesystem>
 
-/* 拒绝反斜杠，从你我做起 */
+/*
+ * ============================================================================
+ *  编码转换辅助模块 - 函数速查 【拒绝反斜杠，从你我做起】
+ * ============================================================================
+ * 
+ *  FUNCTIONS（函数）
+ *  - utf8_to_windows_path()    UTF-8 字符串转宽字符（用于打开文件）
+ *  - open_ofstream()           跨平台打开 ofstream（接受 UTF-8 路径）
+ *  - open_ifstream()           跨平台打开 ifstream（接受 UTF-8 路径）
+ *  - file_exists()             检查文件是否存在
+ *  
+ * ============================================================================
+ */
 
 #ifdef _WIN32
 #include <windows.h>
 
-// Windows: UTF-8 字符串转宽字符（用于打开文件）
 inline std::wstring utf8_to_windows_path(const std::string& utf8_path) {
     if (utf8_path.empty()) return L"";
 
@@ -19,19 +30,16 @@ inline std::wstring utf8_to_windows_path(const std::string& utf8_path) {
     return wide_path;
 }
 
-// 跨平台打开 ofstream（接受 UTF-8 路径）
 inline std::ofstream open_ofstream(const std::string& utf8_path, std::ios::openmode mode = std::ios::out) {
     std::wstring wide_path = utf8_to_windows_path(utf8_path);
     return std::ofstream(wide_path, mode);
 }
 
-// 跨平台打开 ifstream（接受 UTF-8 路径）
 inline std::ifstream open_ifstream(const std::string& utf8_path, std::ios::openmode mode = std::ios::in) {
     std::wstring wide_path = utf8_to_windows_path(utf8_path);
     return std::ifstream(wide_path, mode);
 }
 
-// 检查文件是否存在
 inline bool file_exists(const std::string& utf8_path) {
     std::wstring wide_path = utf8_to_windows_path(utf8_path);
     DWORD attrs = GetFileAttributesW(wide_path.c_str());

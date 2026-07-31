@@ -3,9 +3,9 @@
 
 #include "database.h"
 
-void Structuresults::crash_imformation_set(error_category code, const std::string& msg) {
-	crashreport.error_code_ = code;
-	crashreport.message_ = msg;
+void Structuresults::crash_information_set(error_category code, const std::string& msg) {
+	crashreport.error_code = code;
+	crashreport.message = msg;
 }
 
 /* 函数返回值为错误状态码：
@@ -30,15 +30,15 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 
 	// 文件映射越界检测 PointerToRawData + SizeOfRawData > 文件大小
 	if (header.SizeOfRawData > 0) {
-		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) > static_cast<uint64_t>(data_container.comprehensive_info_.file_size_copy_)) {
+		if (static_cast<uint64_t>(header.PointerToRawData) + static_cast<uint64_t>(header.SizeOfRawData) > static_cast<uint64_t>(data_container.comprehensive_info.file_size_copy)) {
 			return 1;
 		}
 	}
 	
 	// VirtualAddress 和 PointerToRawData 对齐检查
 	try {
-		if (shared_structure.section_alignment_isvalid_ == EleCorrectness::valid) {
-			if (header.VirtualAddress != 0 && header.VirtualAddress % shared_structure.section_alignment_ != 0) {
+		if (shared_structure.section_alignment_isvalid == EleCorrectness::valid) {
+			if (header.VirtualAddress != 0 && header.VirtualAddress % shared_structure.section_alignment != 0) {
 				return 2;
 			}
 		}
@@ -47,8 +47,8 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 			throw std::runtime_error("IMAGE_OPTIONAL_HEADER -> The SectionAlignment value is invalid, \n\
 				which may cause loader errors and prevent scanning of section headers.");
 		}
-		if (shared_structure.file_alignment_isvalid_ == EleCorrectness::valid) {
-			if (header.PointerToRawData != 0 && header.PointerToRawData % shared_structure.file_alignment_ != 0) {
+		if (shared_structure.file_alignment_isvalid == EleCorrectness::valid) {
+			if (header.PointerToRawData != 0 && header.PointerToRawData % shared_structure.file_alignment != 0) {
 				return 3;
 			}
 		}
@@ -60,16 +60,16 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 	}
 	catch (std::runtime_error& e) {
 		// 不输出节区头和节区内容，后续也不处理
-		data_container.num_of_scanned_blocks_ = 4;
+		data_container.num_of_scanned_blocks = 4;
 	}
 
 	// VirtualAddress 是否位于PE头区域检测
-	if (header.VirtualAddress > 0 && header.VirtualAddress < shared_structure.size_of_headers_) {
+	if (header.VirtualAddress > 0 && header.VirtualAddress < shared_structure.size_of_headers) {
 		return 4;
 	}
 
 	// PointerToRawData 是否位于PE头区域检测
-	if (header.PointerToRawData < shared_structure.size_of_headers_) {
+	if (header.PointerToRawData < shared_structure.size_of_headers) {
 		return 5;
 	}
 
@@ -84,7 +84,7 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 
 	// 特殊架构处理
 	// VirtualSize 或 VirtualAddress导致地址溢出（32位系统）
-	if (shared_structure.bitness_ == 32 && header.VirtualAddress + header.VirtualSize > 0xFFFFFFFF) {
+	if (shared_structure.bitness == 32 && header.VirtualAddress + header.VirtualSize > 0xFFFFFFFF) {
 		return 7;
 	}
 

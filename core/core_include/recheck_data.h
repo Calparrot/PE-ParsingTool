@@ -5,6 +5,31 @@
 /* 前置声明 */
 struct Diaresults;
 
+/*
+ * ============================================================================
+ *  复筛数据定义模板 - 类型速查
+ * ============================================================================
+ * 
+ *  STRUCTS（结构体）
+ *  - RangeItem                整数范围项，表示一个整数范围或单个整数，用于导入表地址简化读取，要求T为uint类型
+ *  - ImportModuleInfo32       32位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
+ *  - ImportModuleInfo64       64位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
+ * 
+ *  CLASSES（类）
+ *  - SecondaryRecord          原Structuresults类增强版本
+ *
+ *  MEMBERS - SecondaryRecord 核心成员
+ *  - rec_diaresults[]         单个结构复诊断结果
+ *  - in_module_info32[]       32位导入模块信息
+ *  - in_module_info64[]       64位导入模块信息
+ * 
+ *  FUNCTIONS（函数）
+ *  - cluster_int_pad()        整数聚类算法，参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
+ *  - cluster_int_pad_const()  整数聚类算法（常量版本），参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
+ * 
+ * ============================================================================
+ */
+
 /* 结构体说明
 	RangeItem         ：整数范围项，表示一个整数范围或单个整数，用于导入表地址简化读取，要求T为uint类型
 	ImportModuleInfo32：32位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
@@ -21,13 +46,13 @@ struct RangeItem {
 };
 
 struct ImportModuleInfo32 {
-	std::string module_name_;
-	std::vector<uint32_t> IMAGE_THUNK_DATA32_;
+	std::string module_name;
+	std::vector<uint32_t> IMAGE_THUNK_DATA32;
 };
 
 struct ImportModuleInfo64 {
-	std::string module_name_;
-	std::vector<uint64_t> IMAGE_THUNK_DATA64_;
+	std::string module_name;
+	std::vector<uint64_t> IMAGE_THUNK_DATA64;
 };
 
 /* 类说明
@@ -37,10 +62,10 @@ struct ImportModuleInfo64 {
 */
 class SecondaryRecord {
 public:
-	std::vector<Diaresults> rec_diaresults_{};
+	std::vector<Diaresults> rec_diaresults{};
 	
-	std::vector<ImportModuleInfo32> in_module_info32_;
-	std::vector<ImportModuleInfo64> in_module_info64_;
+	std::vector<ImportModuleInfo32> in_module_info32;
+	std::vector<ImportModuleInfo64> in_module_info64;
 };
 
 /*
@@ -110,5 +135,5 @@ std::vector<RangeItem<T>> cluster_int_pad(std::vector<T>& data, T cluster_granul
 template<typename T>
 std::vector<RangeItem<T>> cluster_int_pad_const(const std::vector<T>& input, T cluster_granularity = 10, T range_padding = 0) {
     std::vector<T> data = input;
-    return clusterIntegersWithPadding(data, cluster_granularity, range_padding);
+    return cluster_int_pad(data, cluster_granularity, range_padding);
 }

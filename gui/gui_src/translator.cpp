@@ -90,26 +90,6 @@ std::wstring generate_file_display(Structuresults data_container) {
     int temporary_address = 0;
     size_t j = 0;
 
-    // 测试代码
-    /*raw_data.append(struct_to_hexstring(data_container.dosheader));
-    if (data_container.structures_attributes.dos_stub_exist_ == true) {
-        raw_data += (vector_to_hexstring(data_container.dosstub));
-    }
-    raw_data.append(struct_to_hexstring(data_container.fileheader));
-    if (data_container.file_identification == 32) {
-        raw_data += (struct_to_hexstring(data_container.optionalheader32));
-    }
-    else if (data_container.file_identification == 64) {
-        raw_data.append(struct_to_hexstring(data_container.optionalheader64));
-    }
-    else {
-        raw_data.append(struct_to_hexstring(data_container.optionalheaderrom));
-    }
-    
-    for (size_t i = 0; i < data_container.sectionheaders.size(); i++) {
-		raw_data.append(struct_to_hexstring(data_container.sectionheaders[i]));
-    }*/
-    
     // 临时方案，仅显示文件前1024字节，避免控件无法处理过大数据导致崩溃
     std::vector<uint8_t> test_data;
     if (data_container.source_file_data.size() > 1024) {
@@ -264,10 +244,10 @@ std::wstring result_translator(Core::Diagnostic structured_results) {
 std::wstring scan_summary(Structuresults data_container) {
     std::wstring scan_results;
 
-    if (data_container.num_of_scanned_blocks_ >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks_); i++) {
-            for(size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
-                scan_results += result_translator(data_container.diarelist[i].information_list_[j]);
+    if (data_container.num_of_scanned_blocks >= 1) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks); i++) {
+            for(size_t j = 0; j < data_container.diarelist[i].information_list.size(); j++) {
+                scan_results += result_translator(data_container.diarelist[i].information_list[j]);
                 scan_results += L"\r\n";
 			}
         }
@@ -315,7 +295,7 @@ std::wstring sctheader_summary(Structuresults data_container) {
 }
 
 std::wstring structure_display(Structuresults data_container, int select) {
-    if (select < 1 || select > data_container.num_of_scanned_blocks_) {
+    if (select < 1 || select > data_container.num_of_scanned_blocks) {
 		return L"输出范围指定有误，无法读取信息。";
     }
 
@@ -324,25 +304,25 @@ std::wstring structure_display(Structuresults data_container, int select) {
     s_sum += L"【结构基本信息】\r\n";
 
     s_sum += L"结构名称  |";
-    s_sum += string_to_wstring(data_container.diarelist[select - 1].component_name_);
+    s_sum += string_to_wstring(data_container.diarelist[select - 1].component_name);
     s_sum += L"\r\n起始偏移  |";
-    s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].file_offset_);
+    s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].file_offset);
 	s_sum += L"\r\n数据长度  |";
-    s_sum += std::to_wstring(data_container.diarelist[select - 1].data_size_);
+    s_sum += std::to_wstring(data_container.diarelist[select - 1].data_size);
 	s_sum += L"字节";
 
     s_sum += L"\r\n\r\n【字段异常信息】\r\n";
 
-    if (data_container.diarelist[select - 1].information_list_.size() == 0) {
+    if (data_container.diarelist[select - 1].information_list.size() == 0) {
 		s_sum += L"没有在该结构中发现异常！";
     }
     else {
         s_sum += L"字段名称    |字段值     |偏移      |存在异常|异常信息    \r\n";
-        for (size_t i = 0; i < data_container.diarelist[select - 1].information_list_.size(); i++) {
-            s_sum += string_to_wstring(data_container.diarelist[select - 1].information_list_[i].field_name);
+        for (size_t i = 0; i < data_container.diarelist[select - 1].information_list.size(); i++) {
+            s_sum += string_to_wstring(data_container.diarelist[select - 1].information_list[i].field_name);
             s_sum += L"  |";
-            if (data_container.diarelist[select - 1].information_list_[i].actual_value != NULL) {
-                s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].information_list_[i].actual_value);
+            if (data_container.diarelist[select - 1].information_list[i].actual_value != NULL) {
+                s_sum += uint_to_hex_wstring(data_container.diarelist[select - 1].information_list[i].actual_value);
             }
             s_sum += L"\r\n";
         }

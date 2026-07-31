@@ -3,7 +3,6 @@
 
 #include "diagnostic_codes.h"
 
-/* 懒人模板 */
 // 创建字段相关的诊断，重载VALUE_MISMATCH
 // 【{severity}】{description} -> {field_name}字段异常，期望/阈值/参考值：{expected}，实际值：{actual}
 Core::Diagnostic value_mismatch(
@@ -107,7 +106,7 @@ Core::Diagnostic detailed_information(
     const std::string& info1, uint64_t offset
 ) {
     Core::Diagnostic d;
-    d.object = Core::Object::IMFORMATION_IN_FIELD;
+    d.object = Core::Object::INFORMATION_IN_FIELD;
     d.severity = severity;
     d.category = Core::DiagCategory::DETAILED_INFORMATION;
     d.field_name = field;

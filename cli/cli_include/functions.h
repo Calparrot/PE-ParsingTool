@@ -1,14 +1,23 @@
 #pragma once
-#include <iostream>
 
 /* 前置声明 */
 struct ScanResultsDistribution;
 
-// 输出批量扫描文件夹的统计结果
+/*
+ * ============================================================================
+ * CLI 辅助函数模块 - 函数速查
+ * ============================================================================
+ * 
+ * FUNCTIONS（函数）
+ * - batch_statistiacl_output() 批量扫描统计结果输出
+ * - show_help()                输出帮助信息
+ * - show_version()             输出版本信息
+ * 
+ * ============================================================================
+ */
+
 void batch_statistiacl_output(ScanResultsDistribution& sr_distribution, int& total_files);
 
-// 输出帮助信息
 void show_help();
 
-// 输出版本信息
 void show_version();

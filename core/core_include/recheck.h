@@ -6,13 +6,25 @@ class Structuresults;
 class SecondaryRecord;
 
 /*
-类说明
-	ReInspector：原PEanalyzer类增强版本封装
-类成员说明
-	check_data_nonempty()：用于确认传入参数非空，即确认已做了基础解析，返回true代表非空
-	*_recheck()：对应*结构的细节版分析
-	INT_extract()：提取导入表IMAGE_IMPORT_DESCRIPTOR对应的模块的
-*/
+ * ============================================================================
+ *  PE 增强分析模块 - 类型速查
+ * ============================================================================
+ * 
+ *  CLASSES（类）
+ *  - ReInspector              PE 增强分析类
+ * 
+ *  MEMBERS - ReInspector 核心成员
+ *  - pedata_ 				   接收的文件流
+ * 
+ *  FUNCTIONS（函数）
+ *  【ReInspector 类成员函数（public）说明】
+ *  - check_data_nonempty()    检查传入参数是否非空
+ *  - *_recheck()              对应结构的细节版分析
+ *  - INT_extract()            提取 IMAGE_IMPORT_DESCRIPTOR 对应的模块
+ * 
+ * ============================================================================
+ */
+
 class ReInspector {
 private:
 	std::ifstream& pedata_;

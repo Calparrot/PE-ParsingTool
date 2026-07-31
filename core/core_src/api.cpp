@@ -22,8 +22,7 @@ std::wstring utf8_to_wide(const std::string& utf8_str) {
 }
 #endif
 
-/* Translator类 */
-/* private */
+/* Translator类 - private */
 // 类型转换
 std::string Translator::vector_to_hexstring(const std::vector<uint8_t>& input_data) {
     std::stringstream ss;
@@ -34,6 +33,7 @@ std::string Translator::vector_to_hexstring(const std::vector<uint8_t>& input_da
     }
     return ss.str();
 }
+
 std::string Translator::hexstring_to_ascii(const std::string& hexstring) {
     std::string ascii;
 
@@ -54,6 +54,7 @@ std::string Translator::hexstring_to_ascii(const std::string& hexstring) {
 
     return ascii;
 }
+
 std::string Translator::generate_file_display(const std::vector<uint8_t>& input_data, unsigned int basic_address) {
     std::string hexadecimal_view;
     std::string raw_data;
@@ -121,6 +122,7 @@ std::string Translator::single_item_degree_translator(Core::Severity severity) {
 
     return degree;
 }
+
 std::string Translator::single_item_translator(Core::Diagnostic single_item) {
     std::string individual_result;
 
@@ -265,6 +267,7 @@ std::string Translator::get_sct_address_table() {
 
     return table;
 }
+
 std::string Translator::get_import_descriptor_table() {
     std::string table;
 
@@ -280,39 +283,41 @@ std::string Translator::get_import_descriptor_table() {
 
 	return table;
 }
+
 std::string Translator::get_INT_table() {
     std::string table;
-	bool is_32bit = (data_container.comprehensive_info_.file_identification_ == "32位");
-	bool is_64bit = (data_container.comprehensive_info_.file_identification_ == "64位");
+	bool is_32bit = (data_container.comprehensive_info.file_identification == "32位");
+	bool is_64bit = (data_container.comprehensive_info.file_identification == "64位");
 
     table += "\n【INT表】\n";
 	table += "序号\t|INT值\n";
     if (is_32bit) {
-        for (size_t i = 0; i < recheck_container.in_module_info32_.size(); i++) {
+        for (size_t i = 0; i < recheck_container.in_module_info32.size(); i++) {
             table += std::to_string(i+1) + "\t|";
-            for(size_t j = 0; j < recheck_container.in_module_info32_[i].IMAGE_THUNK_DATA32_.size(); j++) {
+            for(size_t j = 0; j < recheck_container.in_module_info32[i].IMAGE_THUNK_DATA32.size(); j++) {
                 if(j > 0) {
                     table += " \t|";
 				}
-                table += uint_to_hex_string(recheck_container.in_module_info32_[i].IMAGE_THUNK_DATA32_[j]);
+                table += uint_to_hex_string(recheck_container.in_module_info32[i].IMAGE_THUNK_DATA32[j]);
                 table += "\n";
             }
 		}
     }
     else {
-        for (size_t i = 0; i < recheck_container.in_module_info64_.size(); i++) {
+        for (size_t i = 0; i < recheck_container.in_module_info64.size(); i++) {
             table += std::to_string(i + 1) + "\t|";
-            for (size_t j = 0; j < recheck_container.in_module_info64_[i].IMAGE_THUNK_DATA64_.size(); j++) {
+            for (size_t j = 0; j < recheck_container.in_module_info64[i].IMAGE_THUNK_DATA64.size(); j++) {
                 if (j > 0) {
                     table += " \t|";
                 }
-                table += uint_to_hex_string(recheck_container.in_module_info64_[i].IMAGE_THUNK_DATA64_[j]);
+                table += uint_to_hex_string(recheck_container.in_module_info64[i].IMAGE_THUNK_DATA64[j]);
                 table += "\n";
             }
         }
     }
     return table;
 }
+
 std::string Translator::get_import_module_name(){
     std::string table;
     return table;
@@ -322,12 +327,13 @@ std::string Translator::get_import_module_name(){
 std::string Translator::basic_file_info_translator() {
     std::string basic_info;
     basic_info += "【基础扫描信息】\n\n";
-    basic_info += ("模式：" + data_container.comprehensive_info_.file_identification_ + "\n"); // 32位或64位
-    basic_info += ("架构：" + data_container.comprehensive_info_.architecture_ + "\n");
-    basic_info += ("文件大小：" + uint_to_dec_string(data_container.comprehensive_info_.file_size_copy_) + "字节\n");
+    basic_info += ("模式：" + data_container.comprehensive_info.file_identification + "\n"); // 32位或64位
+    basic_info += ("架构：" + data_container.comprehensive_info.architecture + "\n");
+    basic_info += ("文件大小：" + uint_to_dec_string(data_container.comprehensive_info.file_size_copy) + "字节\n");
 
     return basic_info;
 }
+
 std::string Translator::aggregate_info_translator(){
     std::string agrt_info;
 
@@ -336,14 +342,15 @@ std::string Translator::aggregate_info_translator(){
 
     return agrt_info;
 }
+
 std::string Translator::detailed_file_info_translator() {
     std::string detailed_info;
 
     detailed_info += "\n【详细信息】\n";
-    if (data_container.num_of_scanned_blocks_ >= 1) {
-        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks_); i++) {
+    if (data_container.num_of_scanned_blocks >= 1) {
+        for (size_t i = 0; (i < data_container.diarelist.size()) && (i < data_container.num_of_scanned_blocks); i++) {
             // 导入表打印折叠处理
-            if (data_container.diarelist[i].component_name_ == "IMAGE_IMPORT_DESCRIPTOR" &&
+            if (data_container.diarelist[i].component_name == "IMAGE_IMPORT_DESCRIPTOR" &&
             !data_container.diarelist[i].additional_information.empty()) {
                 for (size_t temp = 0; temp < data_container.diarelist[i].additional_information.size(); temp++) {
                     detailed_info += "< ! > ";
@@ -353,8 +360,8 @@ std::string Translator::detailed_file_info_translator() {
                 break;
             }
             // 正常处理
-            for (size_t j = 0; j < data_container.diarelist[i].information_list_.size(); j++) {
-                detailed_info += single_item_translator(data_container.diarelist[i].information_list_[j]);
+            for (size_t j = 0; j < data_container.diarelist[i].information_list.size(); j++) {
+                detailed_info += single_item_translator(data_container.diarelist[i].information_list[j]);
                 detailed_info += "\n";
             }
         }
@@ -368,7 +375,6 @@ std::string Translator::detailed_file_info_translator() {
 }
 
 // 写文件
-// string版本，要加头文件utf8_filesystem.h
 bool Translator::string_to_file_append(const std::string& export_filepath_utf8, const std::string& input_data) {
     auto output_file = open_ofstream(export_filepath_utf8, std::ios::app | std::ios::binary);
     if (!output_file.is_open()) {
@@ -379,7 +385,7 @@ bool Translator::string_to_file_append(const std::string& export_filepath_utf8, 
     return true;
 }
 
-/* public */
+/* Translator类 - public */
 bool Translator::hexadecimal_document_export(const std::string& export_filepath) {
     unsigned int file_size = data_container.source_file_data.size();
     unsigned int offset = 0;
@@ -417,25 +423,25 @@ void Translator::print_report() {
     std::cout << detailed_file_info_translator();
 }
 
-/* FundamentalAnalysis类 */
+/* FundamentalAnalysis类 - public */
 bool FundamentalAnalysis::readfile(std::string file_path) {
 #ifdef _WIN32 // Windows平台：使用宽字符版本
     std::wstring wpath = utf8_to_wide(file_path);
-    myfile.open(wpath.c_str(), std::ios::binary);
+    myfile_.open(wpath.c_str(), std::ios::binary);
 #else         // Linux/Mac平台：直接使用UTF-8路径
     myfile.open(file_path.c_str(), std::ios::binary);
 #endif
-    if (!myfile.is_open()) {
+    if (!myfile_.is_open()) {
         return false;
     }
-    myfile.seekg(0, std::ios::end);
-    file_size = myfile.tellg();
-    myfile.seekg(0, std::ios::beg);
-    myfile_loaded = true;
+    myfile_.seekg(0, std::ios::end);
+    file_size_ = myfile_.tellg();
+    myfile_.seekg(0, std::ios::beg);
+    myfile_loaded_ = true;
 
     /* 临时方案 */
     data_manager.data_container.source_file_data.resize(2048);
-    myfile.read(reinterpret_cast<char*>(data_manager.data_container.source_file_data.data()), 2048);
+    myfile_.read(reinterpret_cast<char*>(data_manager.data_container.source_file_data.data()), 2048);
 
     return true;
 }
@@ -455,11 +461,11 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
 
     bool previous_execution_result = readfile(input_filepath);
     uint8_t execution_steps = 0; // 记录执行到多少个步骤，不管成功还是失败
-    PEanalyzer target(myfile);   // 创建基础版分析对象
+    PEanalyzer target(myfile_);   // 创建基础版分析对象
 
     if (previous_execution_result) {
         // 初始化工作
-        data_manager.data_container.comprehensive_info_.file_size_copy_ = target.file_size_;
+        data_manager.data_container.comprehensive_info.file_size_copy = target.file_size;
     }
     if (previous_execution_result) {
         previous_execution_result = target.dosheader_analysis(data_manager.data_container);
@@ -500,7 +506,7 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
             test.close();
             return error_code::FILE_ACCESS_DENIED;
         default:
-            data_manager.data_container.num_of_scanned_blocks_ = execution_steps;
+            data_manager.data_container.num_of_scanned_blocks = execution_steps;
             /* 在这调文件置信度检测函数 */
             return error_code::SUCCESS;
         }
@@ -509,7 +515,7 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
 
 FundamentalAnalysis::error_code FundamentalAnalysis::recheck_file(const std::string input_filepath) {
     auto check_data_nonempty = [](Structuresults& data_container) -> bool {
-        return data_container.structures_attributes.dos_header_normal_ &&
+        return data_container.structures_attributes.dos_header_normal &&
             !data_container.diarelist.empty();
         };
     if (!(check_data_nonempty(data_manager.data_container)
@@ -517,12 +523,12 @@ FundamentalAnalysis::error_code FundamentalAnalysis::recheck_file(const std::str
         return FundamentalAnalysis::error_code::PROCESS_ERROR;
     }
 
-    ReInspector enhanced_target(myfile); // 创建增强版分析对象
+    ReInspector enhanced_target(myfile_); // 创建增强版分析对象
     if (config.detailed_header_analysis) {
         ;
     }
     if (config.INT_analysis) {
-        enhanced_target.INT_extract(data_manager.recheck_container, myfile, data_manager.data_container);
+        enhanced_target.INT_extract(data_manager.recheck_container, myfile_, data_manager.data_container);
     }
     return FundamentalAnalysis::error_code::SUCCESS;
 }
@@ -530,10 +536,10 @@ FundamentalAnalysis::error_code FundamentalAnalysis::recheck_file(const std::str
 ScanResultsDistribution FundamentalAnalysis::summary_file() {
     ScanResultsDistribution results_distrubution;
 
-    if (myfile_loaded == true) {
+    if (myfile_loaded_ == true) {
         for (int i = 0; i < data_manager.data_container.diarelist.size(); i++) {
-            for (int j = 0; j < data_manager.data_container.diarelist[i].information_list_.size(); j++) {
-                switch (data_manager.data_container.diarelist[i].information_list_[j].severity) {
+            for (int j = 0; j < data_manager.data_container.diarelist[i].information_list.size(); j++) {
+                switch (data_manager.data_container.diarelist[i].information_list[j].severity) {
                 case Core::Severity::ERROR_HIGH:
                     results_distrubution.error_distribution[i]++;
                     results_distrubution.error_num++;
@@ -552,7 +558,7 @@ ScanResultsDistribution FundamentalAnalysis::summary_file() {
                     break;
                 }
 
-                switch (data_manager.data_container.diarelist[i].information_list_[j].category) {
+                switch (data_manager.data_container.diarelist[i].information_list[j].category) {
                 case Core::DiagCategory::VALUE_MISMATCH:
                     results_distrubution.type_distribution[0]++;
                     break;

@@ -1,24 +1,29 @@
-#ifndef TRANSLATOR_H
-#define TRANSLATOR_H
-
+#pragma once
 #include <iomanip>
 #include <string>
 #include <sstream>
 #include <cstdint>
 
 /*
-    struct_to_hexstring()   ：将任意结构体转换为16进制字符串
-    vector_to_hexstring()   ：uint_8型vector转十六进制wstring类
-    hexstring_to_ascii      ：十六进制wstring类转ascii码wstring类
-
-    generate_file_display() ：源文件信息整理
-
-	result_translator()     ：单条扫描结果翻译
-    scan_summary()          ：结构扫描结果汇总
-    sheader_summary()       ：节区头扫描结果汇总
-
-	structure_summary()     ：结构信息汇总
-*/
+ * ============================================================================
+ *  类型转换辅助模块 - 函数速查
+ * ============================================================================
+ *
+ *  FUNCTIONS（函数）
+ *  - struct_to_hexstring()    将任意结构体转换为16进制字符串
+ *  - uint_to_hex_wstring()    无符号整数（uint8_t、uint16_t等）转十六进制wstring类
+ *  - vector_to_hexstring()    uint_8型vector转十六进制wstring类
+ *  - hexstring_to_ascii()     十六进制wstring类转ascii码wstring类
+ *  - degree_judgement()       将严重程度枚举翻译为字符串形式
+ *  - string_to_wstring()      将string类转换为wstring类
+ *  - generate_file_display()  源文件信息整理
+ *  - result_translator()      单条扫描结果翻译
+ *  - scan_summary()           结构扫描结果汇总
+ *  - sheader_summary()        节区头扫描结果汇总
+ *  - structure_summary()      结构信息汇总
+ *
+ * ============================================================================
+ */
 
 /* 工具函数 */
 template<typename T>
@@ -68,5 +73,3 @@ std::wstring scan_summary(Structuresults data_container);
 std::wstring sctheader_summary(Structuresults data_container);
 
 std::wstring structure_display(Structuresults data_container, int select);
-
-#endif // !TRANSLATOR_H

@@ -1,21 +1,44 @@
-#ifndef DIAGNOSTIC_CODES_H
-#define DIAGNOSTIC_CODES_H
-
+#pragma once
 #include <cstdint>
 #include <string>
 
+/*
+ * ============================================================================
+ *  诊断数据定义模板 - 类型速查
+ * ============================================================================
+ * 
+ *  STRUCTS（结构体）
+ *  - Object        诊断对象枚举
+ *  - Severity      严重程度枚举
+ *  - DiagCategory  诊断类别枚举
+ *  - Diagnostic    对象诊断结果所在背景以及包含的诊断信息
+ * 
+ *  FUNCTIONS（函数）
+ *  - value_mismatch()          字段值不匹配情况填充模板
+ *  - invalid_value()           字段值无效情况填充模板
+ *  - excursion_anomaly()       字段所示地址异常情况填充模板
+ *  - address_out_of_range()    字段所示地址超出范围情况填充模板
+ *  - abnormal_length()         结构长度异常情况填充模板
+ *  - structure_missing()       结构缺失情况填充模板
+ *  - detailed_information()    字段所示信息情况填充模板
+ *  - regular_issue()           结构地址异常（常规）情况填充模板
+ *  - indexed_issue()           结构地址异常（索引）情况填充模板
+ *  - relationship_issue()      字段关系异常情况填充模板
+ *  - additional_information()  额外信息情况填充模板
+ * 
+ * ============================================================================
+ */
+
 namespace Core {
-    // 分析对象
     enum class Object : uint8_t {
         SIGNATURE,            // 签名
         FIELD,                // 字段本身
         ADDRESS_IN_FIELD,     // 根据字段计算出的地址（适用于简单情况）
         STRUCTURE,            // 结构
-        IMFORMATION_IN_FIELD, // 字段所示的信息
+        INFORMATION_IN_FIELD, // 字段所示的信息
 		STRUCTURE_ADDRESS     // 结构地址（适用于复杂情况）
     };
 
-    // 严重程度
     enum class Severity : uint8_t {
         INFO_LOW,             // 普通信息
         SUSPICIOUS,           // 可疑
@@ -23,7 +46,6 @@ namespace Core {
         ERROR_HIGH            // 错误
     };
 
-	// 包含诊断信息
     enum class DiagCategory : uint8_t {
         /* 签名（SIGNATURE）、字段本身（FIELD） */
         VALUE_MISMATCH,        // 【{severity}】{description} -> {field_name}字段异常，期望/阈值/参考值：{expected}，实际值：{actual}
@@ -37,7 +59,7 @@ namespace Core {
         ABNORMAL_LENGTH,       // 【{severity}】{description}长度异常，实际长度：{actual}字节
         STRUCTURE_MISSING,     // 【{severity}】{description}区域缺失
         
-        /* 字段所示的信息（IMFORMATION_IN_FIELD） */
+        /* 字段所示的信息（INFORMATION_IN_FIELD） */
         DETAILED_INFORMATION,  // 【{severity}】{description} -> {field_name}：{info1}
         
         /* 结构地址（STRUCTURE_ADDRESS） */
@@ -49,7 +71,6 @@ namespace Core {
 		ADDITIONAL_INFORMATION // {info1}
     };
 
-	// 对象诊断结果所在背景以及包含的诊断信息
     struct Diagnostic {
 		Object object;           // 诊断对象
 		Severity severity;       // 严重程度
@@ -58,15 +79,19 @@ namespace Core {
         /* 提示信息 */
 		std::string info1;       // 提示信息1
 		std::string info2;       // 提示信息2，默认不用，根据需要使用
+
         /* 基础参数 */
         std::string field_name;  // 字段名，如"PE Signature"
 		std::string description; // 结构名，如"File Header"
         uint64_t offset;         // 文件偏移位置
+
         /* 字段值问题 */
         uint64_t expected_value; // 期望值/阈值/参考值，如"0x00004550"
         uint64_t actual_value;   // 实际值，如"0x12345678"
+
         /* 地址问题 */
 		uint64_t address;        // 地址值，如"0x00400000"
+
         /* 其他信息 */
         uint64_t index;          // 索引，如节区头索引0、1、2...
 		std::string compared_field_name;  // 相关字段名，如"SizeOfHeaders"
@@ -145,5 +170,3 @@ Core::Diagnostic additional_information(
     const std::string& info1,
     uint64_t offset
 );
-
-#endif // !DIAGNOSTIC_CODES_H
