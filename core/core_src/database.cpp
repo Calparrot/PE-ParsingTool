@@ -3,21 +3,26 @@
 
 #include "database.h"
 
+/*
+ * ============================================================================
+ *  【is_this_section_valid 返回值说明】
+ *  - 0 - 合法节区头
+ *  - 1 - 映射越界
+ *  - 2 - VirtualAddress未与SectionAlignment对齐
+ *  - 3 - PointerToRawData未与FileAlignment对齐
+ *  - 4 - VirtualAddress位于头内部
+ *  - 5 - PointerToRawData位于头内部
+ *  - 6 - 关键字段全部为0
+ *  - 7 - （仅x32环境）VirtualAddress+VirtualSize超过32位系统内存页
+ * 
+ * ============================================================================
+ */
+
 void Structuresults::crash_information_set(error_category code, const std::string& msg) {
 	crashreport.error_code = code;
 	crashreport.message = msg;
 }
 
-/* 函数返回值为错误状态码：
-   0：合法节区头
-   1：映射越界
-   2：VirtualAddress未与SectionAlignment对齐
-   3：PointerToRawData未与FileAlignment对齐
-   4：VirtualAddress位于头内部
-   5：PointerToRawData位于头内部
-   6：关键字段全部为0
-   7：（仅x32环境）VirtualAddress+VirtualSize超过32位系统内存页
-*/
 int is_this_section_valid(const SectionHeader& header, SharedStructure shared_structure, Structuresults data_container) {
 	// Name字段全零验证
 	bool all_zero_name = true;
@@ -91,7 +96,6 @@ int is_this_section_valid(const SectionHeader& header, SharedStructure shared_st
 	return 0;
 }
 
-/* 置信度检测列表及其权重（%）*/
 int file_confidence_detection(SharedStructure shared_structure) {
 	int sum = 0;
 

@@ -17,49 +17,49 @@
  * ============================================================================
  * 
  *  STRUCTS（结构体）
- *  - ScanResultsDistribution  扫描结果分布统计
+ *  - ScanResultsDistribution   扫描结果分布统计
  * 
  *  CLASSES（类）
- *  - Translator               扫描结果格式转换器
- *  - FundamentalAnalysis      基础分析对外接口
+ *  - Translator                扫描结果格式转换器
+ *  - FundamentalAnalysis       基础分析对外接口
  * 
  *  MEMBERS - FundamentalAnalysis 核心成员
- *  - myfile_                  文件路径
- *  - file_size_               传入的文件大小
- *  - myfile_loaded_           文件是否成功加载
- *  - data_manager             文件结果处理管理器
- *  - config                   扫描配置信息
- *  - organised_data[]         综合性源文件信息
+ *  - myfile_                   文件路径
+ *  - file_size_                传入的文件大小
+ *  - myfile_loaded_            文件是否成功加载
+ *  - data_manager              文件结果处理管理器
+ *  - config                    扫描配置信息
+ *  - organised_data[]          综合性源文件信息
  * 
  *  FUNCTIONS（函数）
  *  【Translator 类成员函数（private）说明】
- *  - uint_to_hex_string()             无符号整数（uint8_t、uint16_t等）转十六进制表示形式的string类
- *  - uint_to_dec_string()             无符号整数（uint8_t、uint16_t等）转十进制表示形式的string类
- *  - vector_to_hexstring()            vector<uint8_t>转十六进制表示形式的string类
- *  - hexstring_to_ascii()             十六进制表示形式的string类转ascii码表示形式的string类
- *  - generate_file_display()          将原始文件数据转换为十六进制视图
- *  - single_item_degree_translator()  将单条信息严重程度翻译为字符串（如【信息】、【可疑】等）形式
- *  - single_item_translator()         将单条信息翻译为字符串形式
- *  - get_sct_address_table()          将节区地址表整理为字符串形式
- *  - string_to_file_append()          将字符串形式的数据追加写入文件
- *  - basic_file_info_translator()     整理扫描结果 comprehensive_info_ 为【基础扫描信息】块
- *  - aggregate_info_translator()      汇总不同结构的扫描信息
- *  - detailed_file_info_translator()  整理扫描结果 diarelist 为【详细信息】块
+ *  - uint_to_hex_string()              无符号整数（uint8_t、uint16_t等）转十六进制表示形式的string类
+ *  - uint_to_dec_string()              无符号整数（uint8_t、uint16_t等）转十进制表示形式的string类
+ *  - vector_to_hexstring()             vector<uint8_t>转十六进制表示形式的string类
+ *  - hexstring_to_ascii()              十六进制表示形式的string类转ascii码表示形式的string类
+ *  - generate_file_display()           将原始文件数据转换为十六进制视图
+ *  - single_item_degree_translator()   将单条信息严重程度翻译为字符串（如【信息】、【可疑】等）形式
+ *  - single_item_translator()          将单条信息翻译为字符串形式
+ *  - get_sct_address_table()           将节区地址表整理为字符串形式
+ *  - string_to_file_append()           将字符串形式的数据追加写入文件
+ *  - basic_file_info_translator()      整理扫描结果 comprehensive_info_ 为【基础扫描信息】块
+ *  - aggregate_info_translator()       汇总不同结构的扫描信息
+ *  - detailed_file_info_translator()   整理扫描结果 diarelist 为【详细信息】块
  * 
  *  【Translator 类成员函数（public）说明】
- *  - hexadecimal_document_export()    将十六进制视图导出为txt文本文件
- *  - scan_report_export()             将扫描报告导出为txt文本文件
- *  - print_report()                   在终端打印扫描报告
+ *  - hexadecimal_document_export()     将十六进制视图导出为txt文本文件
+ *  - scan_report_export()              将扫描报告导出为txt文本文件
+ *  - print_report()                    在终端打印扫描报告
  * 
  *  【FundamentalAnalysis 类成员函数（private）说明】
- *  - readfile()                       将文件从外存读到内存中的文件流缓冲区并存储源文件数据
- *  - check_little_endian()            小端序检查
+ *  - readfile()                        将文件从外存读到内存中的文件流缓冲区并存储源文件数据
+ *  - check_little_endian()             小端序检查
  * 
  *  【FundamentalAnalysis 类成员函数（public）说明】
- *  - analysis_file()                  基础分析API（分析完后仅在内存中存储结果，不做任何保存，有需要可在调用此函数后调用汇总或者文件输出函数）
- *  - recheck_file()                   增强分析API（在已完成基础分析的基础上进行单次结果复查）
- *  - summary_file()                   结果汇总API（在已完成基础分析的基础上进行单次结果汇总）
- *  - check_settings()				   检查分析设置是否合理
+ *  - analysis_file()                   基础分析API（分析完后仅在内存中存储结果，不做任何保存，有需要可在调用此函数后调用汇总或者文件输出函数）
+ *  - recheck_file()                    增强分析API（在已完成基础分析的基础上进行单次结果复查）
+ *  - summary_file()                    结果汇总API（在已完成基础分析的基础上进行单次结果汇总）
+ *  - check_settings()                  检查分析设置是否合理
  * 
  * ============================================================================
  */
@@ -108,9 +108,6 @@ private:
     std::string uint_to_dec_string(T num, bool with_comma = false) {
         static_assert(std::is_unsigned_v<T>, "T must be unsigned integer type");
         return std::to_string(num);
-        /*std::stringstream ss;
-        ss << num;
-        return ss.str();*/
     }
 
     std::string vector_to_hexstring(const std::vector<uint8_t>& input_data);

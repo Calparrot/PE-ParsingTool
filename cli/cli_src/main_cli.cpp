@@ -103,7 +103,8 @@ int main(int argc, char* argv[]) {
     argv = debug_argv;
 #endif
 
-    auto start_time = std::chrono::steady_clock::now(); // 开始计时
+    // 开始计时
+    auto start_time = std::chrono::steady_clock::now();
 
     /* 无参数情况下直接显示帮助文档 */
     if (argc < 2) { 

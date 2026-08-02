@@ -1,6 +1,6 @@
 ﻿[中文](README.md) | [English](README.en.md)
 
-# PE ParsingTool
+# PE文件解析工具
 
 ![Windows](https://img.shields.io/badge/Platform-Windows-blue)
 ![C++](https://img.shields.io/badge/Language-C++17-blue)
@@ -16,7 +16,7 @@ CLI版本最高运行内存小于2MB（批量扫描），核心组件无第三�
 
 ## 📸 程序预览
 
-![GUI版本程序运行示例](images/guiout.png)
+![GUI版本程序运行示例](docs/images/guiout.png)
 
 ## ✨ 功能特性
 
@@ -103,11 +103,12 @@ cmake --build build -j$(nproc)
 #include <iostream>
 
 int main() {
-    FundamentalAnalysis object; // 创建分析对象
+    // 创建分析对象，调用分析函数并传入文件路径
+    FundamentalAnalysis object;
     FundamentalAnalysis::error_code result = object.analysis_file("C:/test.exe");
-                                // 调用分析函数，传入文件路径
     
-    if (result == FundamentalAnalysis::error_code::SUCCESS) {          // 导出分析报告
+    // 导出分析报告
+    if (result == FundamentalAnalysis::error_code::SUCCESS) {          
         object.data_manager.scan_report_export("C:/output.txt");
         std::cout << "分析完成，报告已导出。" << std::endl;
     }
@@ -136,51 +137,30 @@ int main() {
 ## 📁 项目结构
 ```text
 PE-ParsingTool/
-├── CMakeLists.txt # CMake 构建配置
-├── CMakeSettings.json # Visual Studio CMake 配置
-├── README.md # 项目说明中文版（默认）
-├── README.en.md # 项目说明英文版
-├── LICENSE.txt # 许可证文件
-│
+├── CMakeLists.txt                  # CMake 构建配置
+├── CMakeSettings.json              # Visual Studio CMake 配置
 ├── core/ # 核心解析模块（跨平台）
-│   ├── core_include/ # 头文件
-│   │   ├── api.h # 对外接口
-│   │   ├── database.h # 核心结果存储定义
-│   │   ├── diagnostic_codes.h # 诊断错误码
-│   │   ├── peanalyzer.h # PE解析器核心类
-│   │   ├── recheck.h # PE解析器细扫规则定义
-│   │   └── recheck_data.h # 细扫结果存储定义
-│   └── core_src/ # 源文件
-│       ├── api.cpp
-│       ├── database.cpp
-│       ├── diagnostic_helpers.cpp
-│       ├── peanalyzer.cpp
-│       ├── recheck.cpp
-│       └── recheck_data.cpp
-│
+│   ├── core_include/               # 头文件
+│   └── core_src/                   # 源文件
 ├── gui/ # GUI 模块（Windows 专用）
-│   ├── gui_include/ # 头文件
-│   │   ├── custom_message.h # 自定义消息定义
-│   │   ├── translator.h # 格式转换类定义
-│   │   └── utils.h # 工具函数定义
-│   └── gui_src/ # 源文件
-│       ├── translator.cpp
-│       ├── utils.cpp
-│       └── winmain.cpp # 程序入口
-│
+│   ├── gui_include/                # 头文件
+│   └── gui_src/                    # 源文件
 ├── cli/ # 命令行模块（跨平台）
-│   ├── cli_include/ # 头文件
-│   │   └── functions.h # 工具函数定义
-│   └── cli_src/ # 源文件
-│       ├── functions.cpp
-│       └── main_cli.cpp # 命令行程序入口
-│
-├── icons/ # 图标资源
-│   └── myicon.ico
-├── images/ # 示例图片
-│   └── guiout.png
-├── PE_ParsingTool.rc # 资源文件
-└── resource.h # 资源定义
+│   ├── cli_include/                # 头文件
+│   └── cli_src/                    # 源文件
+├── resources/ # 资源文件夹
+│   ├── icons/                      # 图标资源
+│   ├── PE_ParsingTool.exe.manifest # 程序清单文件
+│   ├── PE_ParsingTool.rc           # 资源文件
+│   └── resource.h                  # 资源定义
+├── docs/ # 文档
+│   ├── images/                     # 示例图片
+│   └── ARCHITECTURE.md             # 架构设计文档
+├── tests/ # 测试
+│   └── samples/                    # 测试样本
+├── README.md                       # 项目说明中文版（默认）
+├── README.en.md                    # 项目说明英文版
+└── LICENSE.txt                     # 许可证文件
 ```
 
 ## ⚠️ 已知问题与限制
@@ -197,6 +177,7 @@ PE-ParsingTool/
 **显示与性能**
 - GUI版本的十六进制查看功能不全，有需要可以在GUI版本下选择导出“十六进制视图”查看
 - CLI版本暂不完全支持传入中文路径（utf-8编码路径）
+- 在 Linux 平台存在 GBK 编码显示乱码问题
 
 **其他**
 - 项目处于开发阶段，API不稳定，因此暂未给出使用说明

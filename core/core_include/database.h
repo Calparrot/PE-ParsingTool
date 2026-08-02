@@ -14,45 +14,53 @@
  * ============================================================================
  * 
  *  STRUCTS（结构体）
- *  - StructuralInformation   收录表（结构是否可疑/异常）
- *  - Diaresults              单个结构的诊断结果
- *  - SectionInformation      单个节区信息（标准/偏移/属性）
- *  - SectionRange            节区范围
- *  - error_category          错误码枚举
- *  - CrashReport             崩溃报告
- *  - OverlapProcessing       重叠数据信息
- *  - ComprehensiveInfo       文件信息
- *  - DOSHeader               _IMAGE_DOS_HEADER 结构定义
- *  - FileHeader              _IMAGE_FILE_HEADER 结构定义
- *  - DataDirectory           _IMAGE_DATA_DIRECTORY 结构定义
- *  - OptionalHeader32        _IMAGE_OPTIONAL_HEADER32 结构定义
- *  - OptionalHeader64        _IMAGE_OPTIONAL_HEADER64 结构定义
- *  - ROM_OptionalHeader      _IMAGE_ROM_OPTIONAL_HEADER 结构定义
- *  - SectionHeader           _IMAGE_SECTION_HEADER 结构定义
- *  - ImportDescriptor        _IMAGE_IMPORT_DESCRIPTOR 结构定义
+ *  - StructuralInformation     收录表（结构是否可疑/异常）
+ *  - Diaresults                单个结构的诊断结果
+ *  - SectionInformation        单个节区信息（标准/偏移/属性）
+ *  - SectionRange              节区范围
+ *  - error_category            错误码枚举
+ *  - CrashReport               崩溃报告
+ *  - OverlapProcessing         重叠数据信息
+ *  - ComprehensiveInfo         文件信息
+ *  - DOSHeader                 _IMAGE_DOS_HEADER 结构定义
+ *  - FileHeader                _IMAGE_FILE_HEADER 结构定义
+ *  - DataDirectory             _IMAGE_DATA_DIRECTORY 结构定义
+ *  - OptionalHeader32          _IMAGE_OPTIONAL_HEADER32 结构定义
+ *  - OptionalHeader64          _IMAGE_OPTIONAL_HEADER64 结构定义
+ *  - ROM_OptionalHeader        _IMAGE_ROM_OPTIONAL_HEADER 结构定义
+ *  - SectionHeader             _IMAGE_SECTION_HEADER 结构定义
+ *  - ImportDescriptor          _IMAGE_IMPORT_DESCRIPTOR 结构定义
  *
  *  CLASSES（类）
- *  - Structuresults          扫描结果容器 → 建议重命名为 data_container
+ *  - Structuresults            扫描结果容器 → 建议重命名为 data_container
  *
  *  MEMBERS - Structuresults 核心成员
- *  - num_of_scanned_blocks_  待补充功能说明
- *  - out_range[]             扫描范围记录表（位数与结构顺序对应）
- *  - diarelist[]			  文件各结构扫描诊断结果表
- *  - section_attributes[]    文件各节区属性表
- *  - max_number_of_possible_sections  最大可能节区数量（暂弃用）
- *  - m_orderliness           内存映射区间是否有序
- *  - s_orderliness           文件映射区间是否有序
- *  - memory_interval_table   节区内存分布区间表
- *  - storage_interval_table  节区文件分布区间表
- *  - overlapping_area[]      重叠数据区间表
- *  - source_file_data        源文件原始数据
+ *  - num_of_scanned_blocks_    待补充功能说明
+ *  - out_range[]               扫描范围记录表（位数与结构顺序对应）
+ *  - diarelist[]               文件各结构扫描诊断结果表
+ *  - section_attributes[]      文件各节区属性表
+ *  - max_number_of_possible_sections   最大可能节区数量（暂弃用）
+ *  - m_orderliness             内存映射区间是否有序
+ *  - s_orderliness             文件映射区间是否有序
+ *  - memory_interval_table     节区内存分布区间表
+ *  - storage_interval_table    节区文件分布区间表
+ *  - overlapping_area[]        重叠数据区间表
+ *  - source_file_data          源文件原始数据
  *
  *  FUNCTIONS（函数）
- *  - is_this_section_valid()     校验 40 字节是否为有效节区头
- *  - file_confidence_detection() PE 文件置信度检测
+ *  - is_this_section_valid()       校验 40 字节是否为有效节区头
+ *  - file_confidence_detection()   PE 文件置信度检测
  * 
  * 【Structuresults 类成员函数（public）说明】
- *  - crash_information_set()     崩溃报告设置
+ *  - crash_information_set()       崩溃报告设置
+ * 
+ *  ADDITIONAL NOTES（附加说明）
+ *   【output_range 输出范围说明（不可用户管理，默认尽量输出所有结果）】
+ *  - 1 - 输出至 40 byte 扫描结果
+ *  - 2 - 输出至 PE 签名前扫描结果
+ *  - 3 - 输出至 PE 签名后 20 byte 扫描结果
+ *  - 4 - 输出至节区头前的扫描结果
+ *  - 5 - 输出文件头部内容所有扫描结果
  * 
  * ============================================================================
  */
@@ -355,14 +363,6 @@ struct ImportDescriptor {
 class Structuresults {
 public:
     // 基础信息
-    /* 
-    output_range 输出范围说明（不可用户管理，默认尽量输出所有结果）：
-        1 - 输出至 40 byte 扫描结果
-        2 - 输出至 PE 签名前扫描结果
-        3 - 输出至 PE 签名后 20 byte 扫描结果
-        4 - 输出至节区头前的扫描结果
-        5 - 输出文件头部内容所有扫描结果
-    */
     int num_of_scanned_blocks = 6;
     int out_range[20] = { 0 };
     ComprehensiveInfo comprehensive_info;

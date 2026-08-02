@@ -11,30 +11,25 @@ struct Diaresults;
  * ============================================================================
  * 
  *  STRUCTS（结构体）
- *  - RangeItem                整数范围项，表示一个整数范围或单个整数，用于导入表地址简化读取，要求T为uint类型
- *  - ImportModuleInfo32       32位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
- *  - ImportModuleInfo64       64位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
+ *  - RangeItem                 整数范围项，表示一个整数范围或单个整数，用于导入表地址简化读取，要求T为uint类型
+ *  - ImportModuleInfo32        32位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
+ *  - ImportModuleInfo64        64位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
  * 
  *  CLASSES（类）
- *  - SecondaryRecord          原Structuresults类增强版本
+ *  - SecondaryRecord           原Structuresults类增强版本
  *
  *  MEMBERS - SecondaryRecord 核心成员
- *  - rec_diaresults[]         单个结构复诊断结果
- *  - in_module_info32[]       32位导入模块信息
- *  - in_module_info64[]       64位导入模块信息
+ *  - rec_diaresults[]          单个结构复诊断结果
+ *  - in_module_info32[]        32位导入模块信息
+ *  - in_module_info64[]        64位导入模块信息
  * 
  *  FUNCTIONS（函数）
- *  - cluster_int_pad()        整数聚类算法，参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
- *  - cluster_int_pad_const()  整数聚类算法（常量版本），参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
+ *  - cluster_int_pad()         整数聚类算法，参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
+ *  - cluster_int_pad_const()   整数聚类算法（常量版本），参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
  * 
  * ============================================================================
  */
 
-/* 结构体说明
-	RangeItem         ：整数范围项，表示一个整数范围或单个整数，用于导入表地址简化读取，要求T为uint类型
-	ImportModuleInfo32：32位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
-	ImportModuleInfo64：64位 IMAGE_IMPORT_DESCRIPTOR 指向的Name和INT数据
-*/
 template<typename T>
 struct RangeItem {
 	T begin;        // 范围起始值（等于实际数据最小值）
@@ -55,11 +50,6 @@ struct ImportModuleInfo64 {
 	std::vector<uint64_t> IMAGE_THUNK_DATA64;
 };
 
-/* 类说明
-	SecondaryRecord：原Structuresults类增强版本
-类成员说明
-	re_diaresults_ ：单个结构复诊断结果
-*/
 class SecondaryRecord {
 public:
 	std::vector<Diaresults> rec_diaresults{};
@@ -68,9 +58,6 @@ public:
 	std::vector<ImportModuleInfo64> in_module_info64;
 };
 
-/*
-    cluster_int_pad：整数聚类算法，参数中cluster_granularity为粒度大小，range_padding为结尾填充长度
- */
 template<typename T>
 std::vector<RangeItem<T>> cluster_int_pad(std::vector<T>& data, T cluster_granularity = 512, T range_padding = 512) {
     static_assert(std::is_unsigned_v<T>, "T must be an unsigned integer type");

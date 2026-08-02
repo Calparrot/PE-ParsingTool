@@ -11,16 +11,16 @@ class SecondaryRecord;
  * ============================================================================
  * 
  *  CLASSES（类）
- *  - ReInspector              PE 增强分析类
+ *  - ReInspector			PE 增强分析类
  * 
  *  MEMBERS - ReInspector 核心成员
- *  - pedata_ 				   接收的文件流
+ *  - pedata_				接收的文件流
  * 
  *  FUNCTIONS（函数）
  *  【ReInspector 类成员函数（public）说明】
- *  - check_data_nonempty()    检查传入参数是否非空
- *  - *_recheck()              对应结构的细节版分析
- *  - INT_extract()            提取 IMAGE_IMPORT_DESCRIPTOR 对应的模块
+ *  - check_data_nonempty()	检查传入参数是否非空
+ *  - *_recheck()			对应结构的细节版分析
+ *  - INT_extract()			提取 IMAGE_IMPORT_DESCRIPTOR 对应的模块
  * 
  * ============================================================================
  */

@@ -10,12 +10,16 @@ constexpr int BUFFER_SIZE = 5600;                      // 复用缓冲区大小
 constexpr int REASONABLE_MAX_SECTIONS = 128;           // 支持的最大节区数量
 constexpr int REASONABLE_MAX_IMPORT_DESCRIPTORS = 100; // 支持的最大导入描述符数量
 
-/* 普通工具函数 */
 /*
-	interval_relation_judgment ：两个区间的关系判断函数
-	interval_insertion_sort    ：处理区间的插入排序函数
-	interval_hole_scan         ：区间缺口扫描函数（要求传入参数已排序）
-*/
+ * ============================================================================
+ *  - interval_relation_judgment()	两个区间的关系判断函数
+ *  - interval_insertion_sort()		处理区间的插入排序函数
+ *  - interval_hole_scan()			区间缺口扫描函数（要求传入参数已排序）
+ * 
+ * ============================================================================
+ */
+
+/* 工具函数 */
 static int interval_relation_judgment(uint64_t f_begin, uint64_t f_end, uint64_t a_begin, uint64_t a_end) { 
 	// front和after的始末值
 	// f_begin-前区间起始地址  f_end-前区间结束地址  a_begin-后区间起始地址  a_end-后区间结束地址
@@ -148,7 +152,7 @@ static bool interval_hole_scan(const std::vector<SectionRange>& input_vector) {
 	return true;
 }
 
-/* private里的工具函数 */
+/* PEanalyzer类 - private */
 void PEanalyzer::clear_buffer() {
 	for (int i = 0; i < 256; i++) {
 		mulbuffer_[i] = 0;
@@ -558,7 +562,7 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 	}
 }
 
-/* public函数 */
+/* PEanalyzer类 - public */
 bool PEanalyzer::dosheader_analysis(Structuresults& data_container) {
 	/* 可能的作用域问题 */
 	// shared_structure_ = SharedStructure();

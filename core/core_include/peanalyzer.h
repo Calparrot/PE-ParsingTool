@@ -9,38 +9,38 @@
  * ============================================================================
  *
  *  STRUCTS（结构体）
- *  - EleCorrectness           自定义三态枚举（用于增强布尔值）
- *  - SharedStructure          关键信息速查表
+ *  - EleCorrectness                    自定义三态枚举（用于增强布尔值）
+ *  - SharedStructure                   关键信息速查表
  *
  *  CLASSES（类）
- *  - PEanalyzer               PE 基础分析类
+ *  - PEanalyzer                        PE 基础分析类
  *
  *  MEMBERS - PEanalyzer 核心成员
- *  - pedata_                  接收的文件流
- *  - mulbuffer_[]             复用缓冲区
- *  - read_offset_             复用缓冲区指针偏移
- *  - shared_structure_        关键信息速查表
- *  - file_size                文件大小
+ *  - pedata_                           接收的文件流
+ *  - mulbuffer_[]                      复用缓冲区
+ *  - read_offset_                      复用缓冲区指针偏移
+ *  - shared_structure_                 关键信息速查表
+ *  - file_size                         文件大小
  *
  *  FUNCTIONS（函数）
  *  【PEanalyzer 类成员函数（private）说明】
- *  - clear_buffer()                   清空复用缓冲区
- *  - field_interpretation()           fileheader中machine字段的解析函数
- *  - magic_check()                    magic字段单架构验证函数
- *  - magic_joint_check()              magic字段一致性联合验证函数
- *  - magic_joint_judge() 		       magic字段反推函数
- *  - section_characteristic_judge()   节区属性判断函数
- *  - section_characteristic_check()   节区属性常见冲突组合验证函数
- *  - section_name_match()             节区常用名称匹配函数
- *  - section_name_check()             节区常用名称检验和属性联合判断函数
+ *  - clear_buffer()                    清空复用缓冲区
+ *  - field_interpretation()            fileheader中machine字段的解析函数
+ *  - magic_check()                     magic字段单架构验证函数
+ *  - magic_joint_check()               magic字段一致性联合验证函数
+ *  - magic_joint_judge()               magic字段反推函数，仅在magic值无效的预分析中使用
+ *  - section_characteristic_judge()    节区属性判断函数
+ *  - section_characteristic_check()    节区属性常见冲突组合验证函数
+ *  - section_name_match()              节区常用名称匹配函数
+ *  - section_name_check()              节区常用名称检验和属性联合判断函数
  * 
  *  【PEanalyzer 类成员函数（public）说明】
- *  - dosheader_analysis()             DOS头分析函数
- *  - dosstub_analysis()               DOS存根分析函数
- *  - file_header_analysis()           文件头分析函数
- *  - optional_header_analysis()       可选头分析函数
- *  - section_headers_analysis()       节区头分析函数
- *  - import_descriptor_seeker()       导入表基础结构分析
+ *  - dosheader_analysis()              DOS头分析函数
+ *  - dosstub_analysis()                DOS存根分析函数
+ *  - file_header_analysis()            文件头分析函数
+ *  - optional_header_analysis()        可选头分析函数
+ *  - section_headers_analysis()        节区头分析函数
+ *  - import_descriptor_seeker()        导入表基础结构分析
  * 
  * ============================================================================
  */
@@ -122,7 +122,7 @@ private:
     std::string field_interpretation(uint16_t inputmachine);
     void magic_check(uint16_t inputmagic, Diaresults& inputresult, int& bitness);
     void magic_joint_check();
-    void magic_joint_judge(); // *反推函数，根据其他字段反推magic，仅在magic值无效的预分析中使用
+    void magic_joint_judge();
     void section_characteristic_judge(uint32_t input_characteristic, Structuresults& data_container);
     void section_characteristic_check(uint32_t input_characteristic, Diaresults& inputresult, size_t num, Structuresults& data_container);
 	int section_name_match(const uint8_t input_name[8]);

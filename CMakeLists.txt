@@ -18,6 +18,8 @@ set(GUI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_include)
 set(GUI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gui/gui_src)
 set(CLI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_include)
 set(CLI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src)
+set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources)
+
 
 # 定义源文件列表
 if(WIN32)
@@ -45,11 +47,15 @@ set(CLI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src/functions.cpp
 )
 
-set(RESOURCES "PE_ParsingTool.rc")
+set(RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/PE_ParsingTool.rc")
 
 # 创建可执行文件
 if (WIN32)
 add_executable(${PROJECT_NAME} WIN32 ${GUI_SOURCES} ${RESOURCES})
+
+# set_target_properties(${PROJECT_NAME} PROPERTIES
+#     RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/resources/PE_ParsingTool.exe.manifest"
+# )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RC_FLAGS "/I ${CMAKE_CURRENT_SOURCE_DIR}"
@@ -65,6 +71,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CORE_SRC_DIR}
     ${GUI_INCLUDE_DIR}
     ${GUI_SRC_DIR}
+    ${RESOURCES_DIR}
 )
 endif()
 

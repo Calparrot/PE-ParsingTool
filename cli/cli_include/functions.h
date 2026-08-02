@@ -9,9 +9,9 @@ struct ScanResultsDistribution;
  * ============================================================================
  * 
  * FUNCTIONS（函数）
- * - batch_statistiacl_output() 批量扫描统计结果输出
- * - show_help()                输出帮助信息
- * - show_version()             输出版本信息
+ * - batch_statistiacl_output()	批量扫描统计结果输出
+ * - show_help()				输出帮助信息
+ * - show_version()				输出版本信息
  * 
  * ============================================================================
  */
