@@ -208,8 +208,8 @@ struct ComprehensiveInfo {
     std::string file_extention = ".exe";  // 文件后缀
 
     /* 迁移中 */
-    uint32_t section_table_offset;        // 节区在文件中的偏移
-    uint32_t clothest_section_offset;     // 可选头后的最近的节区偏移
+    uint32_t section_table_offset = 0;    // 节区在文件中的偏移
+    uint32_t clothest_section_offset = 0; // 可选头后的最近的节区偏移
     int detected_section_count = 0;       // 实际检测出的节区数量
 };
 

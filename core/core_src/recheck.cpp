@@ -25,6 +25,9 @@ struct FirstThunkPoint {
 
 /* 工具函数 */
 static void file_offset_calculate(std::vector<FirstThunkPoint>& point, Structuresults& data_container){
+	if (point.empty()) {
+		return;
+	}
 	int cached_section_index = -1; // 缓存上一次命中的节索引
 	int idx = 0;                   // 正在转换的 rva 在数组的索引
 
@@ -40,7 +43,8 @@ static void file_offset_calculate(std::vector<FirstThunkPoint>& point, Structure
 			continue;
 		}
 		// 未命中，遍历查找
-		for (int temp = 0; temp < data_container.memory_interval_table.size(); temp++) {
+		int temp = 0;
+		for (; temp < data_container.memory_interval_table.size(); temp++) {
 			auto& range = data_container.memory_interval_table[temp];
 			if (point[idx].addr >= range.begin && point[idx].addr < range.end) {
 				cached_section_index = temp;
@@ -50,11 +54,13 @@ static void file_offset_calculate(std::vector<FirstThunkPoint>& point, Structure
 				idx++;
 				break;
 			}
-			else {
-				idx++;
-			}
 		}
-	} while (idx < point.size());
+		// 没有找到匹配的节，跳过该地址
+		if (temp >= data_container.memory_interval_table.size()) {
+			idx++;
+		}
+	} 
+	while (idx < point.size());
 };
 
 static size_t INT_division(const uint8_t buffer[], size_t buffer_size, size_t offset, bool& is_32bit) {

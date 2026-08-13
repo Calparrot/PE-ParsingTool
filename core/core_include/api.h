@@ -140,7 +140,7 @@ public:
 class FundamentalAnalysis {
 private:
     std::ifstream myfile_;
-    uint64_t file_size_;
+    uint64_t file_size_ = 0;
     bool myfile_loaded_ = false;
 
 public:
