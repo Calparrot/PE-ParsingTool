@@ -47,7 +47,10 @@ set(CLI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cli/cli_src/functions.cpp
 )
 
-set(RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/PE_ParsingTool.rc")
+set(RESOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/PE_ParsingTool.rc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/PE_ParsingTool.exe.manifest"
+)
 
 # 创建可执行文件
 if (WIN32)

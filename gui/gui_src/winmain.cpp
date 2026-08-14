@@ -15,6 +15,7 @@
 
 /* 全局变量 */
 RECT main_client_rect;                    // 客户区主窗口大小
+int g_dpi = 96;                           // 当前DPI设置
 static HWND g_navigation_window = NULL;   // 导航窗口句柄
 static HWND g_message_window = NULL;      // 信息窗口句柄
 static HWND hedit_message = NULL;         // 信息窗口显示文本控件句柄
@@ -36,8 +37,11 @@ struct WindowData {
 };
 
 /* 字体设置 */
-HFONT consolas = CreateFont(
-    16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+double scale = g_dpi / 96.0;
+int fontSize = (int)(16 * scale);
+HFONT g_hConsolas = CreateFont(
+    -fontSize,
+    0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
     CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
     FIXED_PITCH | FF_MODERN, L"Consolas"
@@ -53,15 +57,22 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
 void OnFileOpen(HWND hWnd);                         // 处理文件打开
 BOOL RegisterAllWindowClasses(HINSTANCE hInstance); // 注册窗口类
 static std::string WideToUtf8(const std::wstring& wstr); // 将宽字符串转换为UTF-8字符串
+int GetDPI();                                       // 获取当前DPI设置
 
 /* 入口 */
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow){
+int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PWSTR pCmdLine, _In_ int nCmdShow){
     RegisterAllWindowClasses(hInstance);
+    g_dpi = GetDPI();
+
+    int logicWidth = 1024;
+    int logicHeight = 640;
+    int physicalWidth = MulDiv(logicWidth, g_dpi, 96);
+    int physicalHeight = MulDiv(logicHeight, g_dpi, 96);
 
     HWND main_window = CreateWindowEx(
-        0, L"MainClass", L"PE ParsingTool", 
+        0, L"MainClass", L"PE 文件解析工具", 
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT,  CW_USEDEFAULT, 1024, 640,
+        CW_USEDEFAULT,  CW_USEDEFAULT, physicalWidth, physicalHeight,
         NULL, NULL, hInstance, NULL
     );
 
@@ -84,47 +95,87 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
     GetClientRect(hWnd, &main_client_rect);
 
-	int client_width = main_client_rect.right - main_client_rect.left;  // 客户区域总宽度
+    double scale = g_dpi / 96.0;
+
+    int client_width = main_client_rect.right - main_client_rect.left;  // 客户区域总宽度
     int client_height = main_client_rect.bottom - main_client_rect.top; // 客户区域总高度
-	int x_position = 0;   // 初始x坐标
-	int y_position = 0;   // 初始y坐标
-	int child_width = 0;  // 子窗口宽度
-    int child_height = 0; // 子窗口高度
+    int margin = (int)(8 * scale);     // 8px → 12px (150% DPI)
+    int gap = (int)(4 * scale);        // 4px → 6px
+    int doubleGap = (int)(12 * scale); // 12px → 18px
+
+    int x_position = 0;            // 初始x坐标
+    int y_position = 0;            // 初始y坐标
+    int logic_child_width = 0;     // 子窗口逻辑像素宽度
+    int logic_child_height = 0;    // 子窗口逻辑像素高度
+	int physical_child_width = 0;  // 子窗口物理像素宽度
+	int physical_child_height = 0; // 子窗口物理像素高度
 
     int wmId = LOWORD(wParam);
 
     switch (uMsg) {
     case WM_CREATE: {
-        x_position = 8;
-        y_position = 8;
-        child_width = (client_width - 16) / 4;
-        child_height = (client_height - 16) * 4 / 7;
+        // 检查DPI生效调试代码
+        /*HDC hdc = GetDC(hWnd);
+        int dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+        int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+        ReleaseDC(hWnd, hdc);
+
+        WCHAR msg[256];
+        wsprintf(msg, L"DPI: X=%d, Y=%d", dpiX, dpiY);
+        MessageBox(hWnd, msg, L"DPI 信息", MB_OK);
+        break;*/
+        
+        // navigation_window 边距计算
+        /*x_position = 8;
+        y_position = 8;*/
+		// navigation_window 窗口大小计算
+        /*logic_child_width = (client_width - 16) / 4;
+        logic_child_height = (client_height - 16) * 4 / 7;
+        physical_child_width = MulDiv(logic_child_width, g_dpi, 96);
+        physical_child_height = MulDiv(logic_child_height, g_dpi, 96);*/
+        int navWidth = (client_width - 2 * margin - gap) / 4;
+        int navHeight = (client_height - 2 * margin) * 4 / 7;
+
         g_navigation_window = CreateWindowEx(
             0, L"NavigationBar", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE,
-            x_position, y_position, child_width, child_height,
+            margin, margin, navWidth, navHeight,
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
-        x_position = 8;
-        y_position = child_height + 12;
-        child_width = (client_width - 16) / 4;
-        child_height = client_height - child_height - 20;
+        // message_window 边距计算
+        /*x_position = 8;
+        y_position = logic_child_height + 12;*/
+        int msgY = margin + navHeight + gap;
+        // message_window 窗口大小计算
+        /*logic_child_width = (client_width - 16) / 4;
+        logic_child_height = client_height - logic_child_height - 20;
+        physical_child_width = MulDiv(logic_child_width, g_dpi, 96);
+        physical_child_height = MulDiv(logic_child_height, g_dpi, 96);*/
+        int msgHeight = client_height - margin - msgY;
+
         g_message_window = CreateWindowEx(
             0, L"InformationBar", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE,
-            x_position, y_position, child_width, child_height,
+            margin, msgY, navWidth, msgHeight,
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
-        x_position = child_width + 12;
-        y_position = 8;
-        child_width = client_width - child_width - 20;
-        child_height = client_height - 16;
+        // data_window 边距计算
+        /*x_position = logic_child_width + 12;
+        y_position = 8;*/
+        int dataX = margin + navWidth + gap;
+		// data_window 窗口大小计算
+        /*logic_child_width = client_width - logic_child_width - 20;
+        logic_child_height = client_height - 16;
+        physical_child_width = MulDiv(logic_child_width, g_dpi, 96);
+        physical_child_height = MulDiv(logic_child_height, g_dpi, 96);*/
+        int dataWidth = client_width - margin - dataX;
+
         g_data_window = CreateWindowEx(
             0, L"DisplayBox", NULL,
             WS_CHILD | WS_VISIBLE,
-            x_position, y_position, child_width, child_height,
+            dataX, margin, dataWidth, client_height - 2 * margin,
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
@@ -274,7 +325,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 0, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1001, NULL, NULL
         );
-        SendMessage(hText_a, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_a, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         hText_b = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_DOS_HEADER",
@@ -282,7 +333,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 30, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1002, NULL, NULL
         );
-        SendMessage(hText_b, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_b, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         hText_c = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" DOS Stub Program",
@@ -290,7 +341,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 55, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1003, NULL, NULL
         );
-        SendMessage(hText_c, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_c, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         hText_d = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_FILE_HEADER",
@@ -298,7 +349,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 80, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1004, NULL, NULL
         );
-        SendMessage(hText_d, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_d, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         hText_e = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_OPTIONAL_HEADER",
@@ -306,7 +357,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 105, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1005, NULL, NULL
         );
-        SendMessage(hText_e, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_e, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         hText_f = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IMAGE_SECTION_HEADERS",
@@ -314,7 +365,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 130, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1006, NULL, NULL
         );
-        SendMessage(hText_f, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_f, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         hText_g = CreateWindowEx(
             WS_EX_TOPMOST, L"STATIC", L" IIMAGE_IMPORT_DESCRIPTOR",
@@ -322,7 +373,7 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             0, 155, (main_client_rect.right - 16) / 4, 25,
             hWnd, (HMENU)1007, NULL, NULL
         );
-        SendMessage(hText_g, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hText_g, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
 
         break;
     }
@@ -386,7 +437,7 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
         if (p_data) {
             HDC hdc = GetDC(hWnd);
-            HFONT h_old_font = (HFONT)SelectObject(hdc, consolas);
+            HFONT h_old_font = (HFONT)SelectObject(hdc, g_hConsolas);
 
             RECT rect;
             GetClientRect(hWnd, &rect);
@@ -419,7 +470,7 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             p_data->scroll_pos = 0;
 
             HDC hdc = GetDC(hWnd);
-            HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
+            HFONT hOldFont = (HFONT)SelectObject(hdc, g_hConsolas);
 
             RECT rect;
             GetClientRect(hWnd, &rect);
@@ -569,7 +620,7 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC hdc = BeginPaint(hWnd, &ps);
 
         // 设置字体和颜色
-        HFONT hOldFont = (HFONT)SelectObject(hdc, consolas);
+        HFONT hOldFont = (HFONT)SelectObject(hdc, g_hConsolas);
         SetTextColor(hdc, RGB(0, 0, 0));
         SetBkMode(hdc, TRANSPARENT);
 
@@ -637,7 +688,7 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             0, 0, rc.right, rc.bottom,
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
-        SendMessage(hedit_data, WM_SETFONT, (WPARAM)consolas, TRUE);
+        SendMessage(hedit_data, WM_SETFONT, (WPARAM)g_hConsolas, TRUE);
         break;
     }
     case WM_CTLCOLORSTATIC: {
@@ -692,7 +743,9 @@ void OnFileOpen(HWND hWnd){
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
     if (GetOpenFileName(&ofn)){
-        SetWindowText(hWnd, szFile);
+        WCHAR newTitle[MAX_PATH + 64];
+        wsprintf(newTitle, L"%s - PE 文件解析工具", szFile);
+        SetWindowText(hWnd, newTitle);
     }
     else {
         MessageBox(hWnd, L"文件打开失败", L"提示", MB_OK);
@@ -782,4 +835,11 @@ static std::string WideToUtf8(const std::wstring& wstr) {
     std::string result(len, 0);
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &result[0], len, NULL, NULL);
     return result;
+}
+
+int GetDPI() {
+    HDC hdc = GetDC(NULL);
+    int dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+    ReleaseDC(NULL, hdc);
+    return dpi;
 }

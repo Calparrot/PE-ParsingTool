@@ -16,7 +16,8 @@ CLI版本最高运行内存小于2MB（批量扫描），核心组件无第三�
 
 ## 📸 程序预览
 
-![GUI版本程序运行示例](docs/images/guiout.png)
+![GUI版本程序运行示例](docs/images/screenshot_gui.png)
+![txt输出报告（使用记事本查看）示例](docs/images/screenshot_report.png)
 
 ## ✨ 功能特性
 
