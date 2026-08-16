@@ -26,6 +26,11 @@ FundamentalAnalysis g_analysis_object;    // 全局分析对象
 bool file_loaded = false;                 // 文件是否已加载
 wchar_t szFile[MAX_PATH] = { 0 };         // 接收文件路径的缓冲区
 
+std::unique_ptr<FundamentalAnalysis> p_analysis_object; // 全局分析对象避免拷贝代替方案
+static void InitGlobalObjects() {
+    p_analysis_object = std::make_unique<FundamentalAnalysis>();
+}
+
 struct WindowData {
     std::wstring display_text;
     int total_height;  // 文本总高度
@@ -114,28 +119,8 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
     switch (uMsg) {
     case WM_CREATE: {
-        // 检查DPI生效调试代码
-        /*HDC hdc = GetDC(hWnd);
-        int dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
-        int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
-        ReleaseDC(hWnd, hdc);
-
-        WCHAR msg[256];
-        wsprintf(msg, L"DPI: X=%d, Y=%d", dpiX, dpiY);
-        MessageBox(hWnd, msg, L"DPI 信息", MB_OK);
-        break;*/
-        
-        // navigation_window 边距计算
-        /*x_position = 8;
-        y_position = 8;*/
-		// navigation_window 窗口大小计算
-        /*logic_child_width = (client_width - 16) / 4;
-        logic_child_height = (client_height - 16) * 4 / 7;
-        physical_child_width = MulDiv(logic_child_width, g_dpi, 96);
-        physical_child_height = MulDiv(logic_child_height, g_dpi, 96);*/
         int navWidth = (client_width - 2 * margin - gap) / 4;
         int navHeight = (client_height - 2 * margin) * 4 / 7;
-
         g_navigation_window = CreateWindowEx(
             0, L"NavigationBar", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE,
@@ -143,17 +128,8 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
-        // message_window 边距计算
-        /*x_position = 8;
-        y_position = logic_child_height + 12;*/
         int msgY = margin + navHeight + gap;
-        // message_window 窗口大小计算
-        /*logic_child_width = (client_width - 16) / 4;
-        logic_child_height = client_height - logic_child_height - 20;
-        physical_child_width = MulDiv(logic_child_width, g_dpi, 96);
-        physical_child_height = MulDiv(logic_child_height, g_dpi, 96);*/
         int msgHeight = client_height - margin - msgY;
-
         g_message_window = CreateWindowEx(
             0, L"InformationBar", NULL,
             WS_CHILD | WS_BORDER | WS_VISIBLE,
@@ -161,17 +137,8 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             hWnd, NULL, GetModuleHandle(NULL), NULL
         );
 
-        // data_window 边距计算
-        /*x_position = logic_child_width + 12;
-        y_position = 8;*/
         int dataX = margin + navWidth + gap;
-		// data_window 窗口大小计算
-        /*logic_child_width = client_width - logic_child_width - 20;
-        logic_child_height = client_height - 16;
-        physical_child_width = MulDiv(logic_child_width, g_dpi, 96);
-        physical_child_height = MulDiv(logic_child_height, g_dpi, 96);*/
         int dataWidth = client_width - margin - dataX;
-
         g_data_window = CreateWindowEx(
             0, L"DisplayBox", NULL,
             WS_CHILD | WS_VISIBLE,
@@ -192,11 +159,24 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 // sstd::string file_path = converter.to_bytes(szFile);
                 std::string file_path = WideToUtf8(szFile);
 
-                if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
+                /*if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
                     file_loaded = true;
                     g_analysis_object = object;
                     std::wstring* p_data_a = new std::wstring(generate_file_display(object.data_manager.data_container));
                     std::wstring* p_data_b = new std::wstring(scan_summary(object.data_manager.data_container));
+                    SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
+                    SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
+                }
+                else {
+                    MessageBox(hWnd, L"文件打开失败。", L"提示", MB_OK);
+                }*/
+
+                // 实验方案
+                InitGlobalObjects();
+                if (p_analysis_object->analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
+                    file_loaded = true;
+                    std::wstring* p_data_a = new std::wstring(generate_file_display(p_analysis_object->data_manager.data_container));
+                    std::wstring* p_data_b = new std::wstring(scan_summary(p_analysis_object->data_manager.data_container));
                     SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
                     SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
                 }
@@ -211,7 +191,12 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             break;
         }
         case ID_40004: { // 菜单栏：帮助 -> 关于
-            MessageBox(hWnd, L"      PE  ParsingTool                \n\n      版本：v0.0.0\n      作者：CalParrot", L"关于", MB_OK);
+            MessageBox(hWnd, 
+                L"      PE  Parsing  Tool                \n"
+                L"\n      版本：v0.0.0"
+                L"\n      作者：CalParrot",
+                L"关于", MB_OK
+            );
             break;
         }
 		case ID_40005: { // 菜单栏：文件导出 -> 导出十六进制文本
@@ -239,7 +224,15 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
 
             if (file_loaded) {
-                if (g_analysis_object.data_manager.hexadecimal_document_export(wstring_to_utf8(final_filepath))) {
+                /*if (g_analysis_object.data_manager.hexadecimal_document_export(wstring_to_utf8(final_filepath))) {
+                    MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
+                }
+                else {
+                    MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
+                }*/
+
+                // 实验方案
+                if (p_analysis_object->do_hexadecimal_export(wstring_to_utf8(final_filepath))) {
                     MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
                 else {
@@ -276,12 +269,20 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
 
             if (file_loaded) {
-                if (g_analysis_object.data_manager.scan_report_export(wstring_to_utf8(final_filepath))) {
+                /*if (g_analysis_object.data_manager.scan_report_export(wstring_to_utf8(final_filepath))) {
                     MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
                 else {
                     MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
+                }*/
+
+				// 实验方案
+                if (p_analysis_object->data_manager.scan_report_export(wstring_to_utf8(final_filepath))) {
+                    MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
+                else {
+                    MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
+				}
             }
             else {
                 MessageBox(hWnd, L"还没有打开需要分析的文件，请打开文件后重试。", L"导出", MB_OK);
@@ -390,31 +391,46 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-				p_data = new std::wstring(generate_file_display(g_analysis_object.data_manager.data_container));
+				// p_data = new std::wstring(generate_file_display(g_analysis_object.data_manager.data_container));
+                // 实验方案
+				p_data = new std::wstring(generate_file_display(p_analysis_object->data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 1));
+                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 1));
+				// 实验方案
+				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
-                p_data = new std::wstring(L"还在开发中:(");
+                // p_data = new std::wstring(L"还在开发中:(");
+                // 实验方案
+				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 2));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 3, (LPARAM)p_data);
+				
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
-                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 3));
+                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 3));
+				// 实验方案
+				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 3));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
-                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 4));
+                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 4));
+				// 实验方案
+				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 4));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
                 break;
 			case 1006: // 右侧窗口刷新，显示Section Headers扫描信息
-                p_data = new std::wstring(sctheader_summary(g_analysis_object.data_manager.data_container));
+                // p_data = new std::wstring(sctheader_summary(g_analysis_object.data_manager.data_container));
+				// 实验方案
+				p_data = new std::wstring(sctheader_summary(p_analysis_object->data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
 				break;
             case 1007:
-                p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 5));
+                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 5));
+				// 实验方案
+				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 5));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
                 break;
             }
@@ -629,7 +645,7 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         GetClientRect(hWnd, &clientRect);
 
         // 创建文本绘制矩形（考虑滚动偏移）
-        RECT textRect;
+        RECT textRect = { 0 };
         textRect.left = 10;
         textRect.top = 10 - p_data->scroll_pos;  // 应用滚动偏移
         textRect.right = clientRect.right - 10;
@@ -648,7 +664,6 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         SelectClipRgn(hdc, NULL);
         DeleteObject(clipRegion);
         
-
         SelectObject(hdc, hOldFont);
         EndPaint(hWnd, &ps);
 
@@ -762,7 +777,7 @@ BOOL RegisterAllWindowClasses(HINSTANCE hInstance) {
     wc_main.hInstance = hInstance;
     wc_main.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
     wc_main.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc_main.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc_main.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc_main.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
     wc_main.lpszClassName = L"MainClass";
 

@@ -14,7 +14,8 @@ A PE file analysis tool written in C++, focused on security analysis, structure 
 
 ## 📸 Preview
 
-![GUI version preview](docs/images/guiout.png)
+![GUI version preview](docs/images/screenshot_gui.png)
+![TXT report preview (viewed in Notepad)](docs/images/screenshot_report.png)
 
 ## ✨ Features
 
@@ -108,7 +109,7 @@ int main() {
     
     // Export analysis report
     if (result == FundamentalAnalysis::error_code::SUCCESS) {          
-        object.data_manager.scan_report_export("C:/output.txt");
+        object.do_scan_txt_export("C:/output.txt");
         std::cout << "Analysis complete. Report exported." << std::endl;
     }
     return 0;
@@ -129,8 +130,8 @@ int main() {
 |--------|--------------|-------------|
 | `analysis_file(const std::string& path)` | `error_code` | Analyzes the PE file at the given path, returns error code indicating success/failure |
 | `summary_file()` | `ScanResultsDistribution` | Summarizes single analysis result, returns report data (does not print) |
-| `data_manager.scan_report_export(const std::string& path)` | `bool` | Exports analysis report to the specified path |
-| `data_manager.hexadecimal_document_export(const std::string& path)` | `bool` | Exports hexadecimal view data to the specified path |
+| `do_scan_txt_export(const std::string& path)` | `bool` | Exports analysis report to the specified path |
+| `do_hexadecimal_export(const std::string& path)` | `bool` | Exports hexadecimal view data to the specified path |
 | `data_manager.print_report()` | `void` | Prints single analysis report to the console |
 
 > Note: Except for `analysis_file`, all other methods must be called after `analysis_file` succeeds (returns `0`).

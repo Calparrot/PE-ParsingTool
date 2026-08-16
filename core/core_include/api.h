@@ -5,6 +5,7 @@
 #include <sstream>
 #include <type_traits>
 #include <vector>
+#include <functional>
 
 #include "peanalyzer.h"
 #include "database.h"
@@ -47,9 +48,10 @@
  *  - detailed_file_info_translator()   整理扫描结果 diarelist 为【详细信息】块
  * 
  *  【Translator 类成员函数（public）说明】
- *  - hexadecimal_document_export()     将十六进制视图导出为txt文本文件
- *  - scan_report_export()              将扫描报告导出为txt文本文件
+ *  - hexadecimal_document_export()     将十六进制视图导出为txt文本文件（已弃用，建议使用 do_hexadecimal_export()）
+ *  - scan_report_export()              将扫描报告导出为txt文本文件（已弃用，建议使用 do_scan_txt_export()）
  *  - print_report()                    在终端打印扫描报告
+ *  - set_read_callback()				设置读取源文件数据的回调函数
  * 
  *  【FundamentalAnalysis 类成员函数（private）说明】
  *  - readfile()                        将文件从外存读到内存中的文件流缓冲区并存储源文件数据
@@ -59,7 +61,10 @@
  *  - analysis_file()                   基础分析API（分析完后仅在内存中存储结果，不做任何保存，有需要可在调用此函数后调用汇总或者文件输出函数）
  *  - recheck_file()                    增强分析API（在已完成基础分析的基础上进行单次结果复查）
  *  - summary_file()                    结果汇总API（在已完成基础分析的基础上进行单次结果汇总）
+ *  - read_source_file()                读取源文件数据到内存，以 uint8_t vector 储存
  *  - check_settings()                  检查分析设置是否合理
+ *  - do_hexadecimal_export()           将十六进制视图导出为txt文本文件
+ *  - do_scan_txt_export()              将扫描报告导出为txt文本文件，object.do_scan_txt_export() 效果等于 object.data_manager.hexadecimal_document_export()，只是为了统一API接口
  * 
  * ============================================================================
  */
@@ -81,6 +86,10 @@ struct ScanResultsDistribution {
 };
 
 class Translator {
+private:
+    Translator() = default;
+    friend class FundamentalAnalysis;
+
 public:
     Structuresults data_container;
     SecondaryRecord recheck_container;
@@ -131,10 +140,15 @@ private:
     std::string aggregate_info_translator();
     std::string detailed_file_info_translator();
 
+    // 回调保存
+    std::function<bool(std::vector<uint8_t>&, size_t, size_t)> read_callback;
+
 public:
 	bool hexadecimal_document_export(const std::string& export_filepath);
 	bool scan_report_export(const std::string& export_filepath);
     void print_report();
+
+    void set_read_callback(std::function<bool(std::vector<uint8_t>&, size_t, size_t)> callback);
 };
 
 class FundamentalAnalysis {
@@ -165,16 +179,37 @@ private:
     bool check_little_endian();
 
 public:
+	// 内部处理 API 函数
     error_code analysis_file(const std::string input_filepath);
     error_code recheck_file(const std::string input_filepath);
     ScanResultsDistribution summary_file();
-
+    bool read_source_file(std::vector<uint8_t>& buffer, size_t offset, size_t length);
     std::vector<bool> check_settings();
+
+	// 外部处理 API 函数
+    bool do_hexadecimal_export(const std::string& filename);
+	bool do_scan_txt_export(const std::string& filename);
+
+    // 其他工具及回调函数
     FundamentalAnalysis& operator=(const FundamentalAnalysis& other) {
         if (this != &other) {
 			data_manager = other.data_manager;
             file_size_ = other.file_size_;
+            myfile_loaded_ = other.myfile_loaded_;
+
+            data_manager.set_read_callback(
+                [this](std::vector<uint8_t>& buffer, size_t offset, size_t length) -> bool {
+                    return this->read_source_file(buffer, offset, length);
+                }
+            );
         }
         return *this;
+    }
+    FundamentalAnalysis() {
+        data_manager.set_read_callback(
+            [this](std::vector<uint8_t>& buffer, size_t offset, size_t length) -> bool {
+                return this->read_source_file(buffer, offset, length);
+            }
+        );
     }
 };

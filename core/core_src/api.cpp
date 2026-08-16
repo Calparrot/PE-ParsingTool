@@ -387,23 +387,25 @@ bool Translator::string_to_file_append(const std::string& export_filepath_utf8, 
 
 /* Translator¿‡ - public */
 bool Translator::hexadecimal_document_export(const std::string& export_filepath) {
-    unsigned int file_size = data_container.source_file_data.size();
-    unsigned int offset = 0;
-    unsigned int chunk_size = 1024;
+    size_t file_size = data_container.comprehensive_info.file_size_copy;
+    size_t offset = 0;
+    size_t chunk_size = 4096;
     std::vector<uint8_t> current_data;
 
     while (offset < file_size) {
-        unsigned int current_size = (chunk_size <= file_size - offset) ? chunk_size : file_size - offset;
-        current_data.assign(
+        size_t current_size = (chunk_size <= file_size - offset) ? chunk_size : file_size - offset;
+        /*current_data.assign(
             data_container.source_file_data.begin() + offset,
             data_container.source_file_data.begin() + offset + current_size
-        );
-
+        );*/
+        if (!read_callback(current_data, offset, current_size)) {
+            return false;
+        }
         if (!string_to_file_append(export_filepath, generate_file_display(current_data, offset))) {
             return false;
         }
 
-        offset += chunk_size;
+        offset += current_size;
     }
     return true;
 }
@@ -421,6 +423,10 @@ void Translator::print_report() {
     std::cout << basic_file_info_translator();
     std::cout << aggregate_info_translator();
     std::cout << detailed_file_info_translator();
+}
+
+void Translator::set_read_callback(std::function<bool(std::vector<uint8_t>&, size_t, size_t)> callback) {
+    read_callback = callback;
 }
 
 /* FundamentalAnalysis¿‡ - public */
@@ -604,10 +610,57 @@ ScanResultsDistribution FundamentalAnalysis::summary_file() {
     return results_distrubution;
 }
 
+bool FundamentalAnalysis::read_source_file(std::vector<uint8_t>& buffer, size_t offset, size_t length){
+    if (!myfile_loaded_) {
+        return false;
+    }
+    if (offset + length > data_manager.data_container.comprehensive_info.file_size_copy) {
+		return false;
+    }
+
+    std::streampos original_pos = myfile_.tellg();
+
+    myfile_.seekg(offset, std::ios::beg);
+    if (!myfile_) {
+        myfile_.seekg(original_pos);
+        return false;
+    }
+
+    bool rst = true;
+    buffer.resize(length);
+    myfile_.read(reinterpret_cast<char*>(buffer.data()), length);
+    if (!myfile_) {
+        std::streamsize read_count = myfile_.gcount();
+        if (read_count < length) {
+            buffer.resize(read_count);
+        }
+        rst = false;
+    }
+
+    myfile_.clear();
+    myfile_.seekg(original_pos);
+    
+    return rst;
+}
+
 std::vector<bool> FundamentalAnalysis::check_settings() {
     return {
         config.detailed_analysis_started,
         config.detailed_header_analysis,
         config.INT_analysis
     };
+}
+
+bool FundamentalAnalysis::do_hexadecimal_export(const std::string& filepath) {
+    data_manager.set_read_callback(
+        [this](std::vector<uint8_t>& buffer, size_t offset, size_t length) -> bool {
+            return this->read_source_file(buffer, offset, length);
+        }
+    );
+
+    return data_manager.hexadecimal_document_export(filepath);
+}
+
+bool FundamentalAnalysis::do_scan_txt_export(const std::string& filepath) {
+    return data_manager.hexadecimal_document_export(filepath);
 }

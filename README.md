@@ -110,7 +110,7 @@ int main() {
     
     // 导出分析报告
     if (result == FundamentalAnalysis::error_code::SUCCESS) {          
-        object.data_manager.scan_report_export("C:/output.txt");
+        object.do_scan_txt_export("C:/output.txt");
         std::cout << "分析完成，报告已导出。" << std::endl;
     }
     return 0;
@@ -129,8 +129,8 @@ int main() {
 |--------|--------------|-------------|
 | `analysis_file(const std::string& path)` | `error_code` | 分析指定路径的 PE 文件，根据分析成功与否返回错误码 |
 | `summary_file()` | `ScanResultsDistribution` | 汇总单次分析结果，返回分析报告数据（不打印） |
-| `data_manager.scan_report_export(const std::string& path)` | `bool` | 导出分析报告到指定路径 |
-| `data_manager.hexadecimal_document_export(const std::string& path)` | `bool` | 导出十六进制视图数据到指定路径 |
+| `do_scan_txt_export(const std::string& path)` | `bool` | 导出分析报告到指定路径 |
+| `do_hexadecimal_export(const std::string& path)` | `bool` | 导出十六进制视图数据到指定路径 |
 | `data_manager.print_report()` | `void` | 打印单次分析报告到控制台 |
 
 > 注意：除 `analysis_file` 外，其他方法均需在 `analysis_file` 成功（返回 `0`）后调用。
