@@ -159,19 +159,6 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 // sstd::string file_path = converter.to_bytes(szFile);
                 std::string file_path = WideToUtf8(szFile);
 
-                /*if (object.analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
-                    file_loaded = true;
-                    g_analysis_object = object;
-                    std::wstring* p_data_a = new std::wstring(generate_file_display(object.data_manager.data_container));
-                    std::wstring* p_data_b = new std::wstring(scan_summary(object.data_manager.data_container));
-                    SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
-                    SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
-                }
-                else {
-                    MessageBox(hWnd, L"文件打开失败。", L"提示", MB_OK);
-                }*/
-
-                // 实验方案
                 InitGlobalObjects();
                 if (p_analysis_object->analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
                     file_loaded = true;
@@ -224,14 +211,6 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
 
             if (file_loaded) {
-                /*if (g_analysis_object.data_manager.hexadecimal_document_export(wstring_to_utf8(final_filepath))) {
-                    MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
-                }
-                else {
-                    MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
-                }*/
-
-                // 实验方案
                 if (p_analysis_object->do_hexadecimal_export(wstring_to_utf8(final_filepath))) {
                     MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
@@ -269,14 +248,6 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             }
 
             if (file_loaded) {
-                /*if (g_analysis_object.data_manager.scan_report_export(wstring_to_utf8(final_filepath))) {
-                    MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
-                }
-                else {
-                    MessageBox(hWnd, L"文件导出失败。", L"导出", MB_OK);
-                }*/
-
-				// 实验方案
                 if (p_analysis_object->data_manager.scan_report_export(wstring_to_utf8(final_filepath))) {
                     MessageBox(hWnd, (L"文件已导出至" + final_filepath).c_str(), L"导出", MB_OK);
                 }
@@ -391,45 +362,31 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-				// p_data = new std::wstring(generate_file_display(g_analysis_object.data_manager.data_container));
-                // 实验方案
 				p_data = new std::wstring(generate_file_display(p_analysis_object->data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 1));
-				// 实验方案
 				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
-                // p_data = new std::wstring(L"还在开发中:(");
-                // 实验方案
 				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 2));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 3, (LPARAM)p_data);
 				
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
-                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 3));
-				// 实验方案
 				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 3));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 4, (LPARAM)p_data);
                 break;
             case 1005: // 右侧窗口刷新，显示Optional Header扫描信息
-                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 4));
-				// 实验方案
 				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 4));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 5, (LPARAM)p_data);
                 break;
 			case 1006: // 右侧窗口刷新，显示Section Headers扫描信息
-                // p_data = new std::wstring(sctheader_summary(g_analysis_object.data_manager.data_container));
-				// 实验方案
 				p_data = new std::wstring(sctheader_summary(p_analysis_object->data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
 				break;
             case 1007:
-                // p_data = new std::wstring(structure_display(g_analysis_object.data_manager.data_container, 5));
-				// 实验方案
 				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 5));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 6, (LPARAM)p_data);
                 break;

@@ -64,19 +64,29 @@ void batch_statistiacl_output(ScanResultsDistribution& sr_distribution, int& tot
 }
 
 void show_help() {
-    std::cout << "用法: tool <命令> [参数]\n"
-        << "\n命令:\n"
-        << "  scan file <文件>         扫描单个文件\n"
-        << "  scan folder <目录>       批量扫描文件夹\n"
-        << "  export single -i <文件> -o <输出>  导出单文件报告\n"
-        << "  export folder -i <目录> -o <输出>  批量导出报告\n"
-        << "  -h, --help               显示帮助\n"
-        << "\n示例:\n"
-        << "  tool scan file a.exe\n"
-        << "  tool scan folder ./samples\n";
-}
+    std::cout << R"(
+用法  程序名称 <命令> <必选参数> [可选参数]
+=============================================================================
+扫描
+    程序名称 -s file <文件路径>           扫描单个文件，并在终端打印结果
+    程序名称 -s folder <目录路径>         批量扫描文件夹，并在终端打印统计结果
+
+导出
+    程序名称 -e single -i <文件路径> [-o <输出文件路径>]    扫描单个文件，并导出扫描报告
+    程序名称 -e folder -i <目录路径> [-o <输出目录路径>]    批量扫描文件夹，并导出扫描报告
+
+帮助和版本信息
+    程序名称 -h                           显示帮助信息
+    程序名称 -v                           显示版本信息
+=============================================================================
+示例
+    PE_ParsingTool_cli -s file C:\test\example.exe
+    PE_ParsingTool_cli -s folder C:\test
+    PE_ParsingTool_cli -e single -i C:\test\example.exe -o C:\output
+)";
+}   
 
 void show_version() {
-    std::cout << "PE_Parsing CLI 版本 0.0.0\n";
-    std::cout << "其实都没有正式版本，功能还在开发中。\n" << std::endl;
+    std::cout << "PE Parsing CLI v0.1\n";
+    std::cout << "暂时没有正式版本，功能还在开发中:(\n" << std::endl;
 }

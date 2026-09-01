@@ -354,7 +354,7 @@ int main(int argc, char* argv[]) {
 
 	// 不合法情况，PE_ParsingTool_cli.exe -x
     else {
-		std::cout << "参数有误，输入 -h 获取帮助文档。" << std::endl;
+		std::cout << "参数有误，使用 -h 命令获取帮助文档。" << std::endl;
     }
 
     auto end_time = std::chrono::steady_clock::now();

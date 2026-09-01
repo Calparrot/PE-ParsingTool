@@ -1,9 +1,14 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <limits>
+#include <cstring>
+#include <algorithm>
+
+#include "database.h"
 
 /* Ç°ÖÃÉùÃ÷ */
-struct Diaresults;
+// struct Diaresults;
 
 /*
  * ============================================================================

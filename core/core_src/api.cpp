@@ -435,7 +435,7 @@ bool FundamentalAnalysis::readfile(std::string file_path) {
     std::wstring wpath = utf8_to_wide(file_path);
     myfile_.open(wpath.c_str(), std::ios::binary);
 #else         // Linux/Mac平台：直接使用UTF-8路径
-    myfile.open(file_path.c_str(), std::ios::binary);
+    myfile_.open(file_path.c_str(), std::ios::binary);
 #endif
     if (!myfile_.is_open()) {
         return false;
