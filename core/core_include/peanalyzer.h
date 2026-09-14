@@ -35,6 +35,7 @@
  *  - section_name_check()              节区常用名称检验和属性联合判断函数
  * 
  *  【PEanalyzer 类成员函数（public）说明】
+ *  - small_file_processor()            处理小于64字节的文件
  *  - dosheader_analysis()              DOS头分析函数
  *  - dosstub_analysis()                DOS存根分析函数
  *  - file_header_analysis()            文件头分析函数
@@ -130,6 +131,9 @@ private:
 
 public:
     /* 调用时按顺序调用，用户不可管理，由API统一封装 */
+    // 超小文件处理器
+    bool small_file_processor(Structuresults& data_container);
+
     // 头部基础结构分析
     bool dosheader_analysis(Structuresults& data_container);
     bool dosstub_analysis(Structuresults& data_container);

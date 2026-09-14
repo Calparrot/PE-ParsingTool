@@ -148,7 +148,7 @@ bool ReInspector::section_headers_recheck(Structuresults& data_container) {
 	return true;
 }
 
-bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container) {
+bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& recheck_pedata_, Structuresults& data_container) {
 	bool is_32bit = (data_container.comprehensive_info.file_identification == "32位");
 	bool is_64bit = (data_container.comprehensive_info.file_identification == "64位");
 	if (!is_32bit && !is_64bit) {
@@ -196,12 +196,12 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 			// 一个缓冲区可以读取完
 			if (size != 0 && size <= buffer_size
 			&& first_thunk_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
-				pedata.seekg(first_thunk_addr_clustering[i].begin, std::ios::beg);
-				if (!pedata) {
+				recheck_pedata_.seekg(first_thunk_addr_clustering[i].begin, std::ios::beg);
+				if (!recheck_pedata_) {
 					return false;
 				}
-				pedata.read(reinterpret_cast<char*>(buffer), size);
-				if (pedata.gcount() != size) {
+				recheck_pedata_.read(reinterpret_cast<char*>(buffer), size);
+				if (recheck_pedata_.gcount() != size) {
 					return false;
 				}
 
@@ -241,14 +241,14 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 				for (size_t num = 0; num < buffers_num; num++) {
 					if (first_thunk_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
 						std::fill(std::begin(buffer), std::end(buffer), 0);
-						pedata.seekg(first_thunk_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
-						if (!pedata) {
+						recheck_pedata_.seekg(first_thunk_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
+						if (!recheck_pedata_) {
 							return false;
 						}
 						size_t read_size = first_thunk_addr_clustering[i].end - (num * buffer_size) > buffer_size ?
 							buffer_size : first_thunk_addr_clustering[i].end - (num * buffer_size);
-						pedata.read(reinterpret_cast<char*>(buffer), read_size);
-						if (pedata.gcount() != read_size) {
+						recheck_pedata_.read(reinterpret_cast<char*>(buffer), read_size);
+						if (recheck_pedata_.gcount() != read_size) {
 							return false;
 						}
 					}
@@ -286,12 +286,12 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 		}
 		// 单点值
 		else {
-			pedata.seekg(first_thunk_addr_clustering[i].begin, std::ios::beg);
-			if (!pedata) {
+			recheck_pedata_.seekg(first_thunk_addr_clustering[i].begin, std::ios::beg);
+			if (!recheck_pedata_) {
 				return false;
 			}
-			pedata.read(reinterpret_cast<char*>(buffer), 1024);
-			if (pedata.gcount() != 1024) {
+			recheck_pedata_.read(reinterpret_cast<char*>(buffer), 1024);
+			if (recheck_pedata_.gcount() != 1024) {
 				return false;
 			}
 			size_t thunk_length = INT_division(buffer, 1024, 0, is_32bit);
@@ -315,7 +315,7 @@ bool ReInspector::INT_extract(SecondaryRecord recheck_container, std::ifstream& 
 	return true;
 }
 
-bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::ifstream& pedata, Structuresults& data_container) {
+bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::ifstream& recheck_pedata_, Structuresults& data_container) {
 	bool is_32bit = (data_container.comprehensive_info.file_identification == "32位");
 	bool is_64bit = (data_container.comprehensive_info.file_identification == "64位");
 	if (!is_32bit && !is_64bit) {
@@ -354,12 +354,12 @@ bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::if
 			// 一个缓冲区可以读取完
 			if (size != 0 && size <= buffer_size
 				&& name_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
-				pedata.seekg(name_addr_clustering[i].begin, std::ios::beg);
-				if (!pedata) {
+				recheck_pedata_.seekg(name_addr_clustering[i].begin, std::ios::beg);
+				if (!recheck_pedata_) {
 					return false;
 				}
-				pedata.read(reinterpret_cast<char*>(buffer), size);
-				if (pedata.gcount() != size) {
+				recheck_pedata_.read(reinterpret_cast<char*>(buffer), size);
+				if (recheck_pedata_.gcount() != size) {
 					return false;
 				}
 
@@ -374,14 +374,14 @@ bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::if
 				for (size_t num = 0; num < buffers_num; num++) {
 					if (name_addr_clustering[i].end < data_container.comprehensive_info.file_size_copy) {
 						std::fill(std::begin(buffer), std::end(buffer), 0);
-						pedata.seekg(name_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
-						if (!pedata) {
+						recheck_pedata_.seekg(name_addr_clustering[i].begin + (num * buffer_size), std::ios::beg);
+						if (!recheck_pedata_) {
 							return false;
 						}
 						size_t read_size = name_addr_clustering[i].end - (num * buffer_size) > buffer_size ?
 							buffer_size : name_addr_clustering[i].end - (num * buffer_size);
-						pedata.read(reinterpret_cast<char*>(buffer), read_size);
-						if (pedata.gcount() != read_size) {
+						recheck_pedata_.read(reinterpret_cast<char*>(buffer), read_size);
+						if (recheck_pedata_.gcount() != read_size) {
 							return false;
 						}
 					}
@@ -392,12 +392,12 @@ bool ReInspector::module_name_extract(SecondaryRecord recheck_container, std::if
 			}
 		}
 		else { // 单点值
-			pedata.seekg(name_addr_clustering[i].begin, std::ios::beg);
-			if (!pedata) {
+			recheck_pedata_.seekg(name_addr_clustering[i].begin, std::ios::beg);
+			if (!recheck_pedata_) {
 				return false;
 			}
-			pedata.read(reinterpret_cast<char*>(buffer), 1024);
-			if (pedata.gcount() != 1024) {
+			recheck_pedata_.read(reinterpret_cast<char*>(buffer), 1024);
+			if (recheck_pedata_.gcount() != 1024) {
 				return false;
 			}
 			size_t thunk_length = INT_division(buffer, 1024, 0, is_32bit);

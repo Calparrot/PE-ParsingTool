@@ -472,6 +472,11 @@ FundamentalAnalysis::error_code FundamentalAnalysis::analysis_file(const std::st
     if (previous_execution_result) {
         // 初始化工作
         data_manager.data_container.comprehensive_info.file_size_copy = target.file_size;
+        if (target.file_size < 64) {
+            target.small_file_processor(data_manager.data_container);
+            previous_execution_result = false;
+        }
+        execution_steps++;
     }
     if (previous_execution_result) {
         previous_execution_result = target.dosheader_analysis(data_manager.data_container);

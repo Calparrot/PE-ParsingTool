@@ -563,6 +563,30 @@ void PEanalyzer::section_name_check(const uint8_t input_name[8], const uint32_t 
 }
 
 /* PEanalyzer类 - public */
+bool PEanalyzer::small_file_processor(Structuresults& data_container) {
+	pedata_.seekg(0, std::ios::beg);
+	if (!pedata_) {
+		data_container.crash_information_set(
+			// 文件流异常，文件指针移动失败，可能文件未正确打开或已损坏。
+			error_category::FILE_SEEK_FAILED,
+			"DOS Header: File stream exception, \
+			failed to move file pointer, \n\
+			the file may not have been opened correctly or is corrupted."
+		);
+		return false;
+	}
+	pedata_.read(reinterpret_cast<char*>(data_container.source_file_data.data()), file_size);
+	if (pedata_.gcount() != file_size) {
+		data_container.crash_information_set(
+			// 文件流读取数据到内存缓冲区失败。
+			error_category::FILE_READ_FAILED,
+			"DOS Header: Failed to read data from the file stream into the memory buffer."
+		);
+		return false;
+	}
+	return true;
+}
+
 bool PEanalyzer::dosheader_analysis(Structuresults& data_container) {
 	/* 可能的作用域问题 */
 	// shared_structure_ = SharedStructure();
@@ -582,6 +606,7 @@ bool PEanalyzer::dosheader_analysis(Structuresults& data_container) {
 		data_container.diarelist.push_back(result);
 		return false;
 	}
+
 	pedata_.read(reinterpret_cast<char*>(mulbuffer_), 64);
 	if (pedata_.gcount() != 64) {
 		data_container.crash_information_set(

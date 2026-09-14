@@ -16,13 +16,12 @@
 /* 全局变量 */
 RECT main_client_rect;                    // 客户区主窗口大小
 int g_dpi = 96;                           // 当前DPI设置
-static HWND g_navigation_window = NULL;   // 导航窗口句柄
-static HWND g_message_window = NULL;      // 信息窗口句柄
+static HWND g_navigation_window = NULL;   // 导航窗口句柄（左上）
+static HWND g_message_window = NULL;      // 信息窗口句柄（左下）
 static HWND hedit_message = NULL;         // 信息窗口显示文本控件句柄
-static HWND g_data_window = NULL;         // 数据窗口句柄
+static HWND g_data_window = NULL;         // 数据窗口句柄（右）
 static HWND hedit_data = NULL;            // 数据窗口显示文本控件句柄
 
-FundamentalAnalysis g_analysis_object;    // 全局分析对象
 bool file_loaded = false;                 // 文件是否已加载
 wchar_t szFile[MAX_PATH] = { 0 };         // 接收文件路径的缓冲区
 
@@ -159,13 +158,13 @@ LRESULT CALLBACK MainWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 // sstd::string file_path = converter.to_bytes(szFile);
                 std::string file_path = WideToUtf8(szFile);
 
-                InitGlobalObjects();
+                InitGlobalObjects();  
                 if (p_analysis_object->analysis_file(file_path) == FundamentalAnalysis::error_code::SUCCESS) {
                     file_loaded = true;
                     std::wstring* p_data_a = new std::wstring(generate_file_display(p_analysis_object->data_manager.data_container));
                     std::wstring* p_data_b = new std::wstring(scan_summary(p_analysis_object->data_manager.data_container));
                     SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data_a);
-                    SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b);
+                    SendMessage(g_message_window, WM_MSG_INTERFACE_REFRESH, 0, (LPARAM)p_data_b); 
                 }
                 else {
                     MessageBox(hWnd, L"文件打开失败。", L"提示", MB_OK);
@@ -362,17 +361,16 @@ LRESULT CALLBACK NavigationWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
             std::wstring* p_data;
             switch (wID) {
             case 1001:  // 右侧窗口刷新，显示源文件信息
-				p_data = new std::wstring(generate_file_display(p_analysis_object->data_manager.data_container));
+                p_data = new std::wstring(generate_file_display(p_analysis_object->data_manager.data_container));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 1, (LPARAM)p_data);
                 break;
             case 1002:  // 右侧窗口刷新，显示DOS Header扫描信息
-				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 1));
+                p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 1));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 2, (LPARAM)p_data);
                 break;
             case 1003: // 右侧窗口刷新，显示DOS Stub扫描信息
-				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 2));
+                p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 2));
                 SendMessage(g_data_window, WM_DATA_INTERFACE_REFRESH, 3, (LPARAM)p_data);
-				
                 break;
             case 1004: // 右侧窗口刷新，显示File Header扫描信息
 				p_data = new std::wstring(structure_display(p_analysis_object->data_manager.data_container, 3));
@@ -402,9 +400,12 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_NCCREATE: {
         WindowData* nit_data = new WindowData();
+        if (nit_data == nullptr) {
+            return FALSE;
+        }
         nit_data->display_text = L"选择文件后显示数据。";
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)nit_data);
-        return DefWindowProc(hWnd, msg, wp, lp);
+        return TRUE;
     }
     case WM_CREATE: {
         WindowData* p_data = (WindowData*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
@@ -461,7 +462,6 @@ LRESULT CALLBACK MessageWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             SelectObject(hdc, hOldFont);
             ReleaseDC(hWnd, hdc);
 
-            p_data->client_height = rect.bottom - rect.top;
             SCROLLINFO si = { 0 };
             si.cbSize = sizeof(SCROLLINFO);
             si.fMask = SIF_RANGE | SIF_PAGE;
@@ -682,7 +682,7 @@ LRESULT CALLBACK DisplayWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         std::wstring* p_input = (std::wstring*)lp;
 
         if (p_input && hedit_data) {
-            SetWindowText(hedit_data, p_input->c_str());
+            SetWindowText(hedit_data, p_input->c_str()); 
             delete p_input;
         }
 

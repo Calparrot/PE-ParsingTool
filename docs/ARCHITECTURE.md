@@ -1,10 +1,10 @@
-# PE-ParsingTool 架构文档 (ARCHITECTURE.md)
+# PE Parsing Tool 架构文档 (ARCHITECTURE.md)
 
 ## 一、设计思路
 
 ### 1.1 项目定位
 
-PE-ParsingTool 是一个跨平台的 PE（Portable Executable）文件格式分析工具，提供 GUI（Windows 原生 Win32）和 CLI（命令行）两种用户界面，支持对 Windows 可执行文件/动态链接库的头部结构进行解析、诊断和导出。
+PE Parsing Tool 是一个核心跨平台的 PE（Portable Executable）文件格式分析工具，提供 GUI（Windows 原生 Win32）和 CLI（命令行）两种用户界面，支持对 Windows 可执行文件/动态链接库的头部结构进行解析、诊断和导出。
 
 ### 1.2 核心设计原则
 
@@ -14,11 +14,12 @@ PE-ParsingTool 是一个跨平台的 PE（Portable Executable）文件格式分�
 - **核心层**（`core/`）：零第三方依赖，纯 C++17 标准库实现，包含所有 PE 解析、诊断和报告生成逻辑。核心层无平台差异，可在 Windows/Linux 下编译运行。
 - **公共 API 层**（`core/core_include/api.h`）：上层模块仅通过 `FundamentalAnalysis` 和 `Translator` 两个类访问核心功能。
 
-**渐进式分析流水线**
-分析流程采用顺序管道模式：`DOS Header → DOS Stub → File Header → Optional Header → Section Headers → Import Descriptor`。每一步依赖前一步的结果（如 Optional Header 需要 e_lfanew，Section Headers 需要 FileAlignment），任一步失败则停止后续分析，但保留已生成的部分结果。
-
 **两遍扫描策略**
-Section Headers 采用两遍扫描：第一遍通过 `is_this_section_valid()` 探测有效节数量，解决 `NumberOfSections` 字段与实际节表内容之间的矛盾；第二遍对每个节进行详细的权限校验、区间重叠检测和排序检查。
+在核心层中，分信息获取与关键字段扫描阶段（主要）和可配置与细致扫描阶段（次要），每个层次各含一个扫描执行类和数据容器类。所有阶段的数据来源依赖于主要阶段的数据类。
+
+**渐进式分析流水线**
+在核心层中，信息获取与关键字段扫描阶段的分析流程采用顺序管道模式：`DOS Header → DOS Stub → File Header → Optional Header → Section Headers → Import Descriptor`。
+每一步依赖前一步的结果（主要涉及地址计算），任一步失败则停止后续分析，但保留已生成的部分结果。
 
 **诊断驱动**
 不使用简单的"有效/无效"二元判断，而是通过 `Core::Diagnostic` 结构体记录丰富的上下文信息（对象类型、严重级别、分类、期望值、实际值、偏移地址等），由工厂函数统一构造，保证诊断信息的一致性和可扩展性。
