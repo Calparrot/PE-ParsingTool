@@ -21,19 +21,9 @@ CLI version maximum runtime memory < 2MB (batch scanning), core components with 
 
 ## ✨ Features
 
-### ✅ Implemented Features
-- **Basic file header data analysis**: Extracts information from IMAGE_DOS_HEADER to IMAGE_SECTION_HEADER and validates key fields
-- **File export support**: Supports exporting parsing reports and hexadecimal source file data to TXT files
-- **Interface design**: Develops a graphical user interface to improve user experience
-- **Command-line version**: Supports batch file scanning and processing
-
-### 🔄 Features in Development
-- **Import table parsing**: The corresponding module exists but has not yet been integrated into the API
-- **Routine maintenance**: Continuously supplementing the scan rule set, interface beautification, and content expansion, etc.
-
-### 🚧 Planned Features
-- **Export table parsing**: Extract and display the list of exported functions
-- **AI-assisted extension**: Support JSON file export of parsing reports to assist AI parsing
+- **Basic File Header Analysis**: Extracts information from IMAGE_DOS_HEADER through IMAGE_SECTION_HEADER and validates key fields
+- **Export**: Exports analysis reports and human-readable hex data to TXT files
+- **Dual Interface**: Provides both a graphical user interface and a command-line interface, focused on quick inspection and batch scanning respectively
 
 ## 🚀 Quick Start
 

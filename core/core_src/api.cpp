@@ -667,5 +667,5 @@ bool FundamentalAnalysis::do_hexadecimal_export(const std::string& filepath) {
 }
 
 bool FundamentalAnalysis::do_scan_txt_export(const std::string& filepath) {
-    return data_manager.hexadecimal_document_export(filepath);
+    return data_manager.scan_report_export(filepath);
 }
